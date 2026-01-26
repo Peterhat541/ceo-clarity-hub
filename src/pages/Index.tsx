@@ -133,30 +133,30 @@ export default function Index() {
 
   return (
     <CEOLayout>
-      <div className="w-full animate-fade-in h-full flex flex-col">
+      <div className="w-full animate-fade-in h-full flex flex-col px-6 py-4">
         {/* Header with Search */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-3">
+        <div className="mb-4">
+          <h1 className="text-xl font-bold text-foreground mb-2">
             Buenos días
           </h1>
           
           {/* Search Bar */}
           <button 
             onClick={() => setSearchOpen(true)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-left"
           >
-            <Search className="w-5 h-5 text-muted-foreground" />
-            <span className="text-muted-foreground">Buscar cliente...</span>
+            <Search className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Buscar cliente...</span>
           </button>
         </div>
 
         {/* Summary Cards - Main Navigation Hub */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-4 gap-3 mb-4">
           <SummaryCard
             title="Hoy"
             value={todayCount}
             subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<Sun className="w-5 h-5" />}
+            icon={<Sun className="w-4 h-4" />}
             onClick={() => handleCardClick("today")}
             active={activeSection === "today"}
           />
@@ -164,7 +164,7 @@ export default function Index() {
             title="Incidencias"
             value={incidentsCount}
             subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<AlertOctagon className="w-5 h-5" />}
+            icon={<AlertOctagon className="w-4 h-4" />}
             variant="warning"
             onClick={() => handleCardClick("incidents")}
             active={activeSection === "incidents"}
@@ -173,7 +173,7 @@ export default function Index() {
             title="Clientes en rojo"
             value={redClientsCount}
             subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<AlertTriangle className="w-5 h-5" />}
+            icon={<AlertTriangle className="w-4 h-4" />}
             variant="danger"
             onClick={() => handleCardClick("red")}
             active={activeSection === "red"}
@@ -182,7 +182,7 @@ export default function Index() {
             title="Fechas críticas"
             value={criticalDatesCount}
             subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<Calendar className="w-5 h-5" />}
+            icon={<Calendar className="w-4 h-4" />}
             onClick={() => handleCardClick("dates")}
             active={activeSection === "dates"}
           />

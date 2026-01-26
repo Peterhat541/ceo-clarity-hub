@@ -14,7 +14,168 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      client_history: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          summary: string
+          type: Database["public"]["Enums"]["history_type"]
+          visible_to: Database["public"]["Enums"]["visibility_type"]
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          summary: string
+          type: Database["public"]["Enums"]["history_type"]
+          visible_to?: Database["public"]["Enums"]["visibility_type"]
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          summary?: string
+          type?: Database["public"]["Enums"]["history_type"]
+          visible_to?: Database["public"]["Enums"]["visibility_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          address: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          status: Database["public"]["Enums"]["client_status"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["client_status"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["client_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          reminder_minutes: number | null
+          start_at: string
+          title: string
+          type: Database["public"]["Enums"]["event_type"]
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          reminder_minutes?: number | null
+          start_at: string
+          title: string
+          type: Database["public"]["Enums"]["event_type"]
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          reminder_minutes?: number | null
+          start_at?: string
+          title?: string
+          type?: Database["public"]["Enums"]["event_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          due_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["note_status"]
+          target_employee: string | null
+          text: string
+          visible_to: Database["public"]["Enums"]["visibility_type"]
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          due_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["note_status"]
+          target_employee?: string | null
+          text: string
+          visible_to?: Database["public"]["Enums"]["visibility_type"]
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          due_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["note_status"]
+          target_employee?: string | null
+          text?: string
+          visible_to?: Database["public"]["Enums"]["visibility_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +184,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      client_status: "green" | "yellow" | "orange" | "red"
+      event_type: "call" | "meeting" | "reminder"
+      history_type: "email" | "note" | "incident" | "event" | "call" | "meeting"
+      note_status: "pending" | "seen" | "done"
+      visibility_type: "team" | "ceo" | "both"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +315,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      client_status: ["green", "yellow", "orange", "red"],
+      event_type: ["call", "meeting", "reminder"],
+      history_type: ["email", "note", "incident", "event", "call", "meeting"],
+      note_status: ["pending", "seen", "done"],
+      visibility_type: ["team", "ceo", "both"],
+    },
   },
 } as const

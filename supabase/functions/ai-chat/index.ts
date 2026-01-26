@@ -11,6 +11,18 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "get_dashboard_summary",
+      description: "Obtiene un resumen completo del estado actual: clientes que necesitan atención, incidencias abiertas, eventos del día y notas pendientes. USA ESTA FUNCIÓN SIEMPRE que el usuario pregunte '¿Qué tengo que hacer?' o '¿Cómo está todo?' o 'Dame un resumen'.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: []
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "create_event",
       description: "Crea un evento en el calendario (llamada, reunión o recordatorio). Usa esta función cuando el usuario quiera agendar algo.",
       parameters: {
@@ -124,22 +136,26 @@ const tools = [
 // System prompt for the AI
 const systemPrompt = `Eres el asistente ejecutivo de Processia, una plataforma para CEOs.
 
-REGLAS CRÍTICAS:
-1. INTENCIÓN > CONTEXTO: Si el usuario pide un recordatorio personal (ej: "créame un recordatorio para enviar email"), NO asumas cliente activo. Solo asocia cliente si lo menciona explícitamente o la acción lo requiere.
+REGLA PRINCIPAL - RESUMEN DEL DÍA:
+Cuando el usuario pregunte "¿Qué tengo que hacer hoy?", "¿Cómo están las cosas?", "Dame la agenda", "¿Qué hay pendiente?" o similar, SIEMPRE usa la función get_dashboard_summary PRIMERO para obtener datos reales. Luego presenta un resumen claro y accionable:
+- Clientes críticos (rojos/naranjas) que necesitan atención
+- Eventos del día
+- Notas pendientes del equipo
+- Incidencias abiertas
 
-2. TIEMPOS RELATIVOS: Resuelve automáticamente expresiones como:
-   - "dentro de X minutos/horas" = ahora + X minutos/horas
+REGLAS ADICIONALES:
+1. INTENCIÓN > CONTEXTO: Si el usuario pide un recordatorio personal, NO asumas cliente activo. Solo asocia cliente si lo menciona explícitamente.
+
+2. TIEMPOS RELATIVOS: Resuelve automáticamente:
+   - "dentro de X minutos/horas" = ahora + X
    - "en media hora" = ahora + 30 min
    - "mañana a las 10" = mañana a las 10:00
-   NO repreguntes la hora si ya está en el mensaje.
 
-3. EJECUCIÓN DIRECTA: Si tienes la información necesaria, ejecuta la acción. Solo pregunta si falta un dato crítico imposible de inferir.
+3. EJECUCIÓN DIRECTA: Si tienes la información, ejecuta. Solo pregunta si falta un dato crítico.
 
-4. RESPUESTAS BREVES: Confirma acciones en 1-2 líneas. Ejemplo: "Listo. Recordatorio en 2 minutos para enviar email a Laura."
+4. RESPUESTAS BREVES: Confirma acciones en 1-2 líneas.
 
-5. CONTEXTO DE CLIENTE: Cuando hay un cliente activo (se te pasará en el mensaje), úsalo para llamadas/reuniones. Pero no lo forces para recordatorios personales.
-
-6. NOTAS AL EQUIPO: Cuando el CEO quiere dejar instrucciones (ej: "dile a Laura que llame a Global Media"), usa create_note con target_employee y visible_to="team".
+5. NOTAS AL EQUIPO: Para instrucciones (ej: "dile a Laura que llame"), usa create_note con target_employee y visible_to="team".
 
 Hora actual: {current_time}
 Fecha actual: {current_date}
@@ -250,6 +266,96 @@ serve(async (req) => {
         let result: any;
 
         switch (functionName) {
+          case "get_dashboard_summary": {
+            // Get all critical information for the CEO
+            const startOfDay = `${currentDate}T00:00:00`;
+            const endOfDay = `${currentDate}T23:59:59`;
+
+            // 1. Get today's events
+            const { data: eventsData } = await supabase
+              .from("events")
+              .select("*, clients(name)")
+              .gte("start_at", startOfDay)
+              .lte("start_at", endOfDay)
+              .order("start_at", { ascending: true });
+
+            // 2. Get clients that need attention (red, orange status)
+            const { data: criticalClients } = await supabase
+              .from("clients")
+              .select("*")
+              .in("status", ["red", "orange"])
+              .order("status", { ascending: true });
+
+            // 3. Get all clients for overview
+            const { data: allClients } = await supabase
+              .from("clients")
+              .select("id, name, status")
+              .order("status", { ascending: true });
+
+            // 4. Get pending notes for CEO
+            const { data: pendingNotes } = await supabase
+              .from("notes")
+              .select("*, clients(name)")
+              .in("visible_to", ["ceo", "both"])
+              .eq("status", "pending")
+              .order("created_at", { ascending: false })
+              .limit(5);
+
+            // 5. Get recent incidents (history entries of type incident)
+            const { data: incidents } = await supabase
+              .from("client_history")
+              .select("*, clients(name)")
+              .eq("type", "incident")
+              .order("created_at", { ascending: false })
+              .limit(5);
+
+            const statusLabels: Record<string, string> = {
+              red: "🔴 crítico",
+              orange: "🟠 atención",
+              yellow: "🟡 pendiente",
+              green: "🟢 estable"
+            };
+
+            result = {
+              success: true,
+              summary: {
+                todayEvents: eventsData?.map(e => ({
+                  title: e.title,
+                  type: e.type,
+                  time: new Date(e.start_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
+                  client: e.clients?.name || null
+                })) || [],
+                criticalClients: criticalClients?.map(c => ({
+                  name: c.name,
+                  status: c.status,
+                  statusLabel: statusLabels[c.status] || c.status,
+                  contact: c.contact_name,
+                  phone: c.phone
+                })) || [],
+                clientsByStatus: {
+                  red: allClients?.filter(c => c.status === "red").length || 0,
+                  orange: allClients?.filter(c => c.status === "orange").length || 0,
+                  yellow: allClients?.filter(c => c.status === "yellow").length || 0,
+                  green: allClients?.filter(c => c.status === "green").length || 0,
+                  total: allClients?.length || 0
+                },
+                pendingNotes: pendingNotes?.map(n => ({
+                  text: n.text,
+                  client: n.clients?.name || null,
+                  from: n.created_by
+                })) || [],
+                incidents: incidents?.map(i => ({
+                  summary: i.summary,
+                  client: i.clients?.name || null,
+                  date: i.created_at
+                })) || []
+              }
+            };
+            
+            console.log("Dashboard summary result:", JSON.stringify(result, null, 2));
+            break;
+          }
+
           case "create_event": {
             const { data, error } = await supabase.from("events").insert({
               client_id: args.client_id || null,

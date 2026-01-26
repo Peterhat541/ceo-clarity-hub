@@ -14,7 +14,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Filter
+  Filter,
+  X
 } from "lucide-react";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
@@ -360,6 +361,22 @@ export default function Admin() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Clear Filters Button */}
+          {(statusFilter !== "all" || searchQuery) && (
+            <Button 
+              variant="ghost" 
+              onClick={() => { setStatusFilter("all"); setSearchQuery(""); }}
+              className="gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+              Limpiar: {statusFilter !== "all" && searchQuery 
+                ? "Todo" 
+                : statusFilter !== "all" 
+                  ? (statusFilter === "red" ? "Rojos" : statusFilter === "orange" ? "Naranjas" : statusFilter === "yellow" ? "Amarillos" : "Verdes")
+                  : "Búsqueda"}
+            </Button>
+          )}
 
           <Button onClick={() => openModal("newClient")}>
             <Plus className="w-4 h-4 mr-2" />

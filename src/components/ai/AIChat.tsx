@@ -3,6 +3,8 @@ import { Send, Sparkles, Mic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClientContext } from "@/contexts/ClientContext";
+import { useEventContext } from "@/contexts/EventContext";
+import { useNoteContext } from "@/contexts/NoteContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -28,6 +30,8 @@ const suggestedQuestions = [
 
 export function AIChat() {
   const { selectedClient, pendingContext, clearPendingContext } = useClientContext();
+  const { getTodayEvents } = useEventContext();
+  const { getTodayCEONotes } = useNoteContext();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -149,13 +153,35 @@ ${issue ? `**Situación:** ${issue}` : ""}
       { role: "user", content: userInput }
     ];
 
+    // Build UI snapshot with current visible state
+    const todayEvents = getTodayEvents();
+    const todayNotes = getTodayCEONotes();
+    
+    const uiSnapshot = {
+      todayEvents: todayEvents.map(e => ({
+        title: e.title,
+        type: e.type,
+        time: e.time,
+        clientName: e.clientName
+      })),
+      pendingNotes: todayNotes.filter(n => n.status === "pending").map(n => ({
+        content: n.content,
+        clientName: n.clientName,
+        author: n.author
+      })),
+      incidentCounts: {
+        total: 3 // TODO: Replace with real incident count from context when connected to DB
+      }
+    };
+
     try {
       const { data, error } = await supabase.functions.invoke("ai-chat", {
         body: {
           message: userInput,
           activeClientId: activeClient.id,
           activeClientName: activeClient.name,
-          conversationHistory: newHistory.slice(-10) // Send last 10 messages
+          conversationHistory: newHistory.slice(-10), // Send last 10 messages
+          uiSnapshot // Send current UI state
         }
       });
 

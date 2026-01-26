@@ -87,7 +87,7 @@ export default function Index() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { selectedClient, setSelectedClient } = useClientContext();
+  const { selectedClient, setSelectedClient, activateClientWithContext } = useClientContext();
 
   const todayCount = clientsAttention.length;
   const incidentsCount = recentIncidents.length;
@@ -107,9 +107,14 @@ export default function Index() {
     setSelectedClient(clientName);
   };
 
-  const handleIncidentClick = (clientName: string) => {
-    // Also set client context when clicking on incidents
-    setSelectedClient(clientName);
+  const handleAIClick = (clientName: string, issue?: string) => {
+    // Activate IA chat with full context - no navigation, just chat activation
+    activateClientWithContext(clientName, issue);
+  };
+
+  const handleIncidentClick = (clientName: string, description?: string) => {
+    // Activate IA chat with incident context
+    activateClientWithContext(clientName, description);
   };
 
   const handleClientSelect = (clientName: string) => {
@@ -193,6 +198,7 @@ export default function Index() {
                     key={client.name}
                     {...client}
                     onClick={() => handleClientClick(client.name)}
+                    onAIClick={() => handleAIClick(client.name, client.issue)}
                     highlighted={isClientHighlighted(client.name)}
                   />
                 ))}
@@ -213,7 +219,7 @@ export default function Index() {
                     <IncidentRow
                       key={index}
                       {...incident}
-                      onClick={() => handleIncidentClick(incident.clientName)}
+                      onClick={() => handleIncidentClick(incident.clientName, incident.description)}
                     />
                   ))}
                 </div>
@@ -258,7 +264,7 @@ export default function Index() {
                 <IncidentRow
                   key={index}
                   {...incident}
-                  onClick={() => handleIncidentClick(incident.clientName)}
+                  onClick={() => handleIncidentClick(incident.clientName, incident.description)}
                 />
               ))}
             </div>
@@ -276,6 +282,7 @@ export default function Index() {
                     key={client.name}
                     {...client}
                     onClick={() => handleClientClick(client.name)}
+                    onAIClick={() => handleAIClick(client.name, client.issue)}
                     highlighted={isClientHighlighted(client.name)}
                   />
                 ))}
@@ -323,6 +330,7 @@ export default function Index() {
                     key={client.name} 
                     {...client} 
                     onClick={() => handleClientClick(client.name)}
+                    onAIClick={() => handleAIClick(client.name, client.issue)}
                     highlighted={isClientHighlighted(client.name)}
                   />
                 ))}
@@ -343,7 +351,7 @@ export default function Index() {
                     <IncidentRow 
                       key={index} 
                       {...incident} 
-                      onClick={() => handleIncidentClick(incident.clientName)}
+                      onClick={() => handleIncidentClick(incident.clientName, incident.description)}
                     />
                   ))}
                 </div>

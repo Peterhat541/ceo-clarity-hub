@@ -133,7 +133,7 @@ export default function Index() {
 
   return (
     <CEOLayout>
-      <div className="max-w-4xl animate-fade-in h-full flex flex-col">
+      <div className="w-full animate-fade-in h-full flex flex-col">
         {/* Header with Search */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground mb-3">

@@ -4,7 +4,8 @@ import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { ClientCard } from "@/components/dashboard/ClientCard";
 import { IncidentRow } from "@/components/dashboard/IncidentRow";
 import { CollapsibleSection } from "@/components/dashboard/CollapsibleSection";
-import { Search } from "lucide-react";
+import { AgendaPopup } from "@/components/dashboard/AgendaPopup";
+import { Search, Clock } from "lucide-react";
 import {
   AlertTriangle,
   Calendar,
@@ -14,6 +15,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useClientContext } from "@/contexts/ClientContext";
+import { useEventContext } from "@/contexts/EventContext";
+import { Button } from "@/components/ui/button";
 
 // Mock data
 const clientsAttention = [
@@ -87,8 +90,11 @@ export default function Index() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [agendaOpen, setAgendaOpen] = useState(false);
   const { selectedClient, setSelectedClient, activateClientWithContext } = useClientContext();
+  const { getTodayEvents } = useEventContext();
 
+  const todayEvents = getTodayEvents();
   const todayCount = clientsAttention.length;
   const incidentsCount = recentIncidents.length;
   const redClientsCount = clientsAttention.filter((c) => c.status === "red").length;
@@ -148,14 +154,30 @@ export default function Index() {
 
         {/* Summary Cards - Main Navigation Hub */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <SummaryCard
-            title="Hoy"
-            value={todayCount}
-            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<Sun className="w-5 h-5" />}
-            onClick={() => handleCardClick("today")}
-            active={activeSection === "today"}
-          />
+          <div className="relative">
+            <SummaryCard
+              title="Hoy"
+              value={todayCount}
+              subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+              icon={<Sun className="w-5 h-5" />}
+              onClick={() => handleCardClick("today")}
+              active={activeSection === "today"}
+            />
+            {/* Agenda Button */}
+            {todayEvents.length > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAgendaOpen(true);
+                }}
+                className="absolute -top-2 -right-2 h-7 w-7 p-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+              >
+                <Clock className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
           <SummaryCard
             title="Incidencias"
             value={incidentsCount}
@@ -432,6 +454,9 @@ export default function Index() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Agenda Popup */}
+        <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />
       </div>
     </CEOLayout>
   );

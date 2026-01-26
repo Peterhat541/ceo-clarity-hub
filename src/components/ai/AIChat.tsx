@@ -3,6 +3,7 @@ import { Send, Sparkles, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClientContext } from "@/contexts/ClientContext";
+import { useEventContext, CalendarEvent } from "@/contexts/EventContext";
 
 interface Message {
   id: string;
@@ -66,33 +67,110 @@ const clientContacts: Record<string, { phone: string; email: string; mainContact
   "bluesky ventures": { phone: "+34 656 789 012", email: "pablo@bluesky.vc", mainContact: "Pablo Fernández" },
 };
 
+// Parse time from natural language
+const parseTime = (input: string): string | null => {
+  // Match patterns like "12:00", "12", "a las 12", "12:30"
+  const timeMatch = input.match(/(?:a las?\s*)?(\d{1,2})(?::(\d{2}))?/i);
+  if (timeMatch) {
+    const hours = parseInt(timeMatch[1]);
+    const minutes = timeMatch[2] ? timeMatch[2] : "00";
+    if (hours >= 0 && hours <= 23) {
+      return `${hours.toString().padStart(2, "0")}:${minutes}`;
+    }
+  }
+  return null;
+};
+
+// Parse reminder from natural language
+const parseReminder = (input: string): number | null => {
+  const reminderMatch = input.match(/recordatorio\s*(?:de\s*)?(\d+)\s*minutos?\s*antes/i);
+  if (reminderMatch) {
+    return parseInt(reminderMatch[1]);
+  }
+  // Check for common patterns
+  if (input.includes("recordatorio") || input.includes("avísame") || input.includes("avisame")) {
+    // Default to 15 minutes if no specific time mentioned
+    const defaultMatch = input.match(/(\d+)\s*minutos/i);
+    if (defaultMatch) {
+      return parseInt(defaultMatch[1]);
+    }
+    return 15; // Default reminder
+  }
+  return null;
+};
+
+// Calculate reminder time
+const calculateReminderTime = (eventTime: string, minutesBefore: number): string => {
+  const [hours, minutes] = eventTime.split(":").map(Number);
+  const totalMinutes = hours * 60 + minutes - minutesBefore;
+  const reminderHours = Math.floor(totalMinutes / 60);
+  const reminderMins = totalMinutes % 60;
+  return `${reminderHours.toString().padStart(2, "0")}:${reminderMins.toString().padStart(2, "0")}`;
+};
+
+// Detect event type from input
+const detectEventType = (input: string): "call" | "meeting" | "reminder" => {
+  if (input.includes("llamada") || input.includes("llama") || input.includes("llamar")) {
+    return "call";
+  }
+  if (input.includes("reunión") || input.includes("reunion") || input.includes("meeting")) {
+    return "meeting";
+  }
+  return "reminder";
+};
+
+// Check if input is an event creation request
+const isEventCreationRequest = (input: string): boolean => {
+  const triggers = [
+    "agéndame", "agendame", "agenda", "programa", "crea",
+    "ponme una", "pon una", "añade una", "anade una",
+    "llamada a las", "reunión a las", "reunion a las",
+    "recordatorio"
+  ];
+  return triggers.some(trigger => input.includes(trigger));
+};
+
 // Response library with context awareness
-const getContextualResponse = (userInput: string, context: AIContext): { response: string; newContext: Partial<AIContext> } => {
+const getContextualResponse = (userInput: string, context: AIContext): { response: string; newContext: Partial<AIContext>; eventRequest?: { type: "call" | "meeting" | "reminder"; time: string; reminder?: number } } => {
   const lowerInput = userInput.toLowerCase().trim();
-  
+
+  // Handle event creation requests
+  if (isEventCreationRequest(lowerInput) && context.activeClient) {
+    const time = parseTime(lowerInput);
+    if (time) {
+      const eventType = detectEventType(lowerInput);
+      const reminderMinutes = parseReminder(lowerInput);
+      return {
+        response: "", // Will be handled by the caller
+        newContext: {},
+        eventRequest: {
+          type: eventType,
+          time,
+          reminder: reminderMinutes || undefined
+        }
+      };
+    } else {
+      // Ask for time
+      return {
+        response: `Entendido, quieres agendar algo con **${context.activeClient}**. ¿A qué hora?`,
+        newContext: {}
+      };
+    }
+  }
+
+  // Handle event creation without active client
+  if (isEventCreationRequest(lowerInput) && !context.activeClient) {
+    return {
+      response: `¿Con qué cliente quieres agendar esto? Selecciona uno primero.`,
+      newContext: {}
+    };
+  }
+
   // Handle phone/contact requests
-  if ((lowerInput.includes("teléfono") || lowerInput.includes("telefono") || lowerInput.includes("número") || lowerInput.includes("numero") || lowerInput.includes("llamar") || lowerInput.includes("contacto")) && context.activeClient) {
+  if ((lowerInput.includes("teléfono") || lowerInput.includes("telefono") || lowerInput.includes("número") || lowerInput.includes("numero") || lowerInput.includes("contacto")) && context.activeClient) {
     const clientKey = context.activeClient.toLowerCase();
     const contact = clientContacts[clientKey];
     if (contact) {
-      // Check if also asking for scheduling
-      if (lowerInput.includes("agenda") || lowerInput.includes("llamada") || lowerInput.includes("recordatorio") || lowerInput.includes("cita")) {
-        return {
-          response: `**Datos de contacto de ${context.activeClient}:**
-          
-📞 **Teléfono:** ${contact.phone}
-👤 **Contacto principal:** ${contact.mainContact}
-✉️ **Email:** ${contact.email}
-
-⚠️ **Sobre agendar llamadas y recordatorios:**
-Actualmente no tengo integración con calendarios. Te recomiendo:
-1. Llamar directamente al ${contact.phone}
-2. Crear el recordatorio manualmente en tu calendario
-
-¿Hay algo más que pueda ayudarte con ${context.activeClient}?`,
-          newContext: {}
-        };
-      }
       return {
         response: `**Datos de contacto de ${context.activeClient}:**
 
@@ -100,33 +178,10 @@ Actualmente no tengo integración con calendarios. Te recomiendo:
 👤 **Contacto principal:** ${contact.mainContact}
 ✉️ **Email:** ${contact.email}
 
-¿Quieres que te ponga más en contexto antes de llamar?`,
+¿Quieres que te agende una llamada?`,
         newContext: {}
       };
     }
-  }
-
-  // Handle scheduling/agenda requests without active client
-  if (lowerInput.includes("agenda") || lowerInput.includes("recordatorio") || lowerInput.includes("cita")) {
-    if (context.activeClient) {
-      const contact = clientContacts[context.activeClient.toLowerCase()];
-      if (contact) {
-        return {
-          response: `Para **${context.activeClient}** el contacto principal es **${contact.mainContact}** (${contact.phone}).
-
-⚠️ Actualmente no tengo integración con calendarios para agendar automáticamente. Te sugiero:
-1. Llamar directamente
-2. Crear el evento en tu calendario manualmente
-
-¿Necesitas más contexto sobre este cliente antes de contactar?`,
-          newContext: {}
-        };
-      }
-    }
-    return {
-      response: `No tengo integración con calendarios todavía. ¿Sobre qué cliente necesitas información para agendar una llamada?`,
-      newContext: {}
-    };
   }
   
   // Handle affirmative responses with context
@@ -299,6 +354,7 @@ ${client.history}
 
 export function AIChat() {
   const { selectedClient, setSelectedClient, pendingContext, clearPendingContext } = useClientContext();
+  const { addEvent } = useEventContext();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -423,15 +479,51 @@ ${client.issue}
 
     // Fast simulated response (200-400ms for snappiness)
     setTimeout(() => {
-      const { response, newContext } = getContextualResponse(userInput, context);
+      const { response, newContext, eventRequest } = getContextualResponse(userInput, context);
       
       // Update context
       setContext(prev => ({ ...prev, ...newContext }));
 
+      let assistantContent = response;
+
+      // Handle event creation
+      if (eventRequest && context.activeClient) {
+        const eventTypeLabels = {
+          call: "llamada",
+          meeting: "reunión",
+          reminder: "recordatorio"
+        };
+        
+        const reminderData = eventRequest.reminder ? {
+          time: calculateReminderTime(eventRequest.time, eventRequest.reminder),
+          minutesBefore: eventRequest.reminder
+        } : undefined;
+
+        // Create the event
+        const newEvent = addEvent({
+          type: eventRequest.type,
+          title: `${eventTypeLabels[eventRequest.type].charAt(0).toUpperCase() + eventTypeLabels[eventRequest.type].slice(1)} con ${context.activeClient}`,
+          clientName: context.activeClient,
+          date: new Date(),
+          time: eventRequest.time,
+          reminder: reminderData,
+          createdBy: "ai"
+        });
+
+        // Build confirmation message
+        const reminderText = reminderData 
+          ? ` Te avisaré a las ${reminderData.time}.`
+          : "";
+        
+        assistantContent = `✅ He agendado una ${eventTypeLabels[eventRequest.type]} con **${context.activeClient}** hoy a las **${eventRequest.time}**.${reminderText}
+
+Puedes ver tu agenda en la sección "Hoy".`;
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: response,
+        content: assistantContent,
         timestamp: new Date(),
         clientContext: newContext.activeClient || context.activeClient || undefined,
       };

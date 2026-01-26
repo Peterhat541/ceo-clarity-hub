@@ -4,6 +4,7 @@ import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { ClientCard } from "@/components/dashboard/ClientCard";
 import { IncidentRow } from "@/components/dashboard/IncidentRow";
 import { AgendaPopup } from "@/components/dashboard/AgendaPopup";
+import { ClientPopup } from "@/components/dashboard/ClientPopup";
 import { TeamNotesPopup } from "@/components/dashboard/TeamNotesPopup";
 import { Search, Clock, MessageSquare, AlertTriangle, Calendar, AlertOctagon, Sun, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -72,12 +73,12 @@ const criticalDates = [
 ];
 
 const allClients = [
-  { name: "Nexus Tech", status: "red" },
-  { name: "Global Media", status: "orange" },
-  { name: "Startup Lab", status: "orange" },
-  { name: "CoreData", status: "yellow" },
-  { name: "BlueSky Ventures", status: "green" },
-  { name: "TechFlow Solutions", status: "green" },
+  { name: "Nexus Tech", status: "red" as const, lastActivity: "Hace 3 días", issue: "Incidencia de facturación sin resolver. El cliente ha enviado 2 emails sin respuesta.", projectCount: 2 },
+  { name: "Global Media", status: "orange" as const, lastActivity: "Hace 1 día", issue: "Solicitud de llamada urgente pendiente de confirmar.", projectCount: 1 },
+  { name: "Startup Lab", status: "orange" as const, lastActivity: "Hace 2 días", issue: "Fecha límite de entrega del proyecto en 48 horas.", projectCount: 3 },
+  { name: "CoreData", status: "yellow" as const, lastActivity: "Hace 5 días", projectCount: 2 },
+  { name: "BlueSky Ventures", status: "green" as const, lastActivity: "Hoy", projectCount: 1 },
+  { name: "TechFlow Solutions", status: "green" as const, lastActivity: "Ayer", projectCount: 4 },
 ];
 
 export default function Index() {
@@ -86,6 +87,8 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [clientPopupOpen, setClientPopupOpen] = useState(false);
+  const [selectedClientData, setSelectedClientData] = useState<typeof allClients[0] | null>(null);
   const { selectedClient, setSelectedClient, activateClientWithContext } = useClientContext();
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
@@ -124,7 +127,11 @@ export default function Index() {
   const handleClientSelect = (clientName: string) => {
     setSearchOpen(false);
     setSearchQuery("");
-    setSelectedClient(clientName);
+    const clientData = allClients.find(c => c.name === clientName);
+    if (clientData) {
+      setSelectedClientData(clientData);
+      setClientPopupOpen(true);
+    }
   };
 
   const isClientHighlighted = (clientName: string) => {
@@ -477,6 +484,14 @@ export default function Index() {
 
         {/* Team Notes Popup */}
         <TeamNotesPopup isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
+
+        {/* Client Popup */}
+        <ClientPopup 
+          client={selectedClientData}
+          open={clientPopupOpen}
+          onOpenChange={setClientPopupOpen}
+          onAIClick={activateClientWithContext}
+        />
       </div>
     </CEOLayout>
   );

@@ -168,7 +168,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, activeClientId, activeClientName, conversationHistory } = await req.json();
+    const { message, activeClientId, activeClientName, conversationHistory, uiSnapshot } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -212,7 +212,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "openai/gpt-5",
         messages,
         tools,
         tool_choice: "auto",
@@ -271,13 +271,34 @@ serve(async (req) => {
             const startOfDay = `${currentDate}T00:00:00`;
             const endOfDay = `${currentDate}T23:59:59`;
 
-            // 1. Get today's events
-            const { data: eventsData } = await supabase
-              .from("events")
-              .select("*, clients(name)")
-              .gte("start_at", startOfDay)
-              .lte("start_at", endOfDay)
-              .order("start_at", { ascending: true });
+            // Check if we have UI snapshot data (prioritize what CEO sees)
+            const hasSnapshotEvents = uiSnapshot?.todayEvents?.length > 0;
+            const hasSnapshotNotes = uiSnapshot?.pendingNotes?.length > 0;
+
+            // 1. Get today's events - use snapshot if available
+            let todayEvents: any[] = [];
+            if (hasSnapshotEvents) {
+              todayEvents = uiSnapshot.todayEvents.map((e: any) => ({
+                title: e.title,
+                type: e.type,
+                time: e.time,
+                client: e.clientName || null
+              }));
+            } else {
+              const { data: eventsData } = await supabase
+                .from("events")
+                .select("*, clients(name)")
+                .gte("start_at", startOfDay)
+                .lte("start_at", endOfDay)
+                .order("start_at", { ascending: true });
+              
+              todayEvents = eventsData?.map(e => ({
+                title: e.title,
+                type: e.type,
+                time: new Date(e.start_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
+                client: e.clients?.name || null
+              })) || [];
+            }
 
             // 2. Get clients that need attention (red, orange status)
             const { data: criticalClients } = await supabase
@@ -292,22 +313,49 @@ serve(async (req) => {
               .select("id, name, status")
               .order("status", { ascending: true });
 
-            // 4. Get pending notes for CEO
-            const { data: pendingNotes } = await supabase
-              .from("notes")
-              .select("*, clients(name)")
-              .in("visible_to", ["ceo", "both"])
-              .eq("status", "pending")
-              .order("created_at", { ascending: false })
-              .limit(5);
+            // 4. Get pending notes for CEO - use snapshot if available
+            let pendingNotes: any[] = [];
+            if (hasSnapshotNotes) {
+              pendingNotes = uiSnapshot.pendingNotes.map((n: any) => ({
+                text: n.content || n.text,
+                client: n.clientName || null,
+                from: n.author || n.created_by
+              }));
+            } else {
+              const { data: notesData } = await supabase
+                .from("notes")
+                .select("*, clients(name)")
+                .in("visible_to", ["ceo", "both"])
+                .eq("status", "pending")
+                .order("created_at", { ascending: false })
+                .limit(5);
+              
+              pendingNotes = notesData?.map(n => ({
+                text: n.text,
+                client: n.clients?.name || null,
+                from: n.created_by
+              })) || [];
+            }
 
-            // 5. Get recent incidents (history entries of type incident)
-            const { data: incidents } = await supabase
-              .from("client_history")
-              .select("*, clients(name)")
-              .eq("type", "incident")
-              .order("created_at", { ascending: false })
-              .limit(5);
+            // 5. Get recent incidents (history entries of type incident) or use snapshot counts
+            let incidents: any[] = [];
+            if (uiSnapshot?.incidentCounts) {
+              // Use counts from UI for consistency
+              incidents = [{ count: uiSnapshot.incidentCounts.total || 0 }];
+            } else {
+              const { data: incidentsData } = await supabase
+                .from("client_history")
+                .select("*, clients(name)")
+                .eq("type", "incident")
+                .order("created_at", { ascending: false })
+                .limit(5);
+              
+              incidents = incidentsData?.map(i => ({
+                summary: i.summary,
+                client: i.clients?.name || null,
+                date: i.created_at
+              })) || [];
+            }
 
             const statusLabels: Record<string, string> = {
               red: "🔴 crítico",
@@ -318,13 +366,9 @@ serve(async (req) => {
 
             result = {
               success: true,
+              dataSource: hasSnapshotEvents || hasSnapshotNotes ? "ui_snapshot" : "database",
               summary: {
-                todayEvents: eventsData?.map(e => ({
-                  title: e.title,
-                  type: e.type,
-                  time: new Date(e.start_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-                  client: e.clients?.name || null
-                })) || [],
+                todayEvents,
                 criticalClients: criticalClients?.map(c => ({
                   name: c.name,
                   status: c.status,
@@ -339,16 +383,8 @@ serve(async (req) => {
                   green: allClients?.filter(c => c.status === "green").length || 0,
                   total: allClients?.length || 0
                 },
-                pendingNotes: pendingNotes?.map(n => ({
-                  text: n.text,
-                  client: n.clients?.name || null,
-                  from: n.created_by
-                })) || [],
-                incidents: incidents?.map(i => ({
-                  summary: i.summary,
-                  client: i.clients?.name || null,
-                  date: i.created_at
-                })) || []
+                pendingNotes,
+                incidents
               }
             };
             
@@ -582,7 +618,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "openai/gpt-5",
           messages: [
             ...messages,
             choice.message,

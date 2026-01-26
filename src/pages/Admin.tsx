@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   Building2, 
   Plus, 
@@ -10,22 +10,26 @@ import {
   Phone,
   MapPin,
   Edit2,
-  Eye,
-  X,
   StickyNote,
-  LayoutDashboard,
-  Database,
   ArrowUpDown,
-  Check
+  ArrowUp,
+  ArrowDown,
+  Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusDot, Status } from "@/components/dashboard/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
 import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
 import { NoteForm } from "@/components/admin/NoteForm";
+import processiaLogo from "@/assets/processia-logo.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Client {
   id: string;
@@ -63,7 +67,18 @@ interface Incident {
   createdAt: string;
 }
 
-const clients: Client[] = [
+interface Note {
+  id: string;
+  content: string;
+  visibility: "team" | "ceo" | "both";
+  createdAt: string;
+  author: string;
+}
+
+type SortField = "name" | "status" | "mainContact" | "incidents";
+type SortDirection = "asc" | "desc";
+
+const clientsData: Client[] = [
   { 
     id: "1", 
     name: "Nexus Tech", 
@@ -159,18 +174,83 @@ const mockIncidents: Incident[] = [
   { id: "1", description: "Error en la facturación del mes de enero", status: "red", createdAt: "23 Ene 2026" },
 ];
 
+// Mock notes that would be stored in database
+const mockNotes: Note[] = [
+  { id: "1", content: "Cliente muy importante, priorizar siempre", visibility: "both", createdAt: "20 Ene 2026", author: "Ana" },
+  { id: "2", content: "Prefiere comunicación por email", visibility: "team", createdAt: "18 Ene 2026", author: "Carlos" },
+  { id: "3", content: "Pendiente de decisión sobre renovación", visibility: "ceo", createdAt: "22 Ene 2026", author: "Ana" },
+];
+
+const statusOrder: Record<Status, number> = {
+  red: 0,
+  orange: 1,
+  yellow: 2,
+  green: 3,
+};
+
 export default function Admin() {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [modalType, setModalType] = useState<"contacts" | "projects" | "incidents" | "edit" | "newClient" | "newNote" | "email" | null>(null);
+  const [modalType, setModalType] = useState<"contacts" | "projects" | "incidents" | "edit" | "newClient" | "newNote" | "email" | "notes" | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [sortField, setSortField] = useState<SortField>("status");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [notes, setNotes] = useState<Note[]>(mockNotes);
 
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.mainContact.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort clients
+  const filteredAndSortedClients = useMemo(() => {
+    let result = clientsData.filter((client) => {
+      const matchesSearch = 
+        client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        client.mainContact.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === "all" || client.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+
+    // Sort
+    result.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortField) {
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "status":
+          comparison = statusOrder[a.status] - statusOrder[b.status];
+          break;
+        case "mainContact":
+          comparison = a.mainContact.localeCompare(b.mainContact);
+          break;
+        case "incidents":
+          comparison = a.incidents - b.incidents;
+          break;
+      }
+      
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return result;
+  }, [searchQuery, statusFilter, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />;
+    return sortDirection === "asc" 
+      ? <ArrowUp className="w-4 h-4 ml-1" /> 
+      : <ArrowDown className="w-4 h-4 ml-1" />;
+  };
 
   const openModal = (type: typeof modalType, client?: Client) => {
     if (client) setSelectedClient(client);
@@ -182,15 +262,27 @@ export default function Admin() {
     setEditingClient(null);
   };
 
+  const handleSaveNote = (content: string, visibility: "team" | "ceo" | "both") => {
+    const newNote: Note = {
+      id: Date.now().toString(),
+      content,
+      visibility,
+      createdAt: new Date().toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }),
+      author: "Tú",
+    };
+    setNotes([newNote, ...notes]);
+    closeModal();
+  };
+
+  // Notes visible to CEO
+  const ceoNotes = notes.filter(n => n.visibility === "ceo" || n.visibility === "both");
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
       <header className="h-16 border-b border-border bg-background flex items-center justify-between px-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-teal flex items-center justify-center glow">
-            <span className="text-lg font-bold text-primary-foreground">P</span>
-          </div>
-          <span className="text-xl font-semibold text-foreground">Processia</span>
+          <img src={processiaLogo} alt="Processia" className="h-10 w-auto" />
           <span className="text-sm text-muted-foreground ml-2">/ Administración</span>
         </div>
 
@@ -205,6 +297,41 @@ export default function Admin() {
               className="w-80 pl-10 pr-4 py-2 bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+          
+          {/* Status Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="w-4 h-4" />
+                {statusFilter === "all" ? "Todos" : 
+                  statusFilter === "red" ? "Rojos" :
+                  statusFilter === "orange" ? "Naranjas" :
+                  statusFilter === "yellow" ? "Amarillos" : "Verdes"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setStatusFilter("all")}>
+                Todos los estados
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("red")}>
+                <span className="w-2 h-2 rounded-full bg-status-red mr-2" />
+                Intervención necesaria
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("orange")}>
+                <span className="w-2 h-2 rounded-full bg-status-orange mr-2" />
+                En riesgo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("yellow")}>
+                <span className="w-2 h-2 rounded-full bg-status-yellow mr-2" />
+                Atención
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("green")}>
+                <span className="w-2 h-2 rounded-full bg-status-green mr-2" />
+                Todo en orden
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button onClick={() => openModal("newClient")}>
             <Plus className="w-4 h-4 mr-2" />
             Nuevo cliente
@@ -215,9 +342,22 @@ export default function Admin() {
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground mb-1">Base de datos de clientes</h1>
-            <p className="text-muted-foreground">{filteredClients.length} clientes registrados</p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-1">Base de datos de clientes</h1>
+              <p className="text-muted-foreground">{filteredAndSortedClients.length} clientes {statusFilter !== "all" ? `(filtrado por estado)` : "registrados"}</p>
+            </div>
+            
+            {/* CEO Notes indicator */}
+            {ceoNotes.length > 0 && (
+              <button 
+                onClick={() => openModal("notes")}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                <StickyNote className="w-4 h-4" />
+                <span className="text-sm font-medium">{ceoNotes.length} notas para CEO</span>
+              </button>
+            )}
           </div>
 
           {/* Table */}
@@ -225,19 +365,51 @@ export default function Admin() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-secondary/50">
-                  <TableHead className="w-[50px]">Estado</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Contacto principal</TableHead>
+                  <TableHead className="w-[60px]">
+                    <button 
+                      onClick={() => handleSort("status")}
+                      className="flex items-center hover:text-foreground transition-colors"
+                    >
+                      Estado
+                      {getSortIcon("status")}
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button 
+                      onClick={() => handleSort("name")}
+                      className="flex items-center hover:text-foreground transition-colors"
+                    >
+                      Cliente
+                      {getSortIcon("name")}
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button 
+                      onClick={() => handleSort("mainContact")}
+                      className="flex items-center hover:text-foreground transition-colors"
+                    >
+                      Contacto principal
+                      {getSortIcon("mainContact")}
+                    </button>
+                  </TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Teléfono</TableHead>
                   <TableHead className="text-center">Contactos</TableHead>
                   <TableHead className="text-center">Proyectos</TableHead>
-                  <TableHead className="text-center">Incidencias</TableHead>
+                  <TableHead className="text-center">
+                    <button 
+                      onClick={() => handleSort("incidents")}
+                      className="flex items-center justify-center hover:text-foreground transition-colors"
+                    >
+                      Incidencias
+                      {getSortIcon("incidents")}
+                    </button>
+                  </TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredClients.map((client) => (
+                {filteredAndSortedClients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-card">
                     <TableCell>
                       <StatusDot status={client.status} pulse={client.status === "red"} />
@@ -420,6 +592,35 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
 
+      {/* CEO Notes Modal */}
+      <Dialog open={modalType === "notes"} onOpenChange={closeModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Notas visibles para CEO</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-4 max-h-96 overflow-y-auto">
+            {ceoNotes.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No hay notas para el CEO</p>
+            ) : (
+              ceoNotes.map((note) => (
+                <div key={note.id} className="p-3 rounded-lg bg-secondary">
+                  <p className="text-foreground text-sm">{note.content}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-muted-foreground">{note.author} · {note.createdAt}</span>
+                    <span className={cn(
+                      "text-xs px-2 py-0.5 rounded-full",
+                      note.visibility === "ceo" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                    )}>
+                      {note.visibility === "ceo" ? "Solo CEO" : "CEO + Equipo"}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* New Client Modal */}
       <Dialog open={modalType === "newClient"} onOpenChange={closeModal}>
         <DialogContent className="sm:max-w-lg">
@@ -536,7 +737,7 @@ export default function Admin() {
           <DialogHeader>
             <DialogTitle>Nueva nota para {selectedClient?.name}</DialogTitle>
           </DialogHeader>
-          <NoteForm onClose={closeModal} />
+          <NoteForm onClose={closeModal} onSave={handleSaveNote} />
         </DialogContent>
       </Dialog>
 

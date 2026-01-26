@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 export type Status = "green" | "yellow" | "orange" | "red";
@@ -44,16 +45,24 @@ export function StatusBadge({ status, label, size = "md", pulse = false }: Statu
   );
 }
 
-export function StatusDot({ status, pulse = false }: { status: Status; pulse?: boolean }) {
-  const config = statusConfig[status];
-  
-  return (
-    <span
-      className={cn(
-        "w-2.5 h-2.5 rounded-full inline-block",
-        config.bg,
-        pulse && "animate-pulse-glow"
-      )}
-    />
-  );
+interface StatusDotProps {
+  status: Status;
+  pulse?: boolean;
 }
+
+export const StatusDot = forwardRef<HTMLSpanElement, StatusDotProps>(
+  function StatusDot({ status, pulse = false }, ref) {
+    const config = statusConfig[status];
+    
+    return (
+      <span
+        ref={ref}
+        className={cn(
+          "w-2.5 h-2.5 rounded-full inline-block",
+          config.bg,
+          pulse && "animate-pulse-glow"
+        )}
+      />
+    );
+  }
+);

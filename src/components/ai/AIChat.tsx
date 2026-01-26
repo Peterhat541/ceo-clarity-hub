@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles } from "lucide-react";
+import { Send, Sparkles, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -16,12 +16,63 @@ const suggestedQuestions = [
   "Dame un resumen de la semana",
 ];
 
+// Extensive response library for instant responses
+const responseLibrary: Record<string, string> = {
+  "¿Qué tengo que hacer hoy?": `Hoy tienes **3 puntos de atención**:
+
+1. 🔴 **Nexus Tech** — Incidencia de facturación sin resolver desde hace 3 días. El cliente ha enviado 2 emails sin respuesta.
+
+2. 🟠 **Global Media** — Llamada urgente pendiente de confirmar.
+
+3. 🟠 **Startup Lab** — Fecha límite de entrega en 48 horas.
+
+¿Quieres que te dé más contexto de alguno?`,
+
+  "¿Qué clientes necesitan atención?": `Ahora mismo tienes:
+
+🔴 **1 cliente en rojo**: Nexus Tech
+🟠 **2 clientes en naranja**: Global Media, Startup Lab  
+🟡 **3 clientes en amarillo**: sin urgencia inmediata
+
+El resto de clientes (12) están en verde y no requieren tu intervención.`,
+
+  "Dame un resumen de la semana": `Esta semana:
+
+• **4 incidencias resueltas** por el equipo
+• **1 incidencia pendiente** (Nexus Tech) que requiere tu decisión
+• **2 nuevos proyectos** iniciados
+• **Satisfacción general**: Alta
+
+El único punto crítico es Nexus Tech. Todo lo demás está bajo control.`,
+
+  "Ponme en contexto Nexus Tech": `**Nexus Tech** es un cliente desde hace 8 meses con 2 proyectos activos.
+
+**Situación actual:**
+El 23 de enero reportaron un error en su factura de enero. Han enviado 2 emails (el último hace 2 días) y no hemos respondido.
+
+**Historial reciente:**
+- Renovaron contrato hace 3 meses
+- Satisfacción previa: Alta
+- Volumen: €4,500/mes
+
+**Mi recomendación:**
+Necesitas intervenir hoy. Una llamada personal resolvería la situación antes de que escale.`,
+
+  "¿Por qué Nexus Tech está en rojo?": `Nexus Tech está en rojo porque:
+
+1. **Incidencia sin resolver** — 3 días abierta
+2. **Sin respuesta** — 2 emails del cliente ignorados
+3. **Riesgo de escalada** — Cliente importante que puede enfadarse
+
+El equipo marcó esta incidencia como "bloqueada" porque requiere tu aprobación para un ajuste de facturación.`,
+};
+
 export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       role: "assistant",
-      content: "Buenos días. Tienes 2 clientes que requieren tu atención hoy. Nexus Tech está en rojo por una incidencia sin resolver desde hace 3 días. ¿Quieres que te ponga en contexto?",
+      content: "Buenos días. Tienes **1 cliente en rojo** que requiere tu intervención hoy. ¿Quieres que te ponga en contexto?",
       timestamp: new Date(),
     },
   ]);
@@ -37,6 +88,50 @@ export function AIChat() {
     scrollToBottom();
   }, [messages]);
 
+  const getResponse = (userInput: string): string => {
+    // Check for exact matches first
+    if (responseLibrary[userInput]) {
+      return responseLibrary[userInput];
+    }
+
+    // Check for partial matches
+    const lowerInput = userInput.toLowerCase();
+    
+    if (lowerInput.includes("nexus")) {
+      return responseLibrary["Ponme en contexto Nexus Tech"];
+    }
+    if (lowerInput.includes("rojo") || lowerInput.includes("intervención")) {
+      return responseLibrary["¿Qué clientes necesitan atención?"];
+    }
+    if (lowerInput.includes("hacer") || lowerInput.includes("pendiente") || lowerInput.includes("urgente")) {
+      return responseLibrary["¿Qué tengo que hacer hoy?"];
+    }
+    if (lowerInput.includes("semana") || lowerInput.includes("resumen")) {
+      return responseLibrary["Dame un resumen de la semana"];
+    }
+    if (lowerInput.includes("global media")) {
+      return `**Global Media** solicitó una llamada urgente ayer para discutir un cambio de alcance en su proyecto actual. 
+
+El equipo está esperando que confirmes disponibilidad. ¿Quieres que les envíe un mensaje con tu horario disponible?`;
+    }
+    if (lowerInput.includes("startup lab")) {
+      return `**Startup Lab** tiene una entrega de proyecto en 48 horas (Fase 2 del desarrollo).
+
+El equipo dice que van bien de tiempo, pero prefieren que estés al tanto por si hay preguntas del cliente.`;
+    }
+
+    // Default intelligent response
+    return `Entendido. He analizado tu pregunta sobre "${userInput}".
+
+Ahora mismo no tengo información específica sobre esto, pero puedo ayudarte con:
+- Estado de clientes
+- Incidencias activas
+- Fechas críticas
+- Resúmenes de actividad
+
+¿En qué puedo ayudarte?`;
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -48,27 +143,22 @@ export function AIChat() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = input;
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response
+    // Fast simulated response (300-600ms)
     setTimeout(() => {
-      const responses: Record<string, string> = {
-        "¿Qué tengo que hacer hoy?": "Hoy tienes 3 puntos de atención:\n\n1. **Nexus Tech** está en rojo. Llevan 3 días sin respuesta a una incidencia crítica de facturación.\n\n2. **Global Media** tiene una llamada pendiente que solicitaron ayer.\n\n3. **Startup Lab** tiene fecha límite de entrega en 2 días.\n\n¿Quieres que profundice en alguno?",
-        "¿Qué clientes necesitan atención?": "Ahora mismo tienes:\n\n🔴 **1 cliente en rojo**: Nexus Tech\n🟠 **2 clientes en naranja**: Global Media, Startup Lab\n🟡 **3 clientes en amarillo**: sin urgencia inmediata\n\nEl resto de clientes (12) están en verde.",
-        "Dame un resumen de la semana": "Esta semana:\n\n• **4 incidencias resueltas** por el equipo\n• **1 incidencia pendiente** que requiere tu decisión\n• **2 nuevos proyectos** iniciados\n• **Satisfacción general**: Alta\n\nEl único punto crítico es Nexus Tech. Todo lo demás está bajo control.",
-      };
-
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: responses[input] || "Entendido. Dame un momento para analizar la información y darte una respuesta precisa sobre eso.",
+        content: getResponse(userInput),
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
       setIsTyping(false);
-    }, 1500);
+    }, 300 + Math.random() * 300);
   };
 
   const handleSuggestion = (question: string) => {
@@ -158,6 +248,14 @@ export function AIChat() {
             placeholder="Pregunta lo que necesites..."
             className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
           />
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-xl"
+            title="Entrada de voz (próximamente)"
+          >
+            <Mic className="w-5 h-5" />
+          </Button>
           <Button
             onClick={handleSend}
             disabled={!input.trim()}

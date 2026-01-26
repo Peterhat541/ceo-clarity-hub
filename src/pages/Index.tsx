@@ -5,12 +5,11 @@ import { ClientCard } from "@/components/dashboard/ClientCard";
 import { IncidentRow } from "@/components/dashboard/IncidentRow";
 import { CollapsibleSection } from "@/components/dashboard/CollapsibleSection";
 import { Search } from "lucide-react";
-import { 
-  AlertTriangle, 
-  Users, 
-  CheckCircle2, 
+import {
+  AlertTriangle,
   Calendar,
-  AlertOctagon
+  AlertOctagon,
+  Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -88,6 +87,11 @@ export default function Index() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const todayCount = clientsAttention.length;
+  const incidentsCount = recentIncidents.length;
+  const redClientsCount = clientsAttention.filter((c) => c.status === "red").length;
+  const criticalDatesCount = criticalDates.length;
+
   const filteredClients = allClients.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -133,110 +137,164 @@ export default function Index() {
         {/* Summary Cards - Main Navigation Hub */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <SummaryCard
-            title="Intervención necesaria"
-            value={1}
-            subtitle="Hoy · 1 incidencia · 1 en rojo · 0 fechas"
+            title="Hoy"
+            value={todayCount}
+            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+            icon={<Sun className="w-5 h-5" />}
+            onClick={() => handleCardClick("today")}
+            active={activeSection === "today"}
+          />
+          <SummaryCard
+            title="Incidencias"
+            value={incidentsCount}
+            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+            icon={<AlertOctagon className="w-5 h-5" />}
+            variant="warning"
+            onClick={() => handleCardClick("incidents")}
+            active={activeSection === "incidents"}
+          />
+          <SummaryCard
+            title="Clientes en rojo"
+            value={redClientsCount}
+            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
             icon={<AlertTriangle className="w-5 h-5" />}
             variant="danger"
-            onClick={() => handleCardClick("intervention")}
-            active={activeSection === "intervention"}
+            onClick={() => handleCardClick("red")}
+            active={activeSection === "red"}
           />
           <SummaryCard
-            title="En riesgo"
-            value={2}
-            subtitle="Hoy · 2 incidencias · 0 en rojo · 1 fecha"
-            icon={<AlertTriangle className="w-5 h-5" />}
-            variant="warning"
-            onClick={() => handleCardClick("risk")}
-            active={activeSection === "risk"}
-          />
-          <SummaryCard
-            title="Clientes activos"
-            value={18}
-            subtitle="Hoy · 3 incidencias · 1 en rojo · 2 fechas"
-            icon={<Users className="w-5 h-5" />}
-            onClick={() => handleCardClick("active")}
-            active={activeSection === "active"}
-          />
-          <SummaryCard
-            title="Todo en orden"
-            value={15}
-            subtitle="Hoy · 0 incidencias · 0 en rojo · 0 fechas"
-            icon={<CheckCircle2 className="w-5 h-5" />}
-            variant="success"
-            onClick={() => handleCardClick("ok")}
-            active={activeSection === "ok"}
+            title="Fechas críticas"
+            value={criticalDatesCount}
+            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+            icon={<Calendar className="w-5 h-5" />}
+            onClick={() => handleCardClick("dates")}
+            active={activeSection === "dates"}
           />
         </div>
 
         {/* Filtered Content based on card selection */}
-        {activeSection === "intervention" && (
+        {activeSection === "today" && (
           <div className="mb-6 animate-fade-in">
-            <h2 className="text-lg font-semibold text-foreground mb-3">Clientes que requieren intervención</h2>
+            {/* Clients needing attention - Always visible */}
+            <section className="mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-3">
+                Clientes que requieren atención
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {clientsAttention.map((client) => (
+                  <ClientCard
+                    key={client.name}
+                    {...client}
+                    onClick={() => handleClientClick(client.name)}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* Collapsible Sections - collapsed by default */}
+            <div className="space-y-2">
+              <CollapsibleSection
+                title="Incidencias activas"
+                icon={<AlertOctagon className="w-5 h-5 text-status-orange" />}
+                count={recentIncidents.length}
+                variant="warning"
+                defaultOpen={false}
+              >
+                <div className="space-y-2">
+                  {recentIncidents.map((incident, index) => (
+                    <IncidentRow
+                      key={index}
+                      {...incident}
+                      onClick={() => handleIncidentClick(incident.clientName)}
+                    />
+                  ))}
+                </div>
+              </CollapsibleSection>
+
+              <CollapsibleSection
+                title="Próximas fechas críticas"
+                icon={<Calendar className="w-5 h-5 text-muted-foreground" />}
+                count={criticalDates.length}
+                defaultOpen={false}
+              >
+                <div className="space-y-2">
+                  {criticalDates.map((date, index) => (
+                    <div
+                      key={index}
+                      onClick={() => console.log("Navigate to date:", date.title)}
+                      className="flex items-center gap-4 p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all cursor-pointer"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-status-orange/20 flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-status-orange" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground text-sm">{date.title}</p>
+                        <p className="text-xs text-muted-foreground">{date.subtitle}</p>
+                      </div>
+                      <span className="px-2 py-1 rounded-full bg-status-orange/20 text-status-orange text-xs font-medium">
+                        {date.days}d
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleSection>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "incidents" && (
+          <div className="mb-6 animate-fade-in">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Incidencias activas</h2>
             <div className="space-y-3">
-              {clientsAttention.filter(c => c.status === "red").map((client) => (
-                <ClientCard 
-                  key={client.name} 
-                  {...client} 
-                  onClick={() => handleClientClick(client.name)}
+              {recentIncidents.map((incident, index) => (
+                <IncidentRow
+                  key={index}
+                  {...incident}
+                  onClick={() => handleIncidentClick(incident.clientName)}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {activeSection === "risk" && (
+        {activeSection === "red" && (
           <div className="mb-6 animate-fade-in">
-            <h2 className="text-lg font-semibold text-foreground mb-3">Clientes en riesgo</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-3">Clientes en rojo</h2>
             <div className="space-y-3">
-              {clientsAttention.filter(c => c.status === "orange").map((client) => (
-                <ClientCard 
-                  key={client.name} 
-                  {...client} 
-                  onClick={() => handleClientClick(client.name)}
-                />
-              ))}
+              {clientsAttention
+                .filter((c) => c.status === "red")
+                .map((client) => (
+                  <ClientCard
+                    key={client.name}
+                    {...client}
+                    onClick={() => handleClientClick(client.name)}
+                  />
+                ))}
             </div>
           </div>
         )}
 
-        {activeSection === "active" && (
+        {activeSection === "dates" && (
           <div className="mb-6 animate-fade-in">
-            <h2 className="text-lg font-semibold text-foreground mb-3">Todos los clientes activos</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {allClients.map((client) => (
-                <button
-                  key={client.name}
-                  onClick={() => handleClientClick(client.name)}
-                  className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all text-left"
+            <h2 className="text-lg font-semibold text-foreground mb-3">Próximas fechas críticas</h2>
+            <div className="space-y-2">
+              {criticalDates.map((date, index) => (
+                <div
+                  key={index}
+                  onClick={() => console.log("Navigate to date:", date.title)}
+                  className="flex items-center gap-4 p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all cursor-pointer"
                 >
-                  <span className={cn(
-                    "w-3 h-3 rounded-full",
-                    client.status === "red" && "bg-status-red",
-                    client.status === "orange" && "bg-status-orange",
-                    client.status === "yellow" && "bg-status-yellow",
-                    client.status === "green" && "bg-status-green",
-                  )} />
-                  <span className="font-medium text-foreground">{client.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeSection === "ok" && (
-          <div className="mb-6 animate-fade-in">
-            <h2 className="text-lg font-semibold text-foreground mb-3">Clientes sin acción requerida</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {allClients.filter(c => c.status === "green").map((client) => (
-                <button
-                  key={client.name}
-                  onClick={() => handleClientClick(client.name)}
-                  className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all text-left"
-                >
-                  <span className="w-3 h-3 rounded-full bg-status-green" />
-                  <span className="font-medium text-foreground">{client.name}</span>
-                </button>
+                  <div className="w-10 h-10 rounded-lg bg-status-orange/20 flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-status-orange" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground text-sm">{date.title}</p>
+                    <p className="text-xs text-muted-foreground">{date.subtitle}</p>
+                  </div>
+                  <span className="px-2 py-1 rounded-full bg-status-orange/20 text-status-orange text-xs font-medium">
+                    {date.days}d
+                  </span>
+                </div>
               ))}
             </div>
           </div>

@@ -3,22 +3,14 @@ import { CEOLayout } from "@/components/layout/CEOLayout";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { ClientCard } from "@/components/dashboard/ClientCard";
 import { IncidentRow } from "@/components/dashboard/IncidentRow";
-import { CollapsibleSection } from "@/components/dashboard/CollapsibleSection";
 import { AgendaPopup } from "@/components/dashboard/AgendaPopup";
 import { TeamNotesPopup } from "@/components/dashboard/TeamNotesPopup";
-import { Search, Clock, MessageSquare } from "lucide-react";
-import {
-  AlertTriangle,
-  Calendar,
-  AlertOctagon,
-  Sun,
-} from "lucide-react";
+import { Search, Clock, MessageSquare, AlertTriangle, Calendar, AlertOctagon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useClientContext } from "@/contexts/ClientContext";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
-import { Button } from "@/components/ui/button";
 
 // Mock data
 const clientsAttention = [
@@ -160,53 +152,14 @@ export default function Index() {
 
         {/* Summary Cards - Main Navigation Hub */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="relative">
-            <SummaryCard
-              title="Hoy"
-              value={todayCount}
-              subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-              icon={<Sun className="w-5 h-5" />}
-              onClick={() => handleCardClick("today")}
-              active={activeSection === "today"}
-            />
-            {/* Action Buttons for HOY */}
-            <div className="absolute -top-2 -right-2 flex gap-1">
-              {/* Notes Button */}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setNotesOpen(true);
-                }}
-                className={cn(
-                  "h-7 w-7 p-0 rounded-full shadow-lg transition-all",
-                  pendingNotesCount > 0 
-                    ? "bg-purple-500 text-white hover:bg-purple-600" 
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                )}
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-              </Button>
-              {/* Agenda Button */}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setAgendaOpen(true);
-                }}
-                className={cn(
-                  "h-7 w-7 p-0 rounded-full shadow-lg transition-all",
-                  todayEvents.length > 0 
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                )}
-              >
-                <Clock className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-          </div>
+          <SummaryCard
+            title="Hoy"
+            value={todayCount}
+            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+            icon={<Sun className="w-5 h-5" />}
+            onClick={() => handleCardClick("today")}
+            active={activeSection === "today"}
+          />
           <SummaryCard
             title="Incidencias"
             value={incidentsCount}
@@ -256,53 +209,65 @@ export default function Index() {
               </div>
             </section>
 
-            {/* Collapsible Sections - collapsed by default */}
-            <div className="space-y-2">
-              <CollapsibleSection
-                title="Incidencias activas"
-                icon={<AlertOctagon className="w-5 h-5 text-status-orange" />}
-                count={recentIncidents.length}
-                variant="warning"
-                defaultOpen={false}
+            {/* Action Buttons - Agenda & Notes */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setAgendaOpen(true)}
+                className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group"
               >
-                <div className="space-y-2">
-                  {recentIncidents.map((incident, index) => (
-                    <IncidentRow
-                      key={index}
-                      {...incident}
-                      onClick={() => handleIncidentClick(incident.clientName, incident.description)}
-                    />
-                  ))}
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                  todayEvents.length > 0 
+                    ? "bg-primary/20 group-hover:bg-primary/30" 
+                    : "bg-secondary group-hover:bg-secondary/80"
+                )}>
+                  <Clock className={cn(
+                    "w-6 h-6",
+                    todayEvents.length > 0 ? "text-primary" : "text-muted-foreground"
+                  )} />
                 </div>
-              </CollapsibleSection>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-foreground">Agenda</p>
+                  <p className="text-sm text-muted-foreground">
+                    {todayEvents.length} evento{todayEvents.length !== 1 ? "s" : ""} hoy
+                  </p>
+                </div>
+                {todayEvents.length > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium">
+                    {todayEvents.length}
+                  </span>
+                )}
+              </button>
 
-              <CollapsibleSection
-                title="Próximas fechas críticas"
-                icon={<Calendar className="w-5 h-5 text-muted-foreground" />}
-                count={criticalDates.length}
-                defaultOpen={false}
+              <button
+                onClick={() => setNotesOpen(true)}
+                className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-purple-500/50 hover:bg-card/80 transition-all cursor-pointer group"
               >
-                <div className="space-y-2">
-                  {criticalDates.map((date, index) => (
-                    <div
-                      key={index}
-                      onClick={() => console.log("Navigate to date:", date.title)}
-                      className="flex items-center gap-4 p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-status-orange/20 flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-status-orange" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground text-sm">{date.title}</p>
-                        <p className="text-xs text-muted-foreground">{date.subtitle}</p>
-                      </div>
-                      <span className="px-2 py-1 rounded-full bg-status-orange/20 text-status-orange text-xs font-medium">
-                        {date.days}d
-                      </span>
-                    </div>
-                  ))}
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                  pendingNotesCount > 0 
+                    ? "bg-purple-500/20 group-hover:bg-purple-500/30" 
+                    : "bg-secondary group-hover:bg-secondary/80"
+                )}>
+                  <MessageSquare className={cn(
+                    "w-6 h-6",
+                    pendingNotesCount > 0 ? "text-purple-400" : "text-muted-foreground"
+                  )} />
                 </div>
-              </CollapsibleSection>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-foreground">Notas del equipo</p>
+                  <p className="text-sm text-muted-foreground">
+                    {pendingNotesCount > 0 
+                      ? `${pendingNotesCount} pendiente${pendingNotesCount !== 1 ? "s" : ""}` 
+                      : "Sin notas pendientes"}
+                  </p>
+                </div>
+                {pendingNotesCount > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm font-medium">
+                    {pendingNotesCount}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         )}
@@ -388,53 +353,65 @@ export default function Index() {
               </div>
             </section>
 
-            {/* Collapsible Sections - collapsed by default */}
-            <div className="space-y-2">
-              <CollapsibleSection
-                title="Incidencias activas"
-                icon={<AlertOctagon className="w-5 h-5 text-status-orange" />}
-                count={recentIncidents.length}
-                variant="warning"
-                defaultOpen={false}
+            {/* Action Buttons - Agenda & Notes */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setAgendaOpen(true)}
+                className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-primary/50 hover:bg-card/80 transition-all cursor-pointer group"
               >
-                <div className="space-y-2">
-                  {recentIncidents.map((incident, index) => (
-                    <IncidentRow 
-                      key={index} 
-                      {...incident} 
-                      onClick={() => handleIncidentClick(incident.clientName, incident.description)}
-                    />
-                  ))}
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                  todayEvents.length > 0 
+                    ? "bg-primary/20 group-hover:bg-primary/30" 
+                    : "bg-secondary group-hover:bg-secondary/80"
+                )}>
+                  <Clock className={cn(
+                    "w-6 h-6",
+                    todayEvents.length > 0 ? "text-primary" : "text-muted-foreground"
+                  )} />
                 </div>
-              </CollapsibleSection>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-foreground">Agenda</p>
+                  <p className="text-sm text-muted-foreground">
+                    {todayEvents.length} evento{todayEvents.length !== 1 ? "s" : ""} hoy
+                  </p>
+                </div>
+                {todayEvents.length > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium">
+                    {todayEvents.length}
+                  </span>
+                )}
+              </button>
 
-              <CollapsibleSection
-                title="Próximas fechas críticas"
-                icon={<Calendar className="w-5 h-5 text-muted-foreground" />}
-                count={criticalDates.length}
-                defaultOpen={false}
+              <button
+                onClick={() => setNotesOpen(true)}
+                className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-purple-500/50 hover:bg-card/80 transition-all cursor-pointer group"
               >
-                <div className="space-y-2">
-                  {criticalDates.map((date, index) => (
-                    <div 
-                      key={index}
-                      onClick={() => console.log("Navigate to date:", date.title)}
-                      className="flex items-center gap-4 p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-status-orange/20 flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-status-orange" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground text-sm">{date.title}</p>
-                        <p className="text-xs text-muted-foreground">{date.subtitle}</p>
-                      </div>
-                      <span className="px-2 py-1 rounded-full bg-status-orange/20 text-status-orange text-xs font-medium">
-                        {date.days}d
-                      </span>
-                    </div>
-                  ))}
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                  pendingNotesCount > 0 
+                    ? "bg-purple-500/20 group-hover:bg-purple-500/30" 
+                    : "bg-secondary group-hover:bg-secondary/80"
+                )}>
+                  <MessageSquare className={cn(
+                    "w-6 h-6",
+                    pendingNotesCount > 0 ? "text-purple-400" : "text-muted-foreground"
+                  )} />
                 </div>
-              </CollapsibleSection>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-foreground">Notas del equipo</p>
+                  <p className="text-sm text-muted-foreground">
+                    {pendingNotesCount > 0 
+                      ? `${pendingNotesCount} pendiente${pendingNotesCount !== 1 ? "s" : ""}` 
+                      : "Sin notas pendientes"}
+                  </p>
+                </div>
+                {pendingNotesCount > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm font-medium">
+                    {pendingNotesCount}
+                  </span>
+                )}
+              </button>
             </div>
           </>
         )}

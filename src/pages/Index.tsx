@@ -194,7 +194,7 @@ export default function Index() {
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors text-sm shrink-0"
             >
               <X className="w-4 h-4" />
-              Limpiar
+              Limpiar: {activeSection === "today" ? "Hoy" : activeSection === "incidents" ? "Incidencias" : activeSection === "red" ? "Clientes en rojo" : "Fechas críticas"}
             </button>
           )}
         </div>

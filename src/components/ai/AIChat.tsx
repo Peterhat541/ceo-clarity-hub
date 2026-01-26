@@ -298,7 +298,7 @@ ${client.history}
 };
 
 export function AIChat() {
-  const { selectedClient, setSelectedClient } = useClientContext();
+  const { selectedClient, setSelectedClient, pendingContext, clearPendingContext } = useClientContext();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -324,9 +324,54 @@ export function AIChat() {
     scrollToBottom();
   }, [messages]);
 
-  // Sync with external client selection from search
+  // Handle context activation from client cards (IA button)
   useEffect(() => {
-    if (selectedClient && selectedClient !== context.activeClient) {
+    if (pendingContext) {
+      const { clientName, issue } = pendingContext;
+      const clientKey = clientName.toLowerCase();
+      const client = clientDatabase[clientKey];
+      const contact = clientContacts[clientKey];
+      
+      // Update internal context
+      setContext(prev => ({ 
+        ...prev, 
+        activeClient: clientName, 
+        lastMentionedClient: clientName 
+      }));
+      
+      if (client && contact) {
+        // Build contextual auto-message
+        const statusEmoji = client.status === "rojo" ? "🔴" : client.status === "naranja" ? "🟠" : client.status === "amarillo" ? "🟡" : "🟢";
+        const recommendation = client.status === "rojo" 
+          ? "**Acción recomendada:** Llamada hoy para resolver antes de que escale."
+          : client.status === "naranja"
+          ? "**Acción recomendada:** Seguimiento esta semana."
+          : "No requiere acción inmediata.";
+        
+        const contextMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: `Estamos hablando de **${clientName}**. ${statusEmoji} Está en ${client.status} por ${issue || client.issue}.
+
+${client.history}
+
+📞 **Contacto:** ${contact.mainContact} — ${contact.phone}
+
+${recommendation}`,
+          timestamp: new Date(),
+          clientContext: clientName,
+        };
+        setMessages(prev => [...prev, contextMessage]);
+      }
+      
+      // Clear the pending context
+      clearPendingContext();
+    }
+  }, [pendingContext, clearPendingContext]);
+
+  // Sync with external client selection from search (only if not from pending context)
+  useEffect(() => {
+    if (selectedClient && selectedClient !== context.activeClient && !pendingContext) {
       setContext(prev => ({ 
         ...prev, 
         activeClient: selectedClient, 
@@ -359,7 +404,7 @@ ${client.issue}
         setMessages(prev => [...prev, autoMessage]);
       }
     }
-  }, [selectedClient]);
+  }, [selectedClient, pendingContext]);
 
   const handleSend = async () => {
     if (!input.trim()) return;

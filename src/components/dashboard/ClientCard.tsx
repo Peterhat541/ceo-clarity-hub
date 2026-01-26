@@ -1,6 +1,7 @@
 import { StatusDot, Status } from "./StatusBadge";
-import { Building2, AlertCircle, Clock } from "lucide-react";
+import { Building2, AlertCircle, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface ClientCardProps {
   name: string;
@@ -9,6 +10,7 @@ interface ClientCardProps {
   issue?: string;
   projectCount?: number;
   onClick?: () => void;
+  onAIClick?: () => void;
   highlighted?: boolean;
 }
 
@@ -19,8 +21,14 @@ export function ClientCard({
   issue,
   projectCount = 1,
   onClick,
+  onAIClick,
   highlighted = false,
 }: ClientCardProps) {
+  const handleAIClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAIClick?.();
+  };
+
   return (
     <div
       onClick={onClick}
@@ -63,9 +71,22 @@ export function ClientCard({
         </div>
       )}
 
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Clock className="w-3.5 h-3.5" />
-        <span>{lastActivity}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Clock className="w-3.5 h-3.5" />
+          <span>{lastActivity}</span>
+        </div>
+        
+        {/* AI Action Button */}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleAIClick}
+          className="h-8 px-3 gap-1.5 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 transition-all"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>IA</span>
+        </Button>
       </div>
     </div>
   );

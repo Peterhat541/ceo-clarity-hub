@@ -16,6 +16,7 @@ import {
   ArrowDown,
   Filter
 } from "lucide-react";
+import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
 import { StatusDot, Status } from "@/components/dashboard/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -69,10 +70,13 @@ interface Incident {
 
 interface Note {
   id: string;
+  title?: string;
   content: string;
   visibility: "team" | "ceo" | "both";
   createdAt: string;
   author: string;
+  targetDate?: Date;
+  clientName?: string;
 }
 
 type SortField = "name" | "status" | "mainContact" | "incidents";
@@ -197,6 +201,7 @@ export default function Admin() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
   const [notes, setNotes] = useState<Note[]>(mockNotes);
+  const { addNote } = useNoteContext();
 
   // Filter and sort clients
   const filteredAndSortedClients = useMemo(() => {
@@ -262,15 +267,39 @@ export default function Admin() {
     setEditingClient(null);
   };
 
-  const handleSaveNote = (content: string, visibility: "team" | "ceo" | "both") => {
+  const handleSaveNote = (data: {
+    title: string;
+    content: string;
+    visibility: "team" | "ceo" | "both";
+    targetDate: Date;
+    clientName?: string;
+  }) => {
+    // Save to local state for Admin view
     const newNote: Note = {
       id: Date.now().toString(),
-      content,
-      visibility,
+      title: data.title,
+      content: data.content,
+      visibility: data.visibility,
       createdAt: new Date().toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }),
-      author: "Tú",
+      author: "María López", // In a real app, this would be the logged-in user
+      targetDate: data.targetDate,
+      clientName: data.clientName,
     };
     setNotes([newNote, ...notes]);
+
+    // Also add to NoteContext for CEO view if visibility includes CEO
+    if (data.visibility === "ceo" || data.visibility === "both") {
+      addNote({
+        title: data.title,
+        content: data.content,
+        clientName: data.clientName,
+        author: "María López",
+        visibility: data.visibility,
+        targetDate: data.targetDate,
+        status: "pending",
+      });
+    }
+
     closeModal();
   };
 
@@ -735,9 +764,14 @@ export default function Admin() {
       <Dialog open={modalType === "newNote"} onOpenChange={closeModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nueva nota para {selectedClient?.name}</DialogTitle>
+            <DialogTitle>Nueva nota{selectedClient ? ` para ${selectedClient.name}` : ""}</DialogTitle>
           </DialogHeader>
-          <NoteForm onClose={closeModal} onSave={handleSaveNote} />
+          <NoteForm 
+            onClose={closeModal} 
+            onSave={handleSaveNote}
+            clientName={selectedClient?.name}
+            clients={clientsData.map(c => ({ name: c.name }))}
+          />
         </DialogContent>
       </Dialog>
 

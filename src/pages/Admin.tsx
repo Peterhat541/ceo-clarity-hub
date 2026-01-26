@@ -14,7 +14,9 @@ import {
   X,
   StickyNote,
   LayoutDashboard,
-  Database
+  Database,
+  ArrowUpDown,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusDot, Status } from "@/components/dashboard/StatusBadge";
@@ -23,6 +25,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
+import { NoteForm } from "@/components/admin/NoteForm";
 
 interface Client {
   id: string;
@@ -527,37 +530,13 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
 
-      {/* New Note Modal */}
+      {/* New Note Modal with visibility options */}
       <Dialog open={modalType === "newNote"} onOpenChange={closeModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Nueva nota para {selectedClient?.name}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Contenido de la nota</label>
-              <textarea 
-                rows={4}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                placeholder="Escribe la nota aquí..."
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Visibilidad</label>
-              <div className="flex gap-2">
-                <button className="flex-1 px-3 py-2 rounded-lg border border-primary bg-primary/10 text-primary text-sm font-medium">
-                  Solo equipo
-                </button>
-                <button className="flex-1 px-3 py-2 rounded-lg border border-border text-muted-foreground text-sm font-medium hover:border-primary/50 transition-colors">
-                  Visible para CEO
-                </button>
-              </div>
-            </div>
-            <div className="flex gap-3 pt-4">
-              <Button variant="outline" className="flex-1" onClick={closeModal}>Cancelar</Button>
-              <Button className="flex-1">Guardar nota</Button>
-            </div>
-          </div>
+          <NoteForm onClose={closeModal} />
         </DialogContent>
       </Dialog>
 

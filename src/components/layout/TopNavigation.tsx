@@ -1,21 +1,10 @@
 import { useState } from "react";
-import { Search, AlertTriangle, AlertOctagon, Calendar, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-interface TopNavigationProps {
-  activeFilter?: string;
-  onFilterChange?: (filter: string) => void;
-}
-
-const filters = [
-  { id: "today", label: "Hoy", icon: null },
-  { id: "incidents", label: "Incidencias", icon: AlertTriangle, count: 3 },
-  { id: "red-clients", label: "Clientes en rojo", icon: AlertOctagon, count: 1 },
-  { id: "dates", label: "Fechas críticas", icon: Calendar, count: 2 },
-];
-
-export function TopNavigation({ activeFilter = "today", onFilterChange }: TopNavigationProps) {
+// Simplified header without duplicate filter buttons
+export function TopNavigation() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -25,11 +14,19 @@ export function TopNavigation({ activeFilter = "today", onFilterChange }: TopNav
     { name: "Startup Lab", status: "orange" },
     { name: "CoreData", status: "yellow" },
     { name: "BlueSky Ventures", status: "green" },
+    { name: "TechFlow Solutions", status: "green" },
   ];
 
   const filteredClients = mockClients.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleClientSelect = (clientName: string) => {
+    // TODO: Navigate to client or set as active in AI
+    console.log("Selected client:", clientName);
+    setSearchOpen(false);
+    setSearchQuery("");
+  };
 
   return (
     <>
@@ -42,41 +39,14 @@ export function TopNavigation({ activeFilter = "today", onFilterChange }: TopNav
           <span className="text-xl font-semibold text-foreground">Processia</span>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2">
-          {filters.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => onFilterChange?.(filter.id)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                activeFilter === filter.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              )}
-            >
-              {filter.icon && <filter.icon className="w-4 h-4" />}
-              {filter.label}
-              {filter.count && filter.count > 0 && (
-                <span className={cn(
-                  "px-1.5 py-0.5 rounded-full text-xs",
-                  activeFilter === filter.id
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                )}>
-                  {filter.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Search Icon */}
+        {/* Search Button */}
         <button 
           onClick={() => setSearchOpen(true)}
-          className="p-2.5 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
         >
-          <Search className="w-5 h-5 text-muted-foreground" />
+          <Search className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Buscar cliente...</span>
+          <kbd className="hidden sm:inline-flex px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground">⌘K</kbd>
         </button>
       </header>
 
@@ -98,34 +68,29 @@ export function TopNavigation({ activeFilter = "today", onFilterChange }: TopNav
                 autoFocus
               />
             </div>
-            {searchQuery && (
-              <div className="space-y-1">
-                {filteredClients.map((client) => (
-                  <button
-                    key={client.name}
-                    onClick={() => {
-                      setSearchOpen(false);
-                      setSearchQuery("");
-                    }}
-                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
-                  >
-                    <span className={cn(
-                      "w-2.5 h-2.5 rounded-full",
-                      client.status === "red" && "bg-status-red",
-                      client.status === "orange" && "bg-status-orange",
-                      client.status === "yellow" && "bg-status-yellow",
-                      client.status === "green" && "bg-status-green",
-                    )} />
-                    <span className="font-medium text-foreground">{client.name}</span>
-                  </button>
-                ))}
-                {filteredClients.length === 0 && (
-                  <p className="text-center text-muted-foreground py-4">
-                    No se encontraron clientes
-                  </p>
-                )}
-              </div>
-            )}
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {(searchQuery ? filteredClients : mockClients).map((client) => (
+                <button
+                  key={client.name}
+                  onClick={() => handleClientSelect(client.name)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                >
+                  <span className={cn(
+                    "w-2.5 h-2.5 rounded-full",
+                    client.status === "red" && "bg-status-red",
+                    client.status === "orange" && "bg-status-orange",
+                    client.status === "yellow" && "bg-status-yellow",
+                    client.status === "green" && "bg-status-green",
+                  )} />
+                  <span className="font-medium text-foreground">{client.name}</span>
+                </button>
+              ))}
+              {searchQuery && filteredClients.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">
+                  No se encontraron clientes
+                </p>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

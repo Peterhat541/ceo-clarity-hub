@@ -4,6 +4,7 @@ import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { ClientCard } from "@/components/dashboard/ClientCard";
 import { IncidentRow } from "@/components/dashboard/IncidentRow";
 import { CollapsibleSection } from "@/components/dashboard/CollapsibleSection";
+import { Search } from "lucide-react";
 import { 
   AlertTriangle, 
   Users, 
@@ -11,6 +12,8 @@ import {
   Calendar,
   AlertOctagon
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Mock data
 const clientsAttention = [
@@ -71,53 +74,107 @@ const criticalDates = [
   },
 ];
 
-export default function Index() {
-  const [activeFilter, setActiveFilter] = useState("today");
+const allClients = [
+  { name: "Nexus Tech", status: "red" },
+  { name: "Global Media", status: "orange" },
+  { name: "Startup Lab", status: "orange" },
+  { name: "CoreData", status: "yellow" },
+  { name: "BlueSky Ventures", status: "green" },
+  { name: "TechFlow Solutions", status: "green" },
+];
 
-  const handleCardClick = (type: string) => {
-    // Update filter based on card clicked
-    if (type === "danger" || type === "warning") {
-      setActiveFilter("red-clients");
-    } else if (type === "incidents") {
-      setActiveFilter("incidents");
-    }
+export default function Index() {
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredClients = allClients.filter(c => 
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleCardClick = (section: string) => {
+    setActiveSection(activeSection === section ? null : section);
   };
 
   const handleClientClick = (clientName: string) => {
-    // Navigate to client detail or show in AI chat
+    // This would set the AI context to this client
     console.log("Navigate to client:", clientName);
   };
 
   const handleIncidentClick = (clientName: string) => {
-    // Navigate to incident or show in AI chat
     console.log("Navigate to incident for:", clientName);
   };
 
-  // Filter content based on active filter
-  const renderContent = () => {
-    switch (activeFilter) {
-      case "incidents":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Todas las incidencias</h2>
-            <div className="space-y-3">
-              {recentIncidents.map((incident, index) => (
-                <IncidentRow 
-                  key={index} 
-                  {...incident} 
-                  onClick={() => handleIncidentClick(incident.clientName)}
-                />
-              ))}
-            </div>
-          </div>
-        );
+  const handleClientSelect = (clientName: string) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    handleClientClick(clientName);
+  };
 
-      case "red-clients":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Clientes que requieren intervención</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {clientsAttention.map((client) => (
+  return (
+    <CEOLayout>
+      <div className="max-w-4xl animate-fade-in h-full flex flex-col">
+        {/* Header with Search */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Buenos días
+          </h1>
+          
+          {/* Search Bar */}
+          <button 
+            onClick={() => setSearchOpen(true)}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-left"
+          >
+            <Search className="w-5 h-5 text-muted-foreground" />
+            <span className="text-muted-foreground">Buscar cliente...</span>
+          </button>
+        </div>
+
+        {/* Summary Cards - Main Navigation Hub */}
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <SummaryCard
+            title="Intervención necesaria"
+            value={1}
+            subtitle="Nexus Tech"
+            icon={<AlertTriangle className="w-5 h-5" />}
+            variant="danger"
+            onClick={() => handleCardClick("intervention")}
+            active={activeSection === "intervention"}
+          />
+          <SummaryCard
+            title="En riesgo"
+            value={2}
+            subtitle="Esta semana"
+            icon={<AlertTriangle className="w-5 h-5" />}
+            variant="warning"
+            onClick={() => handleCardClick("risk")}
+            active={activeSection === "risk"}
+          />
+          <SummaryCard
+            title="Clientes activos"
+            value={18}
+            subtitle="3 nuevos este mes"
+            icon={<Users className="w-5 h-5" />}
+            onClick={() => handleCardClick("active")}
+            active={activeSection === "active"}
+          />
+          <SummaryCard
+            title="Todo en orden"
+            value={15}
+            subtitle="Sin acción requerida"
+            icon={<CheckCircle2 className="w-5 h-5" />}
+            variant="success"
+            onClick={() => handleCardClick("ok")}
+            active={activeSection === "ok"}
+          />
+        </div>
+
+        {/* Filtered Content based on card selection */}
+        {activeSection === "intervention" && (
+          <div className="mb-6 animate-fade-in">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Clientes que requieren intervención</h2>
+            <div className="space-y-3">
+              {clientsAttention.filter(c => c.status === "red").map((client) => (
                 <ClientCard 
                   key={client.name} 
                   {...client} 
@@ -126,79 +183,74 @@ export default function Index() {
               ))}
             </div>
           </div>
-        );
+        )}
 
-      case "dates":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Fechas críticas</h2>
+        {activeSection === "risk" && (
+          <div className="mb-6 animate-fade-in">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Clientes en riesgo</h2>
             <div className="space-y-3">
-              {criticalDates.map((date, index) => (
-                <div 
-                  key={index}
-                  onClick={() => console.log("Navigate to date:", date.title)}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-lg bg-status-orange/20 flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-status-orange" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{date.title}</p>
-                    <p className="text-sm text-muted-foreground">{date.subtitle}</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-status-orange/20 text-status-orange text-sm font-medium">
-                    {date.days}d
-                  </span>
-                </div>
+              {clientsAttention.filter(c => c.status === "orange").map((client) => (
+                <ClientCard 
+                  key={client.name} 
+                  {...client} 
+                  onClick={() => handleClientClick(client.name)}
+                />
               ))}
             </div>
           </div>
-        );
+        )}
 
-      default: // "today"
-        return (
-          <div className="space-y-6">
-            {/* Summary Cards - All clickable */}
-            <div className="grid grid-cols-4 gap-4">
-              <SummaryCard
-                title="Intervención necesaria"
-                value={1}
-                subtitle="Nexus Tech"
-                icon={<AlertTriangle className="w-5 h-5" />}
-                variant="danger"
-                onClick={() => setActiveFilter("red-clients")}
-              />
-              <SummaryCard
-                title="En riesgo"
-                value={2}
-                subtitle="Esta semana"
-                icon={<AlertTriangle className="w-5 h-5" />}
-                variant="warning"
-                onClick={() => setActiveFilter("red-clients")}
-              />
-              <SummaryCard
-                title="Clientes activos"
-                value={18}
-                subtitle="3 nuevos este mes"
-                icon={<Users className="w-5 h-5" />}
-                onClick={() => console.log("Show all clients")}
-              />
-              <SummaryCard
-                title="Todo en orden"
-                value={15}
-                subtitle="Sin acción requerida"
-                icon={<CheckCircle2 className="w-5 h-5" />}
-                variant="success"
-                onClick={() => console.log("Show healthy clients")}
-              />
+        {activeSection === "active" && (
+          <div className="mb-6 animate-fade-in">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Todos los clientes activos</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {allClients.map((client) => (
+                <button
+                  key={client.name}
+                  onClick={() => handleClientClick(client.name)}
+                  className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all text-left"
+                >
+                  <span className={cn(
+                    "w-3 h-3 rounded-full",
+                    client.status === "red" && "bg-status-red",
+                    client.status === "orange" && "bg-status-orange",
+                    client.status === "yellow" && "bg-status-yellow",
+                    client.status === "green" && "bg-status-green",
+                  )} />
+                  <span className="font-medium text-foreground">{client.name}</span>
+                </button>
+              ))}
             </div>
+          </div>
+        )}
 
+        {activeSection === "ok" && (
+          <div className="mb-6 animate-fade-in">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Clientes sin acción requerida</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {allClients.filter(c => c.status === "green").map((client) => (
+                <button
+                  key={client.name}
+                  onClick={() => handleClientClick(client.name)}
+                  className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all text-left"
+                >
+                  <span className="w-3 h-3 rounded-full bg-status-green" />
+                  <span className="font-medium text-foreground">{client.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Default view when no card is selected */}
+        {!activeSection && (
+          <>
             {/* Clients needing attention - Always visible */}
-            <section>
-              <h2 className="text-lg font-semibold text-foreground mb-4">
+            <section className="mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-3">
                 Clientes que requieren atención
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {clientsAttention.map((client) => (
                   <ClientCard 
                     key={client.name} 
@@ -209,15 +261,16 @@ export default function Index() {
               </div>
             </section>
 
-            {/* Collapsible Sections */}
-            <div className="space-y-3">
+            {/* Collapsible Sections - collapsed by default */}
+            <div className="space-y-2">
               <CollapsibleSection
                 title="Incidencias activas"
                 icon={<AlertOctagon className="w-5 h-5 text-status-orange" />}
                 count={recentIncidents.length}
                 variant="warning"
+                defaultOpen={false}
               >
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {recentIncidents.map((incident, index) => (
                     <IncidentRow 
                       key={index} 
@@ -232,22 +285,23 @@ export default function Index() {
                 title="Próximas fechas críticas"
                 icon={<Calendar className="w-5 h-5 text-muted-foreground" />}
                 count={criticalDates.length}
+                defaultOpen={false}
               >
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {criticalDates.map((date, index) => (
                     <div 
                       key={index}
                       onClick={() => console.log("Navigate to date:", date.title)}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all cursor-pointer"
+                      className="flex items-center gap-4 p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all cursor-pointer"
                     >
-                      <div className="w-12 h-12 rounded-lg bg-status-orange/20 flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-status-orange" />
+                      <div className="w-10 h-10 rounded-lg bg-status-orange/20 flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-status-orange" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{date.title}</p>
-                        <p className="text-sm text-muted-foreground">{date.subtitle}</p>
+                        <p className="font-medium text-foreground text-sm">{date.title}</p>
+                        <p className="text-xs text-muted-foreground">{date.subtitle}</p>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-status-orange/20 text-status-orange text-sm font-medium">
+                      <span className="px-2 py-1 rounded-full bg-status-orange/20 text-status-orange text-xs font-medium">
                         {date.days}d
                       </span>
                     </div>
@@ -255,26 +309,53 @@ export default function Index() {
                 </div>
               </CollapsibleSection>
             </div>
-          </div>
-        );
-    }
-  };
+          </>
+        )}
 
-  return (
-    <CEOLayout activeFilter={activeFilter} onFilterChange={setActiveFilter}>
-      <div className="max-w-4xl animate-fade-in">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-1">
-            Buenos días
-          </h1>
-          <p className="text-muted-foreground">
-            Tienes <span className="text-status-red font-medium">1 cliente</span> que requiere tu intervención hoy.
-          </p>
-        </div>
-
-        {/* Dynamic Content */}
-        {renderContent()}
+        {/* Search Dialog */}
+        <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Buscar cliente</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Nombre del cliente..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1 max-h-64 overflow-y-auto">
+                {(searchQuery ? filteredClients : allClients).map((client) => (
+                  <button
+                    key={client.name}
+                    onClick={() => handleClientSelect(client.name)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                  >
+                    <span className={cn(
+                      "w-2.5 h-2.5 rounded-full",
+                      client.status === "red" && "bg-status-red",
+                      client.status === "orange" && "bg-status-orange",
+                      client.status === "yellow" && "bg-status-yellow",
+                      client.status === "green" && "bg-status-green",
+                    )} />
+                    <span className="font-medium text-foreground">{client.name}</span>
+                  </button>
+                ))}
+                {searchQuery && filteredClients.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">
+                    No se encontraron clientes
+                  </p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </CEOLayout>
   );

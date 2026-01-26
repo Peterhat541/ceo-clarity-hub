@@ -6,17 +6,19 @@ type Visibility = "team" | "ceo" | "both";
 
 interface NoteFormProps {
   onClose: () => void;
+  onSave?: (content: string, visibility: Visibility) => void;
 }
 
-export function NoteForm({ onClose }: NoteFormProps) {
+export function NoteForm({ onClose, onSave }: NoteFormProps) {
   const [content, setContent] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("team");
 
   const handleSubmit = () => {
     if (!content.trim()) return;
     
-    // TODO: Save note with visibility
-    console.log("Saving note:", { content, visibility });
+    if (onSave) {
+      onSave(content, visibility);
+    }
     onClose();
   };
 

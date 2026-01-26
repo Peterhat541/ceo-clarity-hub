@@ -56,9 +56,77 @@ const clientDatabase: Record<string, { status: string; issue: string; details: s
   }
 };
 
+// Client contact database
+const clientContacts: Record<string, { phone: string; email: string; mainContact: string }> = {
+  "nexus tech": { phone: "+34 612 345 678", email: "carlos@nexustech.com", mainContact: "Carlos Rodríguez" },
+  "global media": { phone: "+34 623 456 789", email: "ana@globalmedia.es", mainContact: "Ana Martínez" },
+  "startup lab": { phone: "+34 634 567 890", email: "miguel@startuplab.io", mainContact: "Miguel Sánchez" },
+  "coredata": { phone: "+34 645 678 901", email: "laura@coredata.com", mainContact: "Laura García" },
+  "bluesky ventures": { phone: "+34 656 789 012", email: "pablo@bluesky.vc", mainContact: "Pablo Fernández" },
+};
+
 // Response library with context awareness
 const getContextualResponse = (userInput: string, context: AIContext): { response: string; newContext: Partial<AIContext> } => {
   const lowerInput = userInput.toLowerCase().trim();
+  
+  // Handle phone/contact requests
+  if ((lowerInput.includes("teléfono") || lowerInput.includes("telefono") || lowerInput.includes("número") || lowerInput.includes("numero") || lowerInput.includes("llamar") || lowerInput.includes("contacto")) && context.activeClient) {
+    const clientKey = context.activeClient.toLowerCase();
+    const contact = clientContacts[clientKey];
+    if (contact) {
+      // Check if also asking for scheduling
+      if (lowerInput.includes("agenda") || lowerInput.includes("llamada") || lowerInput.includes("recordatorio") || lowerInput.includes("cita")) {
+        return {
+          response: `**Datos de contacto de ${context.activeClient}:**
+          
+📞 **Teléfono:** ${contact.phone}
+👤 **Contacto principal:** ${contact.mainContact}
+✉️ **Email:** ${contact.email}
+
+⚠️ **Sobre agendar llamadas y recordatorios:**
+Actualmente no tengo integración con calendarios. Te recomiendo:
+1. Llamar directamente al ${contact.phone}
+2. Crear el recordatorio manualmente en tu calendario
+
+¿Hay algo más que pueda ayudarte con ${context.activeClient}?`,
+          newContext: {}
+        };
+      }
+      return {
+        response: `**Datos de contacto de ${context.activeClient}:**
+
+📞 **Teléfono:** ${contact.phone}
+👤 **Contacto principal:** ${contact.mainContact}
+✉️ **Email:** ${contact.email}
+
+¿Quieres que te ponga más en contexto antes de llamar?`,
+        newContext: {}
+      };
+    }
+  }
+
+  // Handle scheduling/agenda requests without active client
+  if (lowerInput.includes("agenda") || lowerInput.includes("recordatorio") || lowerInput.includes("cita")) {
+    if (context.activeClient) {
+      const contact = clientContacts[context.activeClient.toLowerCase()];
+      if (contact) {
+        return {
+          response: `Para **${context.activeClient}** el contacto principal es **${contact.mainContact}** (${contact.phone}).
+
+⚠️ Actualmente no tengo integración con calendarios para agendar automáticamente. Te sugiero:
+1. Llamar directamente
+2. Crear el evento en tu calendario manualmente
+
+¿Necesitas más contexto sobre este cliente antes de contactar?`,
+          newContext: {}
+        };
+      }
+    }
+    return {
+      response: `No tengo integración con calendarios todavía. ¿Sobre qué cliente necesitas información para agendar una llamada?`,
+      newContext: {}
+    };
+  }
   
   // Handle affirmative responses with context
   if ((lowerInput === "sí" || lowerInput === "si" || lowerInput === "vale" || lowerInput === "ok" || lowerInput === "claro") && context.lastMentionedClient) {
@@ -194,6 +262,26 @@ ${client.history}
 
 **Estado actual:** ${client.status}
 **Acción requerida:** ${client.status === "rojo" ? "Intervención directa hoy" : client.status === "naranja" ? "Seguimiento esta semana" : "Ninguna"}`,
+        newContext: {}
+      };
+    }
+  }
+
+  // Handle unrecognized requests with active client context
+  if (context.activeClient) {
+    const contact = clientContacts[context.activeClient.toLowerCase()];
+    const client = clientDatabase[context.activeClient.toLowerCase()];
+    if (contact && client) {
+      return {
+        response: `Sobre **${context.activeClient}**:
+
+📞 **Teléfono:** ${contact.phone}
+👤 **Contacto:** ${contact.mainContact}
+📊 **Estado:** ${client.status}
+
+**Situación:** ${client.issue}
+
+¿Qué necesitas? Puedo darte más contexto, historial o datos de contacto.`,
         newContext: {}
       };
     }

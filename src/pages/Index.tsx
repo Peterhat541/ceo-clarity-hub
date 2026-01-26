@@ -135,7 +135,7 @@ export default function Index() {
           <SummaryCard
             title="Intervención necesaria"
             value={1}
-            subtitle="Nexus Tech"
+            subtitle="Hoy · 1 incidencia · 1 en rojo · 0 fechas"
             icon={<AlertTriangle className="w-5 h-5" />}
             variant="danger"
             onClick={() => handleCardClick("intervention")}
@@ -144,7 +144,7 @@ export default function Index() {
           <SummaryCard
             title="En riesgo"
             value={2}
-            subtitle="Esta semana"
+            subtitle="Hoy · 2 incidencias · 0 en rojo · 1 fecha"
             icon={<AlertTriangle className="w-5 h-5" />}
             variant="warning"
             onClick={() => handleCardClick("risk")}
@@ -153,7 +153,7 @@ export default function Index() {
           <SummaryCard
             title="Clientes activos"
             value={18}
-            subtitle="3 nuevos este mes"
+            subtitle="Hoy · 3 incidencias · 1 en rojo · 2 fechas"
             icon={<Users className="w-5 h-5" />}
             onClick={() => handleCardClick("active")}
             active={activeSection === "active"}
@@ -161,7 +161,7 @@ export default function Index() {
           <SummaryCard
             title="Todo en orden"
             value={15}
-            subtitle="Sin acción requerida"
+            subtitle="Hoy · 0 incidencias · 0 en rojo · 0 fechas"
             icon={<CheckCircle2 className="w-5 h-5" />}
             variant="success"
             onClick={() => handleCardClick("ok")}

@@ -9,6 +9,7 @@ interface ClientCardProps {
   issue?: string;
   projectCount?: number;
   onClick?: () => void;
+  highlighted?: boolean;
 }
 
 export function ClientCard({
@@ -18,22 +19,33 @@ export function ClientCard({
   issue,
   projectCount = 1,
   onClick,
+  highlighted = false,
 }: ClientCardProps) {
   return (
     <div
       onClick={onClick}
       className={cn(
         "group p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all cursor-pointer card-shadow",
-        status === "red" && "border-status-red/30 bg-status-red/5"
+        status === "red" && "border-status-red/30 bg-status-red/5",
+        highlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary"
       )}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-muted-foreground" />
+          <div className={cn(
+            "w-10 h-10 rounded-lg bg-secondary flex items-center justify-center",
+            highlighted && "bg-primary/20"
+          )}>
+            <Building2 className={cn(
+              "w-5 h-5 text-muted-foreground",
+              highlighted && "text-primary"
+            )} />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+            <h3 className={cn(
+              "font-semibold text-foreground group-hover:text-primary transition-colors",
+              highlighted && "text-primary"
+            )}>
               {name}
             </h3>
             <p className="text-xs text-muted-foreground">

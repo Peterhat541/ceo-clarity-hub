@@ -25,6 +25,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { cn } from "@/lib/utils";
 import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
 import { NoteForm } from "@/components/admin/NoteForm";
+import { CEONotificationBell } from "@/components/admin/CEONotificationBell";
 import processiaLogo from "@/assets/processia-logo.png";
 import {
   DropdownMenu,
@@ -377,6 +378,9 @@ export default function Admin() {
                   : "Búsqueda"}
             </Button>
           )}
+
+          {/* CEO Notification Bell */}
+          <CEONotificationBell />
 
           <Button onClick={() => openModal("newClient")}>
             <Plus className="w-4 h-4 mr-2" />

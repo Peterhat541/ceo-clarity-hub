@@ -6,7 +6,9 @@ import { IncidentRow } from "@/components/dashboard/IncidentRow";
 import { AgendaPopup } from "@/components/dashboard/AgendaPopup";
 import { ClientPopup } from "@/components/dashboard/ClientPopup";
 import { TeamNotesPopup } from "@/components/dashboard/TeamNotesPopup";
-import { Search, Clock, MessageSquare, AlertTriangle, Calendar, AlertOctagon, Sun, X } from "lucide-react";
+import { ReminderAlert } from "@/components/dashboard/ReminderAlert";
+import { SendNotePopup } from "@/components/dashboard/SendNotePopup";
+import { Search, Clock, MessageSquare, AlertTriangle, Calendar, AlertOctagon, Sun, X, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useClientContext } from "@/contexts/ClientContext";
@@ -89,6 +91,7 @@ export default function Index() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [clientPopupOpen, setClientPopupOpen] = useState(false);
   const [selectedClientData, setSelectedClientData] = useState<typeof allClients[0] | null>(null);
+  const [sendNoteOpen, setSendNoteOpen] = useState(false);
   const { selectedClient, setSelectedClient, activateClientWithContext } = useClientContext();
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
@@ -287,6 +290,18 @@ export default function Index() {
                 )}
               </button>
             </div>
+
+            {/* Send Note Button */}
+            <button
+              onClick={() => setSendNoteOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all cursor-pointer text-primary font-medium"
+            >
+              <Send className="w-4 h-4" />
+              Enviar nota al equipo
+            </button>
+
+            {/* Reminders Section */}
+            <ReminderAlert />
           </div>
         )}
 
@@ -431,6 +446,18 @@ export default function Index() {
                 )}
               </button>
             </div>
+
+            {/* Send Note Button */}
+            <button
+              onClick={() => setSendNoteOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all cursor-pointer text-primary font-medium"
+            >
+              <Send className="w-4 h-4" />
+              Enviar nota al equipo
+            </button>
+
+            {/* Reminders Section */}
+            <ReminderAlert />
           </>
         )}
 
@@ -484,6 +511,9 @@ export default function Index() {
 
         {/* Team Notes Popup */}
         <TeamNotesPopup isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
+
+        {/* Send Note Popup */}
+        <SendNotePopup isOpen={sendNoteOpen} onClose={() => setSendNoteOpen(false)} />
 
         {/* Client Popup */}
         <ClientPopup 

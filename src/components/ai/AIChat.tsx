@@ -67,9 +67,53 @@ const clientContacts: Record<string, { phone: string; email: string; mainContact
   "bluesky ventures": { phone: "+34 656 789 012", email: "pablo@bluesky.vc", mainContact: "Pablo Fernández" },
 };
 
-// Parse time from natural language
+// Parse time from natural language - handles relative and absolute times
 const parseTime = (input: string): string | null => {
-  // Match patterns like "12:00", "12", "a las 12", "12:30"
+  const now = new Date();
+  
+  // Handle relative time: "dentro de X minutos/hora(s)"
+  const relativeMatch = input.match(/dentro\s*de\s*(\d+)?\s*(media\s*hora|minutos?|horas?)/i);
+  if (relativeMatch) {
+    let minutesToAdd = 0;
+    const value = relativeMatch[1] ? parseInt(relativeMatch[1]) : 1;
+    const unit = relativeMatch[2].toLowerCase();
+    
+    if (unit.includes("media hora")) {
+      minutesToAdd = 30;
+    } else if (unit.includes("hora")) {
+      minutesToAdd = value * 60;
+    } else if (unit.includes("minuto")) {
+      minutesToAdd = value;
+    }
+    
+    const futureTime = new Date(now.getTime() + minutesToAdd * 60000);
+    const hours = futureTime.getHours();
+    const minutes = futureTime.getMinutes();
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  }
+  
+  // Handle "en X minutos/hora(s)"
+  const inMatch = input.match(/en\s*(\d+)?\s*(media\s*hora|minutos?|horas?)/i);
+  if (inMatch) {
+    let minutesToAdd = 0;
+    const value = inMatch[1] ? parseInt(inMatch[1]) : 1;
+    const unit = inMatch[2].toLowerCase();
+    
+    if (unit.includes("media hora")) {
+      minutesToAdd = 30;
+    } else if (unit.includes("hora")) {
+      minutesToAdd = value * 60;
+    } else if (unit.includes("minuto")) {
+      minutesToAdd = value;
+    }
+    
+    const futureTime = new Date(now.getTime() + minutesToAdd * 60000);
+    const hours = futureTime.getHours();
+    const minutes = futureTime.getMinutes();
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  }
+  
+  // Handle absolute time: "12:00", "12", "a las 12", "12:30"
   const timeMatch = input.match(/(?:a las?\s*)?(\d{1,2})(?::(\d{2}))?/i);
   if (timeMatch) {
     const hours = parseInt(timeMatch[1]);

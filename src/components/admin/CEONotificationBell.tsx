@@ -1,15 +1,36 @@
-import { useState } from "react";
-import { Bell, X, User, Building2, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, User, Building2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCEONoteContext, CEONote } from "@/contexts/CEONoteContext";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-function NoteItem({ note, onMarkRead }: { note: CEONote; onMarkRead: () => void }) {
+interface DBNote {
+  id: string;
+  text: string;
+  target_employee: string | null;
+  client_id: string | null;
+  visible_to: string;
+  status: string;
+  created_at: string;
+  created_by: string;
+  clients?: { name: string } | null;
+}
+
+interface NoteDisplay {
+  id: string;
+  content: string;
+  targetEmployee: string | null;
+  clientName: string | null;
+  createdAt: Date;
+  read: boolean;
+}
+
+function NoteItem({ note, onMarkRead }: { note: NoteDisplay; onMarkRead: () => void }) {
   return (
     <div
       className={cn(
@@ -72,10 +93,89 @@ function NoteItem({ note, onMarkRead }: { note: CEONote; onMarkRead: () => void 
 }
 
 export function CEONotificationBell() {
-  const { ceoNotes, getUnreadCount, markAsRead, markAllAsRead } = useCEONoteContext();
+  const [notes, setNotes] = useState<NoteDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   
-  const unreadCount = getUnreadCount();
+  const fetchNotes = async () => {
+    try {
+      // Get notes visible to team (sent by CEO to employees)
+      const { data, error } = await supabase
+        .from("notes")
+        .select("*, clients(name)")
+        .eq("visible_to", "team")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error("Error fetching notes:", error);
+        return;
+      }
+
+      const formattedNotes: NoteDisplay[] = (data as DBNote[]).map(note => ({
+        id: note.id,
+        content: note.text,
+        targetEmployee: note.target_employee,
+        clientName: note.clients?.name || null,
+        createdAt: new Date(note.created_at),
+        read: note.status === "seen" || note.status === "done"
+      }));
+
+      setNotes(formattedNotes);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotes();
+
+    // Listen for new notes
+    const handleNoteCreated = () => {
+      fetchNotes();
+    };
+    window.addEventListener("processia:noteCreated", handleNoteCreated);
+    
+    return () => {
+      window.removeEventListener("processia:noteCreated", handleNoteCreated);
+    };
+  }, []);
+
+  const markAsRead = async (noteId: string) => {
+    try {
+      await supabase
+        .from("notes")
+        .update({ status: "seen" })
+        .eq("id", noteId);
+      
+      setNotes(prev => 
+        prev.map(note => 
+          note.id === noteId ? { ...note, read: true } : note
+        )
+      );
+    } catch (error) {
+      console.error("Error marking note as read:", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const unreadIds = notes.filter(n => !n.read).map(n => n.id);
+      
+      await supabase
+        .from("notes")
+        .update({ status: "seen" })
+        .in("id", unreadIds);
+      
+      setNotes(prev => prev.map(note => ({ ...note, read: true })));
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
+  };
+
+  const unreadCount = notes.filter(n => !n.read).length;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -119,13 +219,17 @@ export function CEONotificationBell() {
         
         {/* Notes list */}
         <div className="max-h-[400px] overflow-y-auto p-2 space-y-2">
-          {ceoNotes.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">Cargando...</p>
+            </div>
+          ) : notes.length === 0 ? (
             <div className="text-center py-8">
               <Bell className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">No hay notas del CEO</p>
             </div>
           ) : (
-            ceoNotes.map((note) => (
+            notes.map((note) => (
               <NoteItem
                 key={note.id}
                 note={note}

@@ -15,15 +15,15 @@ export function CEOLayout({ children }: CEOLayoutProps) {
         {/* Top Navigation - simplified */}
         <TopNavigation />
         
-        {/* Content */}
+        {/* Content - Two column layout, no gaps */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Left panel - Dynamic content */}
-          <main className="flex-1 p-6 overflow-hidden">
+          {/* Left panel - Dynamic content - fills available space */}
+          <main className="flex-1 p-6 overflow-auto">
             {children}
           </main>
           
-          {/* Right panel - AI Chat (always visible) */}
-          <aside className="w-[420px] border-l border-border bg-card flex flex-col">
+          {/* Right panel - AI Chat - directly adjacent */}
+          <aside className="w-[400px] border-l border-border bg-card flex flex-col shrink-0">
             <AIChat />
           </aside>
         </div>

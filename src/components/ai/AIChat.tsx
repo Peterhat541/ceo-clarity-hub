@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useClientContext } from "@/contexts/ClientContext";
 
 interface Message {
   id: string;
@@ -297,6 +298,7 @@ ${client.history}
 };
 
 export function AIChat() {
+  const { selectedClient, setSelectedClient } = useClientContext();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -321,6 +323,43 @@ export function AIChat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Sync with external client selection from search
+  useEffect(() => {
+    if (selectedClient && selectedClient !== context.activeClient) {
+      setContext(prev => ({ 
+        ...prev, 
+        activeClient: selectedClient, 
+        lastMentionedClient: selectedClient 
+      }));
+      
+      // Auto-respond when client is selected from search
+      const clientKey = selectedClient.toLowerCase();
+      const client = clientDatabase[clientKey];
+      const contact = clientContacts[clientKey];
+      
+      if (client && contact) {
+        const autoMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: `**${selectedClient}** seleccionado.
+
+**Estado:** ${client.status === "rojo" ? "🔴" : client.status === "naranja" ? "🟠" : client.status === "amarillo" ? "🟡" : "🟢"} ${client.status}
+
+**Situación actual:**
+${client.issue}
+
+📞 **Teléfono:** ${contact.phone}
+👤 **Contacto:** ${contact.mainContact}
+
+¿Qué quieres saber sobre este cliente?`,
+          timestamp: new Date(),
+          clientContext: selectedClient,
+        };
+        setMessages(prev => [...prev, autoMessage]);
+      }
+    }
+  }, [selectedClient]);
 
   const handleSend = async () => {
     if (!input.trim()) return;

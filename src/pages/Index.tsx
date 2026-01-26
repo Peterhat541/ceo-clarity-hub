@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useClientContext } from "@/contexts/ClientContext";
 
 // Mock data
 const clientsAttention = [
@@ -86,6 +87,7 @@ export default function Index() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { selectedClient, setSelectedClient } = useClientContext();
 
   const todayCount = clientsAttention.length;
   const incidentsCount = recentIncidents.length;
@@ -101,18 +103,23 @@ export default function Index() {
   };
 
   const handleClientClick = (clientName: string) => {
-    // This would set the AI context to this client
-    console.log("Navigate to client:", clientName);
+    // Set the client in context - this updates the AI
+    setSelectedClient(clientName);
   };
 
   const handleIncidentClick = (clientName: string) => {
-    console.log("Navigate to incident for:", clientName);
+    // Also set client context when clicking on incidents
+    setSelectedClient(clientName);
   };
 
   const handleClientSelect = (clientName: string) => {
     setSearchOpen(false);
     setSearchQuery("");
-    handleClientClick(clientName);
+    setSelectedClient(clientName);
+  };
+
+  const isClientHighlighted = (clientName: string) => {
+    return selectedClient?.toLowerCase() === clientName.toLowerCase();
   };
 
   return (
@@ -186,6 +193,7 @@ export default function Index() {
                     key={client.name}
                     {...client}
                     onClick={() => handleClientClick(client.name)}
+                    highlighted={isClientHighlighted(client.name)}
                   />
                 ))}
               </div>
@@ -268,6 +276,7 @@ export default function Index() {
                     key={client.name}
                     {...client}
                     onClick={() => handleClientClick(client.name)}
+                    highlighted={isClientHighlighted(client.name)}
                   />
                 ))}
             </div>
@@ -314,6 +323,7 @@ export default function Index() {
                     key={client.name} 
                     {...client} 
                     onClick={() => handleClientClick(client.name)}
+                    highlighted={isClientHighlighted(client.name)}
                   />
                 ))}
               </div>

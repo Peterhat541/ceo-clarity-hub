@@ -5,7 +5,8 @@ import { ClientCard } from "@/components/dashboard/ClientCard";
 import { IncidentRow } from "@/components/dashboard/IncidentRow";
 import { CollapsibleSection } from "@/components/dashboard/CollapsibleSection";
 import { AgendaPopup } from "@/components/dashboard/AgendaPopup";
-import { Search, Clock } from "lucide-react";
+import { TeamNotesPopup } from "@/components/dashboard/TeamNotesPopup";
+import { Search, Clock, MessageSquare } from "lucide-react";
 import {
   AlertTriangle,
   Calendar,
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useClientContext } from "@/contexts/ClientContext";
 import { useEventContext } from "@/contexts/EventContext";
+import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
 
 // Mock data
@@ -91,14 +93,18 @@ export default function Index() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [agendaOpen, setAgendaOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const { selectedClient, setSelectedClient, activateClientWithContext } = useClientContext();
   const { getTodayEvents } = useEventContext();
+  const { getTodayCEONotes } = useNoteContext();
 
   const todayEvents = getTodayEvents();
+  const todayNotes = getTodayCEONotes();
   const todayCount = clientsAttention.length;
   const incidentsCount = recentIncidents.length;
   const redClientsCount = clientsAttention.filter((c) => c.status === "red").length;
   const criticalDatesCount = criticalDates.length;
+  const pendingNotesCount = todayNotes.filter(n => n.status === "pending").length;
 
   const filteredClients = allClients.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -163,8 +169,26 @@ export default function Index() {
               onClick={() => handleCardClick("today")}
               active={activeSection === "today"}
             />
-            {/* Agenda Button */}
-            {todayEvents.length > 0 && (
+            {/* Action Buttons for HOY */}
+            <div className="absolute -top-2 -right-2 flex gap-1">
+              {/* Notes Button */}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNotesOpen(true);
+                }}
+                className={cn(
+                  "h-7 w-7 p-0 rounded-full shadow-lg transition-all",
+                  pendingNotesCount > 0 
+                    ? "bg-purple-500 text-white hover:bg-purple-600" 
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                )}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+              </Button>
+              {/* Agenda Button */}
               <Button
                 size="sm"
                 variant="ghost"
@@ -172,11 +196,16 @@ export default function Index() {
                   e.stopPropagation();
                   setAgendaOpen(true);
                 }}
-                className="absolute -top-2 -right-2 h-7 w-7 p-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                className={cn(
+                  "h-7 w-7 p-0 rounded-full shadow-lg transition-all",
+                  todayEvents.length > 0 
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                )}
               >
                 <Clock className="w-3.5 h-3.5" />
               </Button>
-            )}
+            </div>
           </div>
           <SummaryCard
             title="Incidencias"
@@ -457,6 +486,9 @@ export default function Index() {
 
         {/* Agenda Popup */}
         <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />
+
+        {/* Team Notes Popup */}
+        <TeamNotesPopup isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
       </div>
     </CEOLayout>
   );

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ClientProvider } from "@/contexts/ClientContext";
 import { EventProvider } from "@/contexts/EventContext";
+import { NoteProvider } from "@/contexts/NoteContext";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -16,19 +17,21 @@ const App = () => (
     <TooltipProvider>
       <ClientProvider>
         <EventProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/admin" element={<Admin />} />
-              {/* Redirect old routes to home */}
-              <Route path="/incidencias" element={<Navigate to="/" replace />} />
-              <Route path="/clientes-rojo" element={<Navigate to="/" replace />} />
-              <Route path="/fechas" element={<Navigate to="/" replace />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <NoteProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/admin" element={<Admin />} />
+                {/* Redirect old routes to home */}
+                <Route path="/incidencias" element={<Navigate to="/" replace />} />
+                <Route path="/clientes-rojo" element={<Navigate to="/" replace />} />
+                <Route path="/fechas" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </NoteProvider>
         </EventProvider>
       </ClientProvider>
     </TooltipProvider>

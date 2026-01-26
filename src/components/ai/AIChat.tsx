@@ -8,17 +8,107 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  clientContext?: string;
+}
+
+interface AIContext {
+  activeClient: string | null;
+  lastMentionedClient: string | null;
 }
 
 const suggestedQuestions = [
   "¿Qué tengo que hacer hoy?",
-  "¿Qué clientes necesitan atención?",
+  "Ponme en contexto Nexus Tech",
   "Dame un resumen de la semana",
 ];
 
-// Extensive response library for instant responses
-const responseLibrary: Record<string, string> = {
-  "¿Qué tengo que hacer hoy?": `Hoy tienes **3 puntos de atención**:
+// Client database for context
+const clientDatabase: Record<string, { status: string; issue: string; details: string; history: string }> = {
+  "nexus tech": {
+    status: "rojo",
+    issue: "Incidencia de facturación sin resolver desde hace 3 días",
+    details: "Cliente desde hace 8 meses con 2 proyectos activos. Volumen: €4,500/mes.",
+    history: "Renovaron contrato hace 3 meses. Satisfacción previa: Alta. Han enviado 2 emails sin respuesta."
+  },
+  "global media": {
+    status: "naranja",
+    issue: "Solicitud de llamada urgente pendiente de confirmar",
+    details: "Cliente con 1 proyecto activo en Barcelona.",
+    history: "Pidieron ayer un cambio de alcance. Esperan confirmación de disponibilidad para una llamada."
+  },
+  "startup lab": {
+    status: "naranja",
+    issue: "Fecha límite de entrega en 48 horas",
+    details: "Cliente con 3 proyectos activos. Fase 2 del desarrollo.",
+    history: "El equipo dice que van bien de tiempo, pero prefieren que estés al tanto."
+  },
+  "coredata": {
+    status: "amarillo",
+    issue: "Retraso en entrega de contenidos por parte del cliente",
+    details: "Cliente con 1 proyecto activo en Bilbao.",
+    history: "El retraso es responsabilidad del cliente, no hay acción requerida de tu parte."
+  },
+  "bluesky ventures": {
+    status: "verde",
+    issue: "Sin incidencias",
+    details: "Cliente con 2 proyectos activos en Valencia.",
+    history: "Todo en orden. Reunión trimestral programada en 4 días."
+  }
+};
+
+// Response library with context awareness
+const getContextualResponse = (userInput: string, context: AIContext): { response: string; newContext: Partial<AIContext> } => {
+  const lowerInput = userInput.toLowerCase().trim();
+  
+  // Handle affirmative responses with context
+  if ((lowerInput === "sí" || lowerInput === "si" || lowerInput === "vale" || lowerInput === "ok" || lowerInput === "claro") && context.lastMentionedClient) {
+    const client = clientDatabase[context.lastMentionedClient.toLowerCase()];
+    if (client) {
+      return {
+        response: `**${context.lastMentionedClient}** está en ${client.status} por: ${client.issue}.
+
+**Contexto:**
+${client.details}
+
+**Historial reciente:**
+${client.history}
+
+**Mi recomendación:**
+${client.status === "rojo" ? "Necesitas intervenir hoy. Una llamada personal resolvería la situación antes de que escale." : client.status === "naranja" ? "Requiere atención esta semana para evitar que escale." : "No requiere acción inmediata."}`,
+        newContext: { activeClient: context.lastMentionedClient }
+      };
+    }
+  }
+
+  // Detect client mentions
+  for (const clientName of Object.keys(clientDatabase)) {
+    if (lowerInput.includes(clientName)) {
+      const client = clientDatabase[clientName];
+      const formattedName = clientName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      
+      return {
+        response: `**${formattedName}** está en ${client.status}.
+
+**Situación actual:**
+${client.issue}
+
+**Detalles:**
+${client.details}
+
+**Historial reciente:**
+${client.history}
+
+**Mi recomendación:**
+${client.status === "rojo" ? "Necesitas intervenir hoy. Una llamada personal resolvería la situación." : client.status === "naranja" ? "Requiere tu atención esta semana." : "No requiere acción inmediata de tu parte."}`,
+        newContext: { activeClient: formattedName, lastMentionedClient: formattedName }
+      };
+    }
+  }
+
+  // Handle "today" questions
+  if (lowerInput.includes("hacer") || lowerInput.includes("hoy") || lowerInput.includes("pendiente") || lowerInput.includes("urgente")) {
+    return {
+      response: `Hoy tienes **3 puntos de atención**:
 
 1. 🔴 **Nexus Tech** — Incidencia de facturación sin resolver desde hace 3 días. El cliente ha enviado 2 emails sin respuesta.
 
@@ -26,45 +116,96 @@ const responseLibrary: Record<string, string> = {
 
 3. 🟠 **Startup Lab** — Fecha límite de entrega en 48 horas.
 
-¿Quieres que te dé más contexto de alguno?`,
+¿Quieres que te ponga en contexto de alguno?`,
+      newContext: { lastMentionedClient: "Nexus Tech" }
+    };
+  }
 
-  "¿Qué clientes necesitan atención?": `Ahora mismo tienes:
+  // Handle "attention needed" questions
+  if (lowerInput.includes("atención") || lowerInput.includes("rojo") || lowerInput.includes("intervención")) {
+    return {
+      response: `Ahora mismo tienes:
 
-🔴 **1 cliente en rojo**: Nexus Tech
-🟠 **2 clientes en naranja**: Global Media, Startup Lab  
-🟡 **3 clientes en amarillo**: sin urgencia inmediata
+🔴 **1 cliente en rojo**: Nexus Tech — requiere tu intervención directa
+🟠 **2 clientes en naranja**: Global Media, Startup Lab — en riesgo esta semana
+🟡 **1 cliente en amarillo**: CoreData — atención menor
+🟢 **2 clientes en verde**: Todo en orden
 
-El resto de clientes (12) están en verde y no requieren tu intervención.`,
+El foco principal es **Nexus Tech**. ¿Quieres que te ponga en contexto?`,
+      newContext: { lastMentionedClient: "Nexus Tech" }
+    };
+  }
 
-  "Dame un resumen de la semana": `Esta semana:
+  // Handle weekly summary
+  if (lowerInput.includes("semana") || lowerInput.includes("resumen")) {
+    return {
+      response: `Esta semana:
 
 • **4 incidencias resueltas** por el equipo
 • **1 incidencia pendiente** (Nexus Tech) que requiere tu decisión
 • **2 nuevos proyectos** iniciados
 • **Satisfacción general**: Alta
 
-El único punto crítico es Nexus Tech. Todo lo demás está bajo control.`,
+El único punto crítico es **Nexus Tech**. Todo lo demás está bajo control.`,
+      newContext: { lastMentionedClient: "Nexus Tech" }
+    };
+  }
 
-  "Ponme en contexto Nexus Tech": `**Nexus Tech** es un cliente desde hace 8 meses con 2 proyectos activos.
+  // Handle "why red" questions
+  if (lowerInput.includes("por qué") && (lowerInput.includes("rojo") || lowerInput.includes("intervención"))) {
+    if (context.activeClient) {
+      const client = clientDatabase[context.activeClient.toLowerCase()];
+      if (client && client.status === "rojo") {
+        return {
+          response: `**${context.activeClient}** está en rojo porque:
 
-**Situación actual:**
-El 23 de enero reportaron un error en su factura de enero. Han enviado 2 emails (el último hace 2 días) y no hemos respondido.
+1. **Incidencia sin resolver** — ${client.issue}
+2. **Sin respuesta** — 2 emails del cliente ignorados
+3. **Riesgo de escalada** — Cliente importante que puede enfadarse
 
-**Historial reciente:**
-- Renovaron contrato hace 3 meses
-- Satisfacción previa: Alta
-- Volumen: €4,500/mes
-
-**Mi recomendación:**
-Necesitas intervenir hoy. Una llamada personal resolvería la situación antes de que escale.`,
-
-  "¿Por qué Nexus Tech está en rojo?": `Nexus Tech está en rojo porque:
+El equipo marcó esta incidencia como "bloqueada" porque requiere tu aprobación.`,
+          newContext: {}
+        };
+      }
+    }
+    return {
+      response: `**Nexus Tech** está en rojo porque:
 
 1. **Incidencia sin resolver** — 3 días abierta
 2. **Sin respuesta** — 2 emails del cliente ignorados
 3. **Riesgo de escalada** — Cliente importante que puede enfadarse
 
 El equipo marcó esta incidencia como "bloqueada" porque requiere tu aprobación para un ajuste de facturación.`,
+      newContext: { activeClient: "Nexus Tech", lastMentionedClient: "Nexus Tech" }
+    };
+  }
+
+  // Handle follow-up about current client
+  if (context.activeClient && (lowerInput.includes("más") || lowerInput.includes("detalle") || lowerInput.includes("historia"))) {
+    const client = clientDatabase[context.activeClient.toLowerCase()];
+    if (client) {
+      return {
+        response: `**Historial completo de ${context.activeClient}:**
+
+${client.details}
+
+**Timeline reciente:**
+${client.history}
+
+**Estado actual:** ${client.status}
+**Acción requerida:** ${client.status === "rojo" ? "Intervención directa hoy" : client.status === "naranja" ? "Seguimiento esta semana" : "Ninguna"}`,
+        newContext: {}
+      };
+    }
+  }
+
+  // Default response - avoid generic text
+  return {
+    response: `Tienes **1 cliente en rojo** (Nexus Tech) y **2 en naranja** (Global Media, Startup Lab) que requieren atención.
+
+¿Sobre cuál quieres que te ponga en contexto?`,
+    newContext: { lastMentionedClient: "Nexus Tech" }
+  };
 };
 
 export function AIChat() {
@@ -72,12 +213,17 @@ export function AIChat() {
     {
       id: "1",
       role: "assistant",
-      content: "Buenos días. Tienes **1 cliente en rojo** que requiere tu intervención hoy. ¿Quieres que te ponga en contexto?",
+      content: "Tienes **1 cliente en rojo** que requiere tu intervención hoy: **Nexus Tech**, con una incidencia de facturación abierta hace 3 días.\n\n¿Quieres que te ponga en contexto?",
       timestamp: new Date(),
+      clientContext: "Nexus Tech",
     },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [context, setContext] = useState<AIContext>({
+    activeClient: null,
+    lastMentionedClient: "Nexus Tech"
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -87,50 +233,6 @@ export function AIChat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const getResponse = (userInput: string): string => {
-    // Check for exact matches first
-    if (responseLibrary[userInput]) {
-      return responseLibrary[userInput];
-    }
-
-    // Check for partial matches
-    const lowerInput = userInput.toLowerCase();
-    
-    if (lowerInput.includes("nexus")) {
-      return responseLibrary["Ponme en contexto Nexus Tech"];
-    }
-    if (lowerInput.includes("rojo") || lowerInput.includes("intervención")) {
-      return responseLibrary["¿Qué clientes necesitan atención?"];
-    }
-    if (lowerInput.includes("hacer") || lowerInput.includes("pendiente") || lowerInput.includes("urgente")) {
-      return responseLibrary["¿Qué tengo que hacer hoy?"];
-    }
-    if (lowerInput.includes("semana") || lowerInput.includes("resumen")) {
-      return responseLibrary["Dame un resumen de la semana"];
-    }
-    if (lowerInput.includes("global media")) {
-      return `**Global Media** solicitó una llamada urgente ayer para discutir un cambio de alcance en su proyecto actual. 
-
-El equipo está esperando que confirmes disponibilidad. ¿Quieres que les envíe un mensaje con tu horario disponible?`;
-    }
-    if (lowerInput.includes("startup lab")) {
-      return `**Startup Lab** tiene una entrega de proyecto en 48 horas (Fase 2 del desarrollo).
-
-El equipo dice que van bien de tiempo, pero prefieren que estés al tanto por si hay preguntas del cliente.`;
-    }
-
-    // Default intelligent response
-    return `Entendido. He analizado tu pregunta sobre "${userInput}".
-
-Ahora mismo no tengo información específica sobre esto, pero puedo ayudarte con:
-- Estado de clientes
-- Incidencias activas
-- Fechas críticas
-- Resúmenes de actividad
-
-¿En qué puedo ayudarte?`;
-  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -147,18 +249,24 @@ Ahora mismo no tengo información específica sobre esto, pero puedo ayudarte co
     setInput("");
     setIsTyping(true);
 
-    // Fast simulated response (300-600ms)
+    // Fast simulated response (200-400ms for snappiness)
     setTimeout(() => {
+      const { response, newContext } = getContextualResponse(userInput, context);
+      
+      // Update context
+      setContext(prev => ({ ...prev, ...newContext }));
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: getResponse(userInput),
+        content: response,
         timestamp: new Date(),
+        clientContext: newContext.activeClient || context.activeClient || undefined,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
       setIsTyping(false);
-    }, 300 + Math.random() * 300);
+    }, 200 + Math.random() * 200);
   };
 
   const handleSuggestion = (question: string) => {
@@ -175,7 +283,12 @@ Ahora mismo no tengo información específica sobre esto, pero puedo ayudarte co
           </div>
           <div>
             <h2 className="font-semibold text-foreground">Asistente IA</h2>
-            <p className="text-xs text-muted-foreground">Tu mano derecha ejecutiva</p>
+            <p className="text-xs text-muted-foreground">
+              {context.activeClient 
+                ? `Contexto: ${context.activeClient}`
+                : "Tu mano derecha ejecutiva"
+              }
+            </p>
           </div>
         </div>
       </div>
@@ -245,7 +358,7 @@ Ahora mismo no tengo información específica sobre esto, pero puedo ayudarte co
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Pregunta lo que necesites..."
+            placeholder="Pregunta sobre cualquier cliente..."
             className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
           />
           <Button

@@ -5,7 +5,7 @@ import { ClientCard } from "@/components/dashboard/ClientCard";
 import { IncidentRow } from "@/components/dashboard/IncidentRow";
 import { AgendaPopup } from "@/components/dashboard/AgendaPopup";
 import { TeamNotesPopup } from "@/components/dashboard/TeamNotesPopup";
-import { Search, Clock, MessageSquare, AlertTriangle, Calendar, AlertOctagon, Sun } from "lucide-react";
+import { Search, Clock, MessageSquare, AlertTriangle, Calendar, AlertOctagon, Sun, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useClientContext } from "@/contexts/ClientContext";
@@ -151,41 +151,52 @@ export default function Index() {
         </div>
 
         {/* Summary Cards - Main Navigation Hub */}
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          <SummaryCard
-            title="Hoy"
-            value={todayCount}
-            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<Sun className="w-4 h-4" />}
-            onClick={() => handleCardClick("today")}
-            active={activeSection === "today"}
-          />
-          <SummaryCard
-            title="Incidencias"
-            value={incidentsCount}
-            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<AlertOctagon className="w-4 h-4" />}
-            variant="warning"
-            onClick={() => handleCardClick("incidents")}
-            active={activeSection === "incidents"}
-          />
-          <SummaryCard
-            title="Clientes en rojo"
-            value={redClientsCount}
-            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<AlertTriangle className="w-4 h-4" />}
-            variant="danger"
-            onClick={() => handleCardClick("red")}
-            active={activeSection === "red"}
-          />
-          <SummaryCard
-            title="Fechas críticas"
-            value={criticalDatesCount}
-            subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
-            icon={<Calendar className="w-4 h-4" />}
-            onClick={() => handleCardClick("dates")}
-            active={activeSection === "dates"}
-          />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="grid grid-cols-4 gap-3 flex-1">
+            <SummaryCard
+              title="Hoy"
+              value={todayCount}
+              subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+              icon={<Sun className="w-4 h-4" />}
+              onClick={() => handleCardClick("today")}
+              active={activeSection === "today"}
+            />
+            <SummaryCard
+              title="Incidencias"
+              value={incidentsCount}
+              subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+              icon={<AlertOctagon className="w-4 h-4" />}
+              variant="warning"
+              onClick={() => handleCardClick("incidents")}
+              active={activeSection === "incidents"}
+            />
+            <SummaryCard
+              title="Clientes en rojo"
+              value={redClientsCount}
+              subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+              icon={<AlertTriangle className="w-4 h-4" />}
+              variant="danger"
+              onClick={() => handleCardClick("red")}
+              active={activeSection === "red"}
+            />
+            <SummaryCard
+              title="Fechas críticas"
+              value={criticalDatesCount}
+              subtitle={`Hoy · ${incidentsCount} incidencias · ${redClientsCount} en rojo · ${criticalDatesCount} fechas`}
+              icon={<Calendar className="w-4 h-4" />}
+              onClick={() => handleCardClick("dates")}
+              active={activeSection === "dates"}
+            />
+          </div>
+          {activeSection && (
+            <button
+              onClick={() => setActiveSection(null)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors text-sm shrink-0"
+            >
+              <X className="w-4 h-4" />
+              Limpiar
+            </button>
+          )}
         </div>
 
         {/* Filtered Content based on card selection */}

@@ -1,104 +1,60 @@
 
+## Objetivo (sin “inventar” nada fuera de lo aprobado)
+Que el **grid del fondo sea “sutil pero claramente visible”** (como textura), manteniendo el estilo Processia, sin cambiar el layout ni añadir features nuevos.
 
-# Plan: Hacer Visible el Grid Pattern en Todas las Páginas
+## Qué pasa ahora (por qué tú no lo ves)
+He verificado el código actual y el grid **sí está aplicado** (`bg-grid` en Desktop/Mobile/Admin y también en `body`).  
+El problema es que el color del grid es **demasiado parecido al fondo**:
 
-## Problema Identificado
+- Fondo: `--background: hsl(240 15% 6%)`
+- Líneas actuales: `hsl(240 8% 12% / 0.4)` (líneas “oscuras” sobre fondo oscuro)
 
-El grid pattern está correctamente aplicado al `body` en `index.css`, pero no se ve porque:
+En algunos monitores/ajustes de brillo/contraste, eso se vuelve prácticamente invisible aunque exista.
 
-1. **Admin.tsx** (línea 312): Tiene `bg-background` opaco que cubre completamente el body
-2. **DesktopCEODashboard.tsx**: También tiene `bg-background` opaco
+## Cambios exactos que haré (mínimos y concretos)
+### 1) Ajustar SOLO el estilo del grid (1 archivo)
+**Archivo:** `src/index.css`
 
-El fondo opaco de estos componentes tapa el grid pattern del body.
+**Acción:** cambiar el grid para que sea un poco más visible usando líneas **ligeramente más claras** con muy baja opacidad (sin que parezca “rejilla marcada”).  
+Además, añadiré una “grid mayor” (cada 4 celdas) muy sutil, como textura premium, sin cargar el diseño.
 
-## Solución
-
-Cambiar los fondos opacos (`bg-background`) por fondos transparentes o semi-transparentes para que el grid del body sea visible a través de ellos.
-
-### Opción Elegida: Grid en cada página (más confiable)
-
-En lugar de depender del body, aplicaremos el grid directamente a los contenedores principales de cada página. Esto es más robusto porque:
-- No depende de que los elementos sean transparentes
-- El grid siempre será visible
-- Mantiene consistencia visual
-
-## Archivos a Modificar
-
-### 1. `src/pages/Admin.tsx`
-
-**Cambio en línea 312:**
-```tsx
-// ANTES:
-<div className="flex flex-col min-h-screen bg-background">
-
-// DESPUÉS:
-<div className="flex flex-col min-h-screen bg-background bg-grid">
-```
-
-Donde `bg-grid` es una nueva clase utility que aplica el grid pattern.
-
-### 2. `src/index.css`
-
-**Añadir nueva clase utility:**
+Propuesta de CSS (valores “sutil visible”):
 ```css
-@layer utilities {
-  .bg-grid {
-    background-image: 
-      linear-gradient(to right, hsl(240 8% 12% / 0.4) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(240 8% 12% / 0.4) 1px, transparent 1px);
-    background-size: 60px 60px;
-  }
-}
+/* Sustituir el background-image actual del grid (body y .bg-grid) por: */
+background-image:
+  /* grid fino */
+  linear-gradient(to right, hsl(0 0% 100% / 0.035) 1px, transparent 1px),
+  linear-gradient(to bottom, hsl(0 0% 100% / 0.035) 1px, transparent 1px),
+  /* grid mayor (cada 4) */
+  linear-gradient(to right, hsl(0 0% 100% / 0.06) 1px, transparent 1px),
+  linear-gradient(to bottom, hsl(0 0% 100% / 0.06) 1px, transparent 1px);
+
+background-size:
+  60px 60px,
+  60px 60px,
+  240px 240px,
+  240px 240px;
 ```
 
-### 3. `src/components/dashboard/DesktopCEODashboard.tsx`
+**Importante:** no tocaré `DesktopCEODashboard.tsx`, `MobileHome.tsx` ni `Admin.tsx` (ya tienen `bg-grid`). Solo haré que el patrón sea visible.
 
-**Cambio en línea 73:**
-```tsx
-// ANTES:
-<div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
+### 2) Mantener consistencia global
+Actualizaré tanto:
+- el grid en `body { ... }` (fallback global), como
+- la utilidad `.bg-grid { ... }` (que es la que usan las páginas)
 
-// DESPUÉS:
-<div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden">
-```
+Así siempre se verá igual.
 
-### 4. `src/components/dashboard/MobileHome.tsx`
+## Cómo validaremos (para no “gastar créditos a ciegas”)
+1. Validación en Desktop (route `/`):
+   - Ver el grid en las zonas “vacías” entre cards y en el header.
+2. Validación en Mobile:
+   - Ver el grid detrás del contenido principal.
+3. Si todavía lo percibís muy flojo:
+   - Ajuste puntual de opacidad (solo números): `0.035 → 0.045` y `0.06 → 0.075` (sin tocar nada más).
 
-**Aplicar el mismo patrón al contenedor principal:**
-```tsx
-<div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden p-4">
-```
+## Nota para ahorrar créditos en cambios visuales futuros
+Para cambios de texto/color/espaciados en elementos estáticos, podéis usar **Visual Edits** (no consume créditos en ediciones directas). En este caso concreto (CSS global), sí requiere cambio de código.
 
-## Resultado Visual
-
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│ ┌ ─ ─ ┐ ┌ ─ ─ ┐ ┌ ─ ─ ┐ ┌ ─ ─ ┐ ← Grid 60px visible en todo el fondo
-│                                                                     │
-│ ├ ─ ─ ┤ ├ ─ ─ ┤ ├ ─ ─ ┤ ├ ─ ─ ┤                                    │
-│  ┌────────────────────┐  ┌────────────────────┐                     │
-│ └│   GLASS CARD       │─ │   GLASS CARD       │┘ ← Cards glass      │
-│  │   (semi-opaco)     │  │   (semi-opaco)     │                     │
-│ ┌└────────────────────┘─ └────────────────────┘┐                    │
-│                                                                     │
-│ ├ ─ ─ ┤ ├ ─ ─ ┤ ├ ─ ─ ┤ ├ ─ ─ ┤ ← Grid continúa detrás             │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-## Resumen de Cambios
-
-| Archivo | Línea | Cambio |
-|---------|-------|--------|
-| `src/index.css` | utilities | Añadir clase `.bg-grid` |
-| `src/pages/Admin.tsx` | 312 | Añadir `bg-grid` al contenedor |
-| `src/components/dashboard/DesktopCEODashboard.tsx` | 73 | Añadir `bg-grid` al contenedor |
-| `src/components/dashboard/MobileHome.tsx` | contenedor principal | Añadir `bg-grid` al contenedor |
-
-## Beneficios
-
-- Grid visible en TODAS las páginas
-- Consistencia visual con processia.es
-- Solución robusta que no depende de transparencias complejas
-- Fácil de mantener
-
+## Rollback rápido (si no os gusta)
+Podéis restaurar el estado anterior desde el historial del proyecto (sin rehacer nada).

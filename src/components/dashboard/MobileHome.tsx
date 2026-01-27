@@ -1,18 +1,15 @@
 import { useState } from "react";
 import { AIHeroCard } from "./AIHeroCard";
-import { FeatureCard } from "./FeatureCard";
 import { QuickAccessGrid } from "./QuickAccessGrid";
 import { AgendaPopup } from "./AgendaPopup";
 import { TeamNotesPopup } from "./TeamNotesPopup";
 import { SendNotePopup } from "./SendNotePopup";
 import { ReminderAlert } from "./ReminderAlert";
+import { ClientCard } from "./ClientCard";
 import { ClientChatModal } from "@/components/ai/ClientChatModal";
 import { 
   Calendar, 
-  Users, 
   MessageSquare, 
-  Send, 
-  Clock, 
   AlertTriangle,
   CalendarDays,
   User
@@ -72,11 +69,18 @@ export function MobileHome() {
 
   const quickAccessItems = [
     {
-      icon: <Clock className="h-7 w-7 text-primary" />,
+      icon: <Calendar className="h-7 w-7 text-primary" />,
       label: "Agenda",
       bgClass: "bg-primary/10",
       onClick: () => setAgendaOpen(true),
       badge: todayEvents.length,
+    },
+    {
+      icon: <MessageSquare className="h-7 w-7 text-status-purple" />,
+      label: "Notas",
+      bgClass: "bg-status-purple/10",
+      onClick: () => setNotesOpen(true),
+      badge: pendingNotes.length,
     },
     {
       icon: <AlertTriangle className="h-7 w-7 text-status-orange" />,
@@ -86,16 +90,9 @@ export function MobileHome() {
       badge: recentIncidents.length,
     },
     {
-      icon: <Users className="h-7 w-7 text-status-red" />,
-      label: "Clientes",
-      bgClass: "bg-status-red/10",
-      onClick: () => setClientsOpen(true),
-      badge: redClients.length,
-    },
-    {
-      icon: <CalendarDays className="h-7 w-7 text-accent" />,
+      icon: <CalendarDays className="h-7 w-7 text-status-red" />,
       label: "Fechas",
-      bgClass: "bg-accent/10",
+      bgClass: "bg-status-red/10",
       onClick: () => setDatesOpen(true),
       badge: criticalDates.length,
     },
@@ -120,46 +117,24 @@ export function MobileHome() {
           <AIHeroCard onTalkClick={() => setChatOpen(true)} />
         </section>
 
-        {/* Features Section */}
+        {/* Clients Section */}
         <section className="mb-6">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Funcionalidades
+            Clientes que requieren atención
           </h2>
-          <div className="space-y-3">
-            <FeatureCard
-              icon={<Calendar className="h-7 w-7 text-primary" />}
-              iconBgClass="bg-primary/10"
-              title="Agenda del día"
-              subtitle={`${todayEvents.length} evento${todayEvents.length !== 1 ? "s" : ""} programado${todayEvents.length !== 1 ? "s" : ""}`}
-              badge={todayEvents.length > 0 ? todayEvents.length : undefined}
-              badgeClass="bg-primary/10 text-primary"
-              onClick={() => setAgendaOpen(true)}
-            />
-            <FeatureCard
-              icon={<Users className="h-7 w-7 text-status-red" />}
-              iconBgClass="bg-status-red/10"
-              title="Clientes que requieren atención"
-              subtitle={`${redClients.length} en rojo, ${orangeClients.length} en naranja`}
-              badge={redClients.length > 0 ? redClients.length : undefined}
-              badgeClass="bg-status-red/10 text-status-red"
-              onClick={() => setClientsOpen(true)}
-            />
-            <FeatureCard
-              icon={<MessageSquare className="h-7 w-7 text-status-purple" />}
-              iconBgClass="bg-status-purple/10"
-              title="Notas del equipo"
-              subtitle={pendingNotes.length > 0 ? `${pendingNotes.length} pendiente${pendingNotes.length !== 1 ? "s" : ""} de revisar` : "Sin notas pendientes"}
-              badge={pendingNotes.length > 0 ? pendingNotes.length : undefined}
-              badgeClass="bg-status-purple/10 text-status-purple"
-              onClick={() => setNotesOpen(true)}
-            />
-            <FeatureCard
-              icon={<Send className="h-7 w-7 text-accent" />}
-              iconBgClass="bg-accent/10"
-              title="Enviar instrucción"
-              subtitle="Crear nota para el equipo"
-              onClick={() => setSendNoteOpen(true)}
-            />
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+            {clientsAttention.map((client) => (
+              <div key={client.name} className="min-w-[280px] flex-shrink-0">
+                <ClientCard
+                  name={client.name}
+                  status={client.status}
+                  lastActivity={client.lastActivity}
+                  issue={client.issue}
+                  projectCount={client.projectCount}
+                  onAIClick={() => handleClientClick(client)}
+                />
+              </div>
+            ))}
           </div>
         </section>
 

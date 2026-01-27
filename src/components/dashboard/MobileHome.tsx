@@ -69,28 +69,28 @@ export function MobileHome() {
 
   const quickAccessItems = [
     {
-      icon: <Calendar className="h-7 w-7 text-primary" />,
+      icon: <Calendar className="h-5 w-5 text-primary" />,
       label: "Agenda",
       bgClass: "bg-primary/10",
       onClick: () => setAgendaOpen(true),
       badge: todayEvents.length,
     },
     {
-      icon: <MessageSquare className="h-7 w-7 text-status-purple" />,
+      icon: <MessageSquare className="h-5 w-5 text-status-purple" />,
       label: "Notas",
       bgClass: "bg-status-purple/10",
       onClick: () => setNotesOpen(true),
       badge: pendingNotes.length,
     },
     {
-      icon: <AlertTriangle className="h-7 w-7 text-status-orange" />,
+      icon: <AlertTriangle className="h-5 w-5 text-status-orange" />,
       label: "Incidencias",
       bgClass: "bg-status-orange/10",
       onClick: () => setIncidentsOpen(true),
       badge: recentIncidents.length,
     },
     {
-      icon: <CalendarDays className="h-7 w-7 text-status-red" />,
+      icon: <CalendarDays className="h-5 w-5 text-status-red" />,
       label: "Fechas",
       bgClass: "bg-status-red/10",
       onClick: () => setDatesOpen(true),
@@ -98,32 +98,46 @@ export function MobileHome() {
     },
   ];
 
+  // Only show first 2 clients, rest in modal
+  const visibleClients = clientsAttention.slice(0, 2);
+  const hasMoreClients = clientsAttention.length > 2;
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-lg px-4 py-6">
-        {/* Header with greeting */}
-        <header className="mb-6 flex items-center justify-between">
+    <div className="h-screen bg-background overflow-hidden flex flex-col">
+      <div className="mx-auto w-full max-w-lg px-4 py-3 flex flex-col flex-1 overflow-hidden">
+        {/* Header with greeting - compact */}
+        <header className="mb-3 flex items-center justify-between shrink-0">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Hola, Juan!</h1>
-            <p className="text-muted-foreground">¿Cómo va el día de hoy?</p>
+            <h1 className="text-xl font-bold text-foreground">Hola, Juan!</h1>
+            <p className="text-xs text-muted-foreground">¿Cómo va el día?</p>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <User className="h-6 w-6 text-primary" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <User className="h-5 w-5 text-primary" />
           </div>
         </header>
 
-        {/* AI Hero Card */}
-        <section className="mb-6">
+        {/* AI Hero Card - compact */}
+        <section className="mb-3 shrink-0">
           <AIHeroCard onTalkClick={() => setChatOpen(true)} />
         </section>
 
-        {/* Clients Section */}
-        <section className="mb-6">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Clientes que requieren atención
-          </h2>
-          <div className="space-y-3">
-            {clientsAttention.map((client) => (
+        {/* Clients Section - limited to 2 */}
+        <section className="mb-3 shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Clientes que requieren atención
+            </h2>
+            {hasMoreClients && (
+              <button 
+                onClick={() => setClientsOpen(true)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Ver todos ({clientsAttention.length})
+              </button>
+            )}
+          </div>
+          <div className="space-y-2">
+            {visibleClients.map((client) => (
               <ClientCard
                 key={client.name}
                 name={client.name}
@@ -137,16 +151,13 @@ export function MobileHome() {
           </div>
         </section>
 
-        {/* Quick Access Section */}
-        <section className="mb-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {/* Quick Access Section - compact */}
+        <section className="shrink-0">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Mi espacio
           </h2>
           <QuickAccessGrid items={quickAccessItems} />
         </section>
-
-        {/* Reminder Alert */}
-        <ReminderAlert />
       </div>
 
       {/* AI Chat Modal */}

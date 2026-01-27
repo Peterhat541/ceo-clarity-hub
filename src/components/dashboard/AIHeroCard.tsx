@@ -6,31 +6,33 @@ interface AIHeroCardProps {
 
 export function AIHeroCard({ onTalkClick }: AIHeroCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/90 to-accent p-6 shadow-xl">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/90 to-accent p-4 shadow-lg">
       {/* Background decoration */}
-      <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-      <div className="absolute -bottom-4 -left-4 h-24 w-24 rounded-full bg-white/5" />
+      <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/10" />
+      <div className="absolute -bottom-3 -left-3 h-16 w-16 rounded-full bg-white/5" />
       
-      <div className="relative flex flex-col items-center text-center">
+      <div className="relative flex items-center gap-4">
         {/* AI Icon */}
-        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-          <Bot className="h-10 w-10 text-white" />
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+          <Bot className="h-7 w-7 text-white" />
         </div>
         
         {/* Message */}
-        <h2 className="mb-2 text-xl font-semibold text-white">
-          Cuéntame, ¿qué necesitas?
-        </h2>
-        <p className="mb-6 text-sm text-white/80">
-          Estoy aquí para ayudarte con cualquier cosa
-        </p>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base font-semibold text-white">
+            ¿Qué necesitas?
+          </h2>
+          <p className="text-xs text-white/80 truncate">
+            Estoy aquí para ayudarte
+          </p>
+        </div>
         
         {/* Talk Button */}
         <button
           onClick={onTalkClick}
-          className="flex items-center gap-2 rounded-full bg-white px-8 py-3 font-semibold text-primary shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+          className="flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary shadow-md transition-all hover:scale-105 active:scale-95"
         >
-          <MessageCircle className="h-5 w-5" />
+          <MessageCircle className="h-4 w-4" />
           Hablar
         </button>
       </div>

@@ -15,6 +15,7 @@ interface ReminderContextType {
   activeReminders: ActiveReminder[];
   dismissReminder: (id: string) => void;
   dismissAllReminders: () => void;
+  triggerTestReminder: () => void;
 }
 
 const ReminderContext = createContext<ReminderContextType | undefined>(undefined);
@@ -93,9 +94,23 @@ export function ReminderProvider({ children }: { children: ReactNode }) {
     setActiveReminders([]);
   };
 
+  const triggerTestReminder = () => {
+    const now = new Date();
+    const testReminder: ActiveReminder = {
+      id: `test-reminder-${Date.now()}`,
+      eventId: "test-event",
+      eventTitle: "Reunión de prueba con cliente",
+      clientName: "Test Client",
+      eventTime: `${now.getHours().toString().padStart(2, "0")}:${(now.getMinutes() + 15).toString().padStart(2, "0")}`,
+      triggeredAt: now,
+      dismissed: false,
+    };
+    setActiveReminders((prev) => [...prev, testReminder]);
+  };
+
   return (
     <ReminderContext.Provider
-      value={{ activeReminders, dismissReminder, dismissAllReminders }}
+      value={{ activeReminders, dismissReminder, dismissAllReminders, triggerTestReminder }}
     >
       {children}
     </ReminderContext.Provider>

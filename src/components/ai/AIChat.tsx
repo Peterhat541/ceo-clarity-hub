@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Mic, Loader2 } from "lucide-react";
+import { Send, Mic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClientContext } from "@/contexts/ClientContext";
@@ -266,33 +266,22 @@ ${issue ? `**Situación:** ${issue}` : ""}
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-teal flex items-center justify-center glow">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div className="flex-1">
-            <h2 className="font-semibold text-foreground">Asistente IA</h2>
-            <p className="text-xs text-muted-foreground">
-              {activeClient.name 
-                ? `Contexto: ${activeClient.name}`
-                : "Tu mano derecha ejecutiva"
-              }
-            </p>
-          </div>
-          {activeClient.name && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearContext}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Limpiar
-            </Button>
-          )}
+      {/* Context indicator (only when client active) */}
+      {activeClient.name && (
+        <div className="px-4 py-2 border-b border-border bg-primary/5 flex items-center justify-between">
+          <p className="text-xs text-primary">
+            Contexto: <span className="font-medium">{activeClient.name}</span>
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearContext}
+            className="text-xs text-muted-foreground hover:text-foreground h-6 px-2"
+          >
+            Limpiar
+          </Button>
         </div>
-      </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

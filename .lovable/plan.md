@@ -1,87 +1,172 @@
 
-# Plan: Rediseño Visual Estilo App Móvil
+# Plan: Reorganizar Secciones del Dashboard
 
 ## Objetivo
 
-Transformar la interfaz actual en un diseño más amigable, visual y tipo "app móvil" inspirado en la imagen de referencia, manteniendo la funcionalidad actual.
+Reorganizar las secciones del dashboard móvil:
+1. **Funcionalidades** → Mostrar las tarjetas de clientes que requieren atención (estilo visual de la imagen)
+2. **Mi Espacio** (círculos) → Cambiar a: Agenda, Notas, Incidencias, Fechas críticas
 
 ---
 
-## Elementos Clave del Nuevo Diseño
+## Cambios Visuales
 
-### 1. Cabecera con Saludo Personalizado
-- "Hola, Juan!" con avatar del CEO
-- Texto secundario contextual ("¿Cómo va el día?")
-- Estilo más cálido y personal
+### Antes
+| Sección | Contenido |
+|---------|-----------|
+| Funcionalidades | Lista vertical (Agenda, Clientes, Notas, Enviar instrucción) |
+| Mi Espacio | Iconos circulares (Agenda, Incidencias, Clientes, Fechas) |
 
-### 2. Tarjeta Principal del Asistente IA
-- Tarjeta destacada con gradiente suave (teal/azul)
-- Icono/ilustración grande del asistente
-- Mensaje "¿Qué necesitas hoy?" 
-- Botón "Hablar" prominente que activa el chat
-- Bordes extra redondeados con sombra suave
-
-### 3. Tarjetas de Funcionalidades (Grid 1 columna)
-- Diseño tipo lista con iconos ilustrativos a la izquierda
-- Cada tarjeta representa una función:
-  - "Agenda del día" - Ver eventos programados
-  - "Clientes que requieren atención" - Estado de clientes
-  - "Notas del equipo" - Mensajes pendientes
-  - "Enviar instrucción" - Crear nota para el equipo
-- Fondo claro/gris suave con sombras elevadas
-- Esquinas muy redondeadas (2xl)
-
-### 4. Sección "Mi Espacio" (Grid de iconos circulares)
-- Iconos grandes en círculos
-- Accesos rápidos: Agenda, Incidencias, Clientes, Fechas
-- Estilo ilustrativo con colores suaves
-
-### 5. Cambios de Estilo Global
-- Aumentar border-radius a 2xl (1rem)
-- Sombras más suaves y elevadas (shadow-lg)
-- Espaciado más generoso
-- Opción de tema claro (o mantener oscuro con ajustes)
+### Después
+| Sección | Contenido |
+|---------|-----------|
+| Clientes que requieren atención | Grid horizontal de tarjetas ClientCard (estilo oscuro como la imagen) |
+| Mi Espacio | Iconos circulares (Agenda, Notas, Incidencias, Fechas críticas) |
 
 ---
 
-## Estructura del Layout Propuesto
+## Diseño de Tarjetas de Clientes
+
+Cada tarjeta tendrá el estilo de la imagen de referencia:
+
+```text
+┌─────────────────────────────────────┐
+│ [🏢]  Nexus Tech              [●]   │  ← Indicador estado (rojo/naranja)
+│       2 proyectos activos           │
+│                                     │
+│ ⚠ Incidencia de facturación...     │  ← Descripción del problema
+│                                     │
+│ ⏰ Hace 3 días          [✨ IA]    │  ← Tiempo + Botón IA
+└─────────────────────────────────────┘
+```
+
+- Fondo oscuro (bg-card con borde)
+- Indicador de estado en esquina (rojo pulsante para críticos)
+- Icono de edificio + nombre + proyectos activos
+- Descripción del problema en recuadro
+- Tiempo transcurrido + botón "IA" para acceder al chat
+
+---
+
+## Archivos a Modificar
+
+### 1. `src/components/dashboard/MobileHome.tsx`
+
+**Cambios:**
+
+1. **Reemplazar sección "Funcionalidades"** por:
+   - Título: "Clientes que requieren atención"
+   - Grid horizontal scrollable con componentes `ClientCard`
+   - Cada tarjeta abre el chat de IA del cliente al pulsar "IA"
+
+2. **Actualizar quickAccessItems** (Mi Espacio):
+   - Agenda → Abre popup de agenda
+   - Notas → Abre popup de notas del equipo + enviar instrucción
+   - Incidencias → Abre popup de incidencias activas
+   - Fechas → Abre popup de fechas críticas
+
+3. **Importar ClientCard** del componente existente
+
+---
+
+## Detalle de Implementación
+
+### Nueva sección "Clientes que requieren atención"
+
+```tsx
+<section className="mb-6">
+  <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+    Clientes que requieren atención
+  </h2>
+  <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
+    {clientsAttention.map((client) => (
+      <div key={client.name} className="min-w-[280px] flex-shrink-0">
+        <ClientCard
+          name={client.name}
+          status={client.status}
+          lastActivity={client.lastActivity}
+          issue={client.issue}
+          projectCount={client.projectCount}
+          onAIClick={() => handleClientClick(client)}
+        />
+      </div>
+    ))}
+  </div>
+</section>
+```
+
+### Nuevos quickAccessItems (Mi Espacio)
+
+```tsx
+const quickAccessItems = [
+  {
+    icon: <Calendar className="h-7 w-7 text-primary" />,
+    label: "Agenda",
+    bgClass: "bg-primary/10",
+    onClick: () => setAgendaOpen(true),
+    badge: todayEvents.length,
+  },
+  {
+    icon: <MessageSquare className="h-7 w-7 text-status-purple" />,
+    label: "Notas",
+    bgClass: "bg-status-purple/10",
+    onClick: () => setNotesOpen(true),
+    badge: pendingNotes.length,
+  },
+  {
+    icon: <AlertTriangle className="h-7 w-7 text-status-orange" />,
+    label: "Incidencias",
+    bgClass: "bg-status-orange/10",
+    onClick: () => setIncidentsOpen(true),
+    badge: recentIncidents.length,
+  },
+  {
+    icon: <CalendarDays className="h-7 w-7 text-status-red" />,
+    label: "Fechas",
+    bgClass: "bg-status-red/10",
+    onClick: () => setDatesOpen(true),
+    badge: criticalDates.length,
+  },
+];
+```
+
+---
+
+## Estilo Visual de las Tarjetas
+
+El componente `ClientCard` ya existente tiene el estilo correcto:
+- Fondo oscuro con borde
+- Indicador de estado en la esquina
+- Icono de edificio + nombre
+- Área de descripción del problema
+- Tiempo + botón "IA"
+
+Solo necesita ajustar los colores para que se vea bien con el nuevo tema claro del fondo.
+
+---
+
+## Resultado Esperado
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
-│ Logo Processia                                    [Avatar] │
-├────────────────────────────────────────────────────────────┤
-│                                                            │
-│  "Hola, Juan!"                                             │
+│  Hola, Juan!                                               │
 │  ¿Cómo va el día de hoy?                                   │
 │                                                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                                                      │  │
-│  │         [Icono IA Grande]                            │  │
-│  │                                                      │  │
-│  │         "Cuéntame, ¿qué necesitas?"                  │  │
-│  │                                                      │  │
-│  │              [ Hablar ]                              │  │
-│  │                                                      │  │
-│  └──────────────────────────────────────────────────────┘  │
+│  [══════════ AI Hero Card ═══════════]                     │
 │                                                            │
-│  Funcionalidades                                           │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ [📅]  Agenda del día                                 │  │
-│  │       3 eventos programados                          │  │
-│  └──────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ [👥]  Clientes que requieren atención                │  │
-│  │       2 en rojo, 1 en naranja                        │  │
-│  └──────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ [💬]  Notas del equipo                               │  │
-│  │       1 pendiente de revisar                         │  │
-│  └──────────────────────────────────────────────────────┘  │
+│  CLIENTES QUE REQUIEREN ATENCIÓN                           │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  Nexus Tech  │  │ Global Media │  │  Startup Lab │  →   │
+│  │  2 proyectos │  │  1 proyecto  │  │  3 proyectos │      │
+│  │  ⚠ Inciden..│  │  ⚠ Solicitud.│  │  ⚠ Fecha lím │      │
+│  │ 3d    [IA]  │  │ 1d    [IA]  │  │ 2d    [IA]  │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                                    (scroll horizontal)      │
 │                                                            │
-│  Mi espacio                                                │
+│  MI ESPACIO                                                │
 │    ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐                      │
-│    │ 📅  │  │ ⚠️  │  │ 👥  │  │ 📆  │                      │
-│    │Citas│  │Inci.│  │Clien│  │Fecha│                      │
+│    │ 📅  │  │ 💬  │  │ ⚠️  │  │ 📆  │                      │
+│    │Agend│  │Notas│  │Incid│  │Fecha│                      │
 │    └─────┘  └─────┘  └─────┘  └─────┘                      │
 │                                                            │
 └────────────────────────────────────────────────────────────┘
@@ -89,59 +174,13 @@ Transformar la interfaz actual en un diseño más amigable, visual y tipo "app m
 
 ---
 
-## Archivos a Modificar
+## Archivos Afectados
 
-### 1. `src/index.css`
-- Añadir variables para tema claro (opcional)
-- Nuevas clases para sombras suaves y gradientes
-- Aumentar radius por defecto
+1. **`src/components/dashboard/MobileHome.tsx`**
+   - Importar `ClientCard`
+   - Reemplazar sección Funcionalidades por grid horizontal de ClientCards
+   - Actualizar quickAccessItems con los 4 nuevos iconos
 
-### 2. `src/pages/Index.tsx`
-- Reestructurar layout con nuevo diseño
-- Cabecera con saludo "Hola, Juan!" + avatar
-- Tarjeta principal del asistente IA
-- Lista de funcionalidades en formato tarjeta
-- Sección "Mi espacio" con iconos circulares
-
-### 3. `src/components/layout/CEOLayout.tsx`
-- Ajustar layout para diseño más centrado
-- Posiblemente ocultar chat lateral para mobile-first
-- Integrar chat como modal/overlay en lugar de panel fijo
-
-### 4. `src/components/dashboard/SummaryCard.tsx`
-- Rediseñar como tarjeta de funcionalidad
-- Iconos más grandes y ilustrativos
-- Descripción secundaria más prominente
-
-### 5. Nuevos Componentes
-- `src/components/dashboard/AIHeroCard.tsx` - Tarjeta principal del asistente
-- `src/components/dashboard/QuickAccessGrid.tsx` - Grid de iconos "Mi espacio"
-- `src/components/dashboard/FeatureCard.tsx` - Tarjetas de funcionalidades
-
-### 6. `tailwind.config.ts`
-- Ajustar border-radius predeterminado
-- Añadir nuevas sombras personalizadas
-
----
-
-## Decisión: Tema de Color
-
-La imagen de referencia usa fondo blanco/claro. Tengo dos opciones:
-
-| Opción | Descripción |
-|--------|-------------|
-| A) Tema claro | Cambiar a fondo blanco con acentos teal (como la imagen) |
-| B) Mantener oscuro | Mantener fondo negro pero aplicar el nuevo estilo visual |
-
-Recomiendo **Opción A (Tema claro)** para mayor similitud con la referencia, pero puedo implementar B si prefieres mantener la estética oscura actual.
-
----
-
-## Resultado Esperado
-
-Una interfaz más amigable, visual y tipo "app móvil" donde:
-- El CEO ve un saludo personalizado al entrar
-- La tarjeta del asistente IA es el elemento central y destacado
-- Las funcionalidades se presentan como tarjetas fáciles de tocar
-- Los accesos rápidos están organizados en iconos circulares
-- El diseño se siente más como una app móvil moderna
+2. **`src/components/dashboard/ClientCard.tsx`** (ajuste menor)
+   - Asegurar que el fondo oscuro se vea bien sobre fondo claro
+   - Ajustar clase `bg-card` para tema claro si es necesario

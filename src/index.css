@@ -113,6 +113,13 @@
 }
 
 @layer utilities {
+  .bg-grid {
+    background-image: 
+      linear-gradient(to right, hsl(240 8% 12% / 0.4) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(240 8% 12% / 0.4) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-teal);

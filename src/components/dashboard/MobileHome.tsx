@@ -109,7 +109,7 @@ export function MobileHome() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden p-4">
+    <div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden p-4">
       {/* Header */}
       <header className="shrink-0 mb-4">
         <h1 className="text-xl font-bold text-foreground">{getGreeting()}, Juan!</h1>

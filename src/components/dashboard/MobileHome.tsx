@@ -98,9 +98,11 @@ export function MobileHome() {
     },
   ];
 
-  // Only show first 2 clients, rest in modal
-  const visibleClients = clientsAttention.slice(0, 2);
-  const hasMoreClients = clientsAttention.length > 2;
+  // Sort by criticality (red > orange > yellow > green) and show first 2
+  const statusPriority = { red: 0, orange: 1, yellow: 2, green: 3 };
+  const sortedClients = [...clientsAttention].sort((a, b) => statusPriority[a.status] - statusPriority[b.status]);
+  const visibleClients = sortedClients.slice(0, 2);
+  const hasMoreClients = sortedClients.length > 2;
 
   return (
     <div className="h-screen bg-background overflow-hidden flex flex-col">

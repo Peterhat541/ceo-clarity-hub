@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { AIHeroCard } from "./AIHeroCard";
 import { QuickAccessGrid } from "./QuickAccessGrid";
 import { AgendaPopup } from "./AgendaPopup";
 import { TeamNotesPopup } from "./TeamNotesPopup";
 import { SendNotePopup } from "./SendNotePopup";
-import { ReminderAlert } from "./ReminderAlert";
 import { ClientCard } from "./ClientCard";
 import { ClientChatModal } from "@/components/ai/ClientChatModal";
 import { 
@@ -12,7 +10,7 @@ import {
   MessageSquare, 
   AlertTriangle,
   CalendarDays,
-  User
+  Sparkles
 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
@@ -59,8 +57,6 @@ export function MobileHome() {
 
   const todayEvents = getTodayEvents();
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
-  const redClients = clientsAttention.filter(c => c.status === "red");
-  const orangeClients = clientsAttention.filter(c => c.status === "orange");
 
   const handleClientClick = (client: typeof clientsAttention[0]) => {
     setSelectedClient(client);
@@ -98,86 +94,96 @@ export function MobileHome() {
     },
   ];
 
-  // Sort by criticality (red > orange > yellow > green) and show first 2
+  // Sort by criticality and show first 2
   const statusPriority = { red: 0, orange: 1, yellow: 2, green: 3 };
   const sortedClients = [...clientsAttention].sort((a, b) => statusPriority[a.status] - statusPriority[b.status]);
   const visibleClients = sortedClients.slice(0, 2);
   const hasMoreClients = sortedClients.length > 2;
 
+  // Get greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Buenos días";
+    if (hour < 19) return "Buenas tardes";
+    return "Buenas noches";
+  };
+
   return (
-    <div className="min-h-full bg-background">
-      <div className="mx-auto w-full max-w-lg px-4 py-4 lg:max-w-2xl lg:py-6">
-        {/* Header with greeting - compact */}
-        <header className="mb-3 flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Hola, Juan!</h1>
-            <p className="text-xs text-muted-foreground">¿Cómo va el día?</p>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <User className="h-5 w-5 text-primary" />
-          </div>
-        </header>
+    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden p-4">
+      {/* Header */}
+      <header className="shrink-0 mb-4">
+        <h1 className="text-xl font-bold text-foreground">{getGreeting()}, Juan!</h1>
+        <p className="text-sm text-muted-foreground">¿Cómo va el día?</p>
+      </header>
 
-        {/* AI Hero Card - compact */}
-        <section className="mb-3 shrink-0">
-          <AIHeroCard onTalkClick={() => setChatOpen(true)} />
-        </section>
+      {/* AI Hero Card - Prominent */}
+      <button
+        onClick={() => setChatOpen(true)}
+        className="shrink-0 mb-4 w-full glass-card rounded-2xl p-5 flex items-center gap-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
+      >
+        <div className="h-12 w-12 rounded-xl bg-gradient-teal flex items-center justify-center glow">
+          <Sparkles className="h-6 w-6 text-primary-foreground" />
+        </div>
+        <div className="flex-1 text-left">
+          <h2 className="font-semibold text-foreground">Asistente IA</h2>
+          <p className="text-sm text-muted-foreground">Toca para hablar con tu mano derecha</p>
+        </div>
+        <div className="h-3 w-3 rounded-full bg-status-green animate-pulse" />
+      </button>
 
-        {/* Clients Section - limited to 2 */}
-        <section className="mb-3 shrink-0">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Clientes que requieren atención
-            </h2>
-            {hasMoreClients && (
-              <button 
-                onClick={() => setClientsOpen(true)}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Ver todos ({clientsAttention.length})
-              </button>
-            )}
-          </div>
-          <div className="space-y-2">
-            {visibleClients.map((client) => (
-              <ClientCard
-                key={client.name}
-                name={client.name}
-                status={client.status}
-                lastActivity={client.lastActivity}
-                issue={client.issue}
-                projectCount={client.projectCount}
-                onAIClick={() => handleClientClick(client)}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* Quick Access Section */}
-        <section className="mt-4">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:text-sm">
-            Mi espacio
+      {/* Clients Card - Fills remaining space */}
+      <div className="flex-1 min-h-0 glass-card rounded-2xl p-4 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between mb-3 shrink-0">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Clientes críticos
           </h2>
-          <QuickAccessGrid items={quickAccessItems} />
-        </section>
+          {hasMoreClients && (
+            <button 
+              onClick={() => setClientsOpen(true)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Ver todos ({clientsAttention.length})
+            </button>
+          )}
+        </div>
+        
+        <div className="flex-1 overflow-auto space-y-2 min-h-0">
+          {visibleClients.map((client) => (
+            <ClientCard
+              key={client.name}
+              variant="compact"
+              name={client.name}
+              status={client.status}
+              lastActivity={client.lastActivity}
+              issue={client.issue}
+              projectCount={client.projectCount}
+              onAIClick={() => handleClientClick(client)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Quick Access Footer */}
+      <div className="shrink-0 mt-4">
+        <QuickAccessGrid items={quickAccessItems} />
       </div>
 
       {/* AI Chat Modal */}
       <Dialog open={chatOpen} onOpenChange={setChatOpen}>
-        <DialogContent className="max-w-lg h-[80vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-lg h-[85vh] p-0 overflow-hidden bg-card border-border">
           <AIChat />
         </DialogContent>
       </Dialog>
 
-      {/* Popups - Using existing props */}
+      {/* Popups */}
       <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />
       <TeamNotesPopup isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
       <SendNotePopup isOpen={sendNoteOpen} onClose={() => setSendNoteOpen(false)} />
 
       {/* Clients Modal */}
       <Dialog open={clientsOpen} onOpenChange={setClientsOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto">
-          <h2 className="text-lg font-semibold mb-4">Clientes que requieren atención</h2>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto bg-card border-border">
+          <h2 className="text-lg font-semibold mb-4 text-foreground">Clientes que requieren atención</h2>
           <div className="space-y-3">
             {clientsAttention.map((client) => (
               <button
@@ -202,8 +208,8 @@ export function MobileHome() {
 
       {/* Incidents Modal */}
       <Dialog open={incidentsOpen} onOpenChange={setIncidentsOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto">
-          <h2 className="text-lg font-semibold mb-4">Incidencias activas</h2>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto bg-card border-border">
+          <h2 className="text-lg font-semibold mb-4 text-foreground">Incidencias activas</h2>
           <div className="space-y-3">
             {recentIncidents.map((incident, i) => (
               <div
@@ -227,8 +233,8 @@ export function MobileHome() {
 
       {/* Dates Modal */}
       <Dialog open={datesOpen} onOpenChange={setDatesOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto">
-          <h2 className="text-lg font-semibold mb-4">Fechas críticas</h2>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto bg-card border-border">
+          <h2 className="text-lg font-semibold mb-4 text-foreground">Fechas críticas</h2>
           <div className="space-y-3">
             {criticalDates.map((date, i) => (
               <div

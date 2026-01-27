@@ -1,4 +1,5 @@
 import { MobileHome } from "@/components/dashboard/MobileHome";
+import { DesktopCEODashboard } from "@/components/dashboard/DesktopCEODashboard";
 import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -10,19 +11,17 @@ export default function Index() {
     return null;
   }
 
-  // For mobile: full screen layout
+  // Mobile: compact layout
   if (isMobile) {
     return <MobileHome />;
   }
 
-  // For desktop: same design but wider, with ViewSwitcher for navigation
+  // Desktop: full-width professional dashboard
   return (
-    <div className="h-screen bg-background flex flex-col">
-      <div className="flex-1 overflow-auto flex justify-center">
-        <div className="w-full max-w-2xl">
-          <MobileHome />
-        </div>
-      </div>
+    <div className="w-screen min-h-screen flex flex-col bg-background">
+      <main className="flex-1 overflow-hidden">
+        <DesktopCEODashboard />
+      </main>
       <ViewSwitcher />
     </div>
   );

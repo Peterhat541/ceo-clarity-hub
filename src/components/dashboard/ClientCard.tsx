@@ -1,5 +1,5 @@
 import { StatusDot, Status } from "./StatusBadge";
-import { Building2, AlertCircle, Clock, Sparkles } from "lucide-react";
+import { Building2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +12,7 @@ interface ClientCardProps {
   onClick?: () => void;
   onAIClick?: () => void;
   highlighted?: boolean;
+  variant?: "default" | "compact";
 }
 
 export function ClientCard({
@@ -23,12 +24,54 @@ export function ClientCard({
   onClick,
   onAIClick,
   highlighted = false,
+  variant = "default",
 }: ClientCardProps) {
   const handleAIClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onAIClick?.();
   };
 
+  // Compact variant - single line row
+  if (variant === "compact") {
+    return (
+      <div
+        onClick={onClick}
+        className={cn(
+          "client-row cursor-pointer group",
+          status === "red" && "bg-status-red/5 border border-status-red/20",
+          highlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+        )}
+      >
+        <StatusDot status={status} pulse={status === "red"} />
+        
+        <div className="flex-1 min-w-0">
+          <p className={cn(
+            "font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate",
+            highlighted && "text-primary"
+          )}>
+            {name}
+          </p>
+          {issue && (
+            <p className="text-xs text-muted-foreground truncate">{issue}</p>
+          )}
+        </div>
+        
+        <span className="text-[10px] text-muted-foreground shrink-0">{lastActivity}</span>
+        
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleAIClick}
+          className="h-8 px-3 gap-1.5 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 shrink-0"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          IA
+        </Button>
+      </div>
+    );
+  }
+
+  // Default variant - card style
   return (
     <div
       onClick={onClick}

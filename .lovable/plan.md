@@ -1,223 +1,147 @@
 
-# Plan: Implementar "Cards Gigantes" - Diseño Zero Scroll Adaptativo
+# Plan: Correcciones del Dashboard "Cards Gigantes"
 
-## Concepto Visual
+## Problemas Identificados
 
-Dos bloques principales de máximo impacto visual que ocupan el 100% del viewport sin scroll:
+### 1. Header No Visible
+El header definido en `DesktopCEODashboard.tsx` (líneas 73-78) no se muestra porque:
+- `Index.tsx` envuelve el dashboard en un contenedor con `h-screen` 
+- Añade `ViewSwitcher` (48px) debajo, causando desbordamiento
+- El header del dashboard se corta por arriba
 
-```text
-DESKTOP (100vw x 100vh)
-┌────────────────────────────────────────────────────────────────────────────┐
-│  [Logo Processia]                                    Buenos días · 27 Ene  │
-├────────────────────────────────────────────────────────────────────────────┤
-│                                    │                                       │
-│   ┌────────────────────────────┐   │   ┌─────────────────────────────────┐ │
-│   │                            │   │   │                                 │ │
-│   │    CLIENTES CRÍTICOS       │   │   │       ASISTENTE IA              │ │
-│   │                            │   │   │                                 │ │
-│   │    ●  Nexus Tech     [IA]  │   │   │   ✧ "Hola, soy tu mano          │ │
-│   │       Facturación sin...   │   │   │      derecha ejecutiva"         │ │
-│   │                            │   │   │                                 │ │
-│   │    ●  Global Media   [IA]  │   │   │   [Chat messages...]            │ │
-│   │       Llamada urgente      │   │   │                                 │ │
-│   │                            │   │   │                                 │ │
-│   │    ●  Startup Lab    [IA]  │   │   │                                 │ │
-│   │       Deadline 48h         │   │   │                                 │ │
-│   │                            │   │   │   ┌───────────────────────────┐ │ │
-│   │ ─────────────────────────  │   │   │   │ Pregunta...          ➤   │ │ │
-│   │  📅 3 eventos  💬 2 notas  │   │   │   └───────────────────────────┘ │ │
-│   └────────────────────────────┘   │   └─────────────────────────────────┘ │
-│                                    │                                       │
-└────────────────────────────────────────────────────────────────────────────┘
+### 2. Paleta de Colores Demasiado Contrastada
+Basándome en el análisis de processia.es, la web corporativa utiliza:
+- Fondo negro profundo con grid sutil
+- Acento principal en teal (#2E9D8F / hsl 174 72% 40%)
+- Textos secundarios en grises más suaves (no blanco puro)
+- Glows sutiles en elementos interactivos
 
-MÓVIL (100vw x 100vh - sin scroll)
-┌──────────────────────────────┐
-│  Buenos días, Juan!          │
-├──────────────────────────────┤
-│  ┌────────────────────────┐  │
-│  │   ASISTENTE IA    ✧    │  │
-│  │   Toca para hablar     │  │
-│  │   [████████████████]   │  │
-│  └────────────────────────┘  │
-│                              │
-│  ┌────────────────────────┐  │
-│  │  ● Nexus Tech          │  │
-│  │    Facturación...      │  │
-│  ├────────────────────────┤  │
-│  │  ● Global Media        │  │
-│  │    Llamada urgente     │  │
-│  ├────────────────────────┤  │
-│  │  + Ver todos (3)       │  │
-│  └────────────────────────┘  │
-│                              │
-│  📅 3    💬 2    ⚠ 2    📆 2 │
-└──────────────────────────────┘
+El dashboard actual tiene:
+- Negro demasiado puro (hsl 240 20% 4%)
+- Texto blanco al 98% (muy alto contraste)
+- Faltan gradientes sutiles
+
+---
+
+## Correcciones a Implementar
+
+### Archivo 1: `src/pages/Index.tsx`
+
+**Problema**: Conflicto de alturas entre contenedores
+
+**Solución**: Eliminar contenedor wrapper redundante y dejar que `DesktopCEODashboard` maneje todo el layout incluyendo el ViewSwitcher
+
+```tsx
+// Desktop: render dashboard directly (it handles its own viewport)
+return <DesktopCEODashboard />;
 ```
 
-## Archivos a Modificar
+### Archivo 2: `src/components/dashboard/DesktopCEODashboard.tsx`
 
-### 1. `src/index.css` - Tema Dark Executive
+**Cambios**:
+1. Integrar ViewSwitcher dentro del componente
+2. Asegurar que el header sea visible y prominente
+3. Calcular alturas correctamente: header (56px) + main (flex-1) + footer (48px)
 
-Actualizar las variables CSS para el tema oscuro corporativo:
-
-**Nuevos valores de color:**
-- Background: `240 20% 4%` (negro profundo #0A0A0F)
-- Card: `240 10% 8%` (gris muy oscuro)
-- Border: `240 5% 18%` (borde sutil)
-- Primary: `174 72% 40%` (teal Processia)
-- Muted-foreground: `240 5% 55%` (texto secundario)
-
-**Añadir nuevas utilidades:**
-- `.glass-card` - efecto glass morphism sutil
-- `.card-giant` - estilos para cards gigantes
-- Animaciones de entrada suaves
-
-### 2. `src/components/dashboard/DesktopCEODashboard.tsx` - Layout Principal
-
-**Estructura completa nueva:**
-
+**Estructura corregida**:
 ```tsx
 <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
-  {/* Header minimalista */}
-  <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b">
-    <img src={logo} className="h-7" />
-    <span className="text-sm text-muted-foreground">Buenos días · 27 Ene</span>
+  {/* Header - SIEMPRE VISIBLE */}
+  <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border/50 bg-card/30 backdrop-blur-sm">
+    <img src={processiaLogo} alt="Processia" className="h-7" />
+    <span className="text-sm text-muted-foreground">
+      {getGreeting()} · {formatDate()}
+    </span>
   </header>
   
-  {/* Contenido principal - 2 cards gigantes */}
+  {/* Main Content */}
   <main className="flex-1 flex gap-6 p-6 min-h-0">
-    {/* Card Izquierda: Clientes */}
-    <div className="flex-1 glass-card rounded-3xl flex flex-col p-6">
-      <h2>Clientes que requieren atención</h2>
-      {/* Lista de clientes con scroll interno si es necesario */}
-      <div className="flex-1 overflow-auto space-y-3">
-        {clients.map(client => <ClientRow />)}
-      </div>
-      {/* Footer con accesos rápidos */}
-      <div className="flex gap-4 pt-4 border-t">
-        <QuickButton icon={Calendar} label="3 eventos" />
-        <QuickButton icon={MessageSquare} label="2 notas" />
-      </div>
-    </div>
-    
-    {/* Card Derecha: Chat IA */}
-    <div className="w-[500px] glass-card rounded-3xl flex flex-col">
-      <AIChat />
-    </div>
+    {/* Cards... */}
   </main>
+  
+  {/* ViewSwitcher integrado */}
+  <ViewSwitcher />
 </div>
 ```
 
-**Componentes internos:**
-- `ClientRow`: Fila compacta de cliente con estado, nombre, issue y botón IA
-- `QuickButton`: Botón de acceso rápido a agenda/notas
+### Archivo 3: `src/index.css` - Paleta Refinada
 
-### 3. `src/components/dashboard/MobileHome.tsx` - Adaptación Móvil
-
-**Nueva estructura sin scroll:**
-
-```tsx
-<div className="h-screen w-screen flex flex-col bg-background overflow-hidden p-4">
-  {/* Header */}
-  <header className="shrink-0 mb-4">
-    <h1>Buenos días, Juan!</h1>
-  </header>
-  
-  {/* Card IA - Prominente */}
-  <div className="shrink-0 mb-4">
-    <button onClick={openChat} className="w-full glass-card rounded-2xl p-5">
-      <Sparkles /> Hablar con IA
-    </button>
-  </div>
-  
-  {/* Card Clientes - Flex-1 para llenar espacio */}
-  <div className="flex-1 min-h-0 glass-card rounded-2xl p-4 flex flex-col">
-    <h2>Clientes críticos</h2>
-    <div className="flex-1 overflow-auto">
-      {visibleClients.map(client => <CompactClientRow />)}
-    </div>
-    <button>+ Ver todos ({total})</button>
-  </div>
-  
-  {/* Quick Access Footer - fijo */}
-  <div className="shrink-0 mt-4 grid grid-cols-4 gap-2">
-    <QuickIcon icon={Calendar} count={3} />
-    <QuickIcon icon={MessageSquare} count={2} />
-    <QuickIcon icon={AlertTriangle} count={2} />
-    <QuickIcon icon={CalendarDays} count={2} />
-  </div>
-</div>
-```
-
-### 4. `src/components/dashboard/ClientCard.tsx` - Versión Compacta
-
-Crear variante `compact` para las filas de clientes dentro de los cards gigantes:
-
-```tsx
-interface ClientCardProps {
-  variant?: "default" | "compact";
-  // ... existing props
-}
-```
-
-**Modo compact:**
-- Layout horizontal de una línea
-- Status dot + Nombre + Issue truncado + Tiempo + Botón IA
-- Sin padding extra, altura fija de ~48px
-
-## Estilos CSS Clave
-
-### Variables Dark Executive (index.css)
+**Cambios en variables CSS** para reducir contraste y añadir elegancia:
 
 ```css
 :root {
-  --background: 240 20% 4%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 8%;
-  --card-foreground: 0 0% 98%;
-  --border: 240 5% 18%;
+  /* Fondo: negro profundo pero no puro */
+  --background: 240 15% 6%;        /* Más cálido que 4% */
+  --foreground: 220 10% 92%;       /* No blanco puro, más suave */
+  
+  /* Cards: ligeramente más claras */
+  --card: 240 10% 10%;
+  --card-foreground: 220 10% 92%;
+  
+  /* Bordes más sutiles */
+  --border: 240 8% 20%;
+  
+  /* Textos secundarios más legibles */
+  --muted-foreground: 220 10% 65%; /* Más claro que 55% */
+  
+  /* Mantener teal corporativo */
   --primary: 174 72% 40%;
-  --muted-foreground: 240 5% 55%;
+  
+  /* Añadir variable púrpura para acentos secundarios */
+  --accent-purple: 271 65% 50%;
 }
 ```
 
-### Clases Utilitarias Nuevas
+### Archivo 4: Ajustes menores en `glass-card`
 
+Suavizar los efectos de glass morphism:
 ```css
 .glass-card {
-  @apply bg-card/80 backdrop-blur-xl border border-border/50;
-  box-shadow: 0 8px 32px -8px hsl(174 72% 40% / 0.1);
-}
-
-.card-giant {
-  @apply rounded-3xl p-6;
-}
-
-.client-row {
-  @apply flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors;
+  @apply bg-card/70 backdrop-blur-xl border border-border/30;
+  box-shadow: 0 4px 24px -4px hsl(0 0% 0% / 0.3),
+              inset 0 1px 0 0 hsl(0 0% 100% / 0.02);
 }
 ```
 
-## Comportamiento Responsivo
+---
 
-| Breakpoint | Layout |
-|------------|--------|
-| < 768px | Stack vertical (IA arriba, Clientes abajo) |
-| >= 768px | Grid horizontal 50/50 |
-| >= 1280px | Grid horizontal con chat de 500px fijo |
+## Distribución Visual Corregida
 
-## Interactividad
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│ [LOGO]                                       Buenos días · 27 Ene  │  ← Header (h-14 = 56px)
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────────────────┐   ┌─────────────────────────────┐  │
+│  │                             │   │                             │  │
+│  │   CLIENTES CRÍTICOS         │   │   ASISTENTE IA              │  │
+│  │                             │   │                             │  │
+│  │   ● Nexus Tech        [IA]  │   │   ✧ "Hola, soy tu mano      │  │
+│  │   ● Global Media      [IA]  │   │      derecha ejecutiva"     │  │
+│  │   ● Startup Lab       [IA]  │   │                             │  │
+│  │                             │   │   [Chat...]                 │  │
+│  │ ─────────────────────────── │   │                             │  │
+│  │  📅 1 eventos  💬 2 notas   │   │                             │  │
+│  │  [Enviar nota al equipo]    │   │   [Input...]                │  │
+│  └─────────────────────────────┘   └─────────────────────────────┘  │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│        ◉ Vista CEO                    ○ Administración              │  ← ViewSwitcher (h-12 = 48px)
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-- **Click en cliente**: Abre modal de chat IA con contexto del cliente
-- **Click en IA hero (móvil)**: Abre modal de chat IA
-- **Quick buttons**: Abren popups existentes (Agenda, Notas, etc.)
-- **Hover en cards**: Glow teal sutil en bordes
+---
+
+## Resumen de Cambios
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Index.tsx` | Simplificar para renderizar solo `DesktopCEODashboard` sin wrapper |
+| `src/components/dashboard/DesktopCEODashboard.tsx` | Integrar ViewSwitcher, asegurar header visible |
+| `src/index.css` | Ajustar paleta: reducir contraste, suavizar grises, mantener teal |
 
 ## Resultado Esperado
-
-- Dashboard que ocupa 100% del viewport (zero scroll en vista principal)
-- Dos bloques visuales de alto impacto
-- Transición fluida de desktop a móvil
-- Estética Dark Executive coherente con processia.es
-- Escaneo instantáneo de información crítica
-- Máximo contraste y legibilidad
+- Header con logo y saludo siempre visible
+- Paleta de colores más elegante y menos contrastada
+- Coherencia visual con processia.es
+- Layout 100vh sin scroll, respetando header y footer

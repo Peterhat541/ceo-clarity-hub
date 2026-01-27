@@ -105,8 +105,8 @@ export function MobileHome() {
   const hasMoreClients = sortedClients.length > 2;
 
   return (
-    <div className="h-screen bg-background overflow-hidden flex flex-col">
-      <div className="mx-auto w-full max-w-lg px-4 py-3 flex flex-col flex-1 overflow-hidden">
+    <div className="min-h-full bg-background">
+      <div className="mx-auto w-full max-w-lg px-4 py-4 lg:max-w-2xl lg:py-6">
         {/* Header with greeting - compact */}
         <header className="mb-3 flex items-center justify-between shrink-0">
           <div>
@@ -153,9 +153,9 @@ export function MobileHome() {
           </div>
         </section>
 
-        {/* Quick Access Section - compact */}
-        <section className="shrink-0">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {/* Quick Access Section */}
+        <section className="mt-4">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:text-sm">
             Mi espacio
           </h2>
           <QuickAccessGrid items={quickAccessItems} />

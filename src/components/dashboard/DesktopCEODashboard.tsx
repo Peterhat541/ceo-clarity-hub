@@ -4,6 +4,7 @@ import { ClientChatModal } from "@/components/ai/ClientChatModal";
 import { AgendaPopup } from "./AgendaPopup";
 import { TeamNotesPopup } from "./TeamNotesPopup";
 import { SendNotePopup } from "./SendNotePopup";
+import { ReminderAlert } from "./ReminderAlert";
 import { AIChat } from "@/components/ai/AIChat";
 import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
 import { 
@@ -14,9 +15,9 @@ import {
 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
+import { useReminderContext } from "@/contexts/ReminderContext";
 import processiaLogo from "@/assets/processia-logo-new.png";
 import { Button } from "@/components/ui/button";
-
 // Mock data
 interface ClientData {
   name: string;
@@ -40,9 +41,11 @@ export function DesktopCEODashboard() {
 
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
+  const { activeReminders } = useReminderContext();
 
   const todayEvents = getTodayEvents();
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
+  const visibleReminders = activeReminders.filter((r) => !r.dismissed);
 
   // Sort by criticality
   const statusPriority = { red: 0, orange: 1, yellow: 2, green: 3 };
@@ -80,8 +83,15 @@ export function DesktopCEODashboard() {
 
       {/* Main Content - Two Giant Cards */}
       <main className="flex-1 flex gap-6 p-6 min-h-0">
-        {/* Left Card: Clients */}
+        {/* Left Card: Clients + Reminders */}
         <div className="flex-1 glass-card card-giant flex flex-col overflow-hidden animate-fade-up">
+          {/* Active Reminders Section - Only shows when there are reminders */}
+          {visibleReminders.length > 0 && (
+            <div className="mb-4 shrink-0">
+              <ReminderAlert />
+            </div>
+          )}
+          
           <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">
             Clientes que requieren atención
           </h2>

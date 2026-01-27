@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Loader2, X } from "lucide-react";
+import { Send, Sparkles, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,14 +52,99 @@ export function ClientChatModal({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasLoadedHistory = useRef(false);
 
   const status = statusConfig[clientStatus];
 
-  // Initialize chat with welcome message when modal opens
+  // Load conversation history from database when modal opens
   useEffect(() => {
-    if (open && messages.length === 0) {
+    if (open && clientName && !hasLoadedHistory.current) {
+      loadConversationHistory();
+    }
+    if (!open) {
+      hasLoadedHistory.current = false;
+    }
+  }, [open, clientName]);
+
+  const loadConversationHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from("client_conversations")
+        .select("*")
+        .eq("client_name", clientName)
+        .order("created_at", { ascending: true })
+        .limit(50);
+
+      if (error) {
+        console.error("Error loading conversation history:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // Convert DB records to messages
+        const loadedMessages: Message[] = data.map((record) => ({
+          id: record.id,
+          role: record.role as "user" | "assistant",
+          content: record.content,
+          timestamp: new Date(record.created_at),
+        }));
+
+        // Build conversation history for AI context
+        const history: ConversationMessage[] = data.map((record) => ({
+          role: record.role as "user" | "assistant",
+          content: record.content,
+        }));
+
+        setMessages(loadedMessages);
+        setConversationHistory(history);
+      } else {
+        // No history, show welcome message
+        const welcomeMessage: Message = {
+          id: "welcome",
+          role: "assistant",
+          content: `**${clientName}** — ${status.label}
+
+${issue ? `**Situación actual:** ${issue}` : ""}
+
+¿Qué quieres saber o hacer con este cliente?`,
+          timestamp: new Date(),
+        };
+        setMessages([welcomeMessage]);
+      }
+      
+      hasLoadedHistory.current = true;
+    } catch (error) {
+      console.error("Error loading history:", error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const saveMessageToDb = async (role: "user" | "assistant", content: string) => {
+    try {
+      await supabase.from("client_conversations").insert({
+        client_id: clientId,
+        client_name: clientName,
+        role,
+        content,
+      });
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
+  };
+
+  const clearConversation = async () => {
+    try {
+      await supabase
+        .from("client_conversations")
+        .delete()
+        .eq("client_name", clientName);
+
+      // Reset to welcome message
       const welcomeMessage: Message = {
         id: "welcome",
         role: "assistant",
@@ -71,15 +156,21 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
-    }
-  }, [open, clientName, issue, status.label, messages.length]);
+      setConversationHistory([]);
 
-  // Reset state when modal closes
-  useEffect(() => {
-    if (!open) {
-      // Keep messages for session, but could reset here if preferred
+      toast({
+        title: "Conversación borrada",
+        description: `Se ha limpiado el historial de ${clientName}.`,
+      });
+    } catch (error) {
+      console.error("Error clearing conversation:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo borrar la conversación.",
+        variant: "destructive",
+      });
     }
-  }, [open]);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -104,6 +195,9 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
     setInput("");
     setIsLoading(true);
 
+    // Save user message to DB
+    saveMessageToDb("user", userInput);
+
     const newHistory: ConversationMessage[] = [
       ...conversationHistory,
       { role: "user", content: userInput }
@@ -116,7 +210,7 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
           activeClientId: clientId,
           activeClientName: clientName,
           conversationHistory: newHistory.slice(-10),
-          uiSnapshot: {} // Modal doesn't need full UI snapshot
+          uiSnapshot: {}
         }
       });
 
@@ -152,6 +246,9 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      
+      // Save assistant message to DB
+      saveMessageToDb("assistant", assistantContent);
       
       setConversationHistory([
         ...newHistory,
@@ -198,6 +295,15 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
                 {status.label}
               </span>
             </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={clearConversation}
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              title="Limpiar conversación"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
             <div className="w-8 h-8 rounded-lg bg-gradient-teal flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
@@ -207,36 +313,45 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
         {/* Messages */}
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "animate-fade-in",
-                  message.role === "user" ? "flex justify-end" : ""
-                )}
-              >
-                <div
-                  className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-3",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground"
-                  )}
-                >
-                  <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
+            {isLoadingHistory ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Cargando historial...</span>
+              </div>
+            ) : (
+              <>
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={cn(
+                      "animate-fade-in",
+                      message.role === "user" ? "flex justify-end" : ""
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[85%] rounded-2xl px-4 py-3",
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground"
+                      )}
+                    >
+                      <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-            
-            {isLoading && (
-              <div className="animate-fade-in">
-                <div className="bg-secondary rounded-2xl px-4 py-3 inline-flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Pensando...</span>
-                </div>
-              </div>
+                ))}
+                
+                {isLoading && (
+                  <div className="animate-fade-in">
+                    <div className="bg-secondary rounded-2xl px-4 py-3 inline-flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Pensando...</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             
             <div ref={messagesEndRef} />
@@ -252,12 +367,12 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
               placeholder={`Pregunta sobre ${clientName}...`}
-              disabled={isLoading}
+              disabled={isLoading || isLoadingHistory}
               className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all disabled:opacity-50"
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || isLoadingHistory}
               size="icon"
               className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90"
             >

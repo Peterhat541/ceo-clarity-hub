@@ -1,111 +1,223 @@
 
-# Plan: Restaurar Vista CEO Desktop al Diseño Original
+# Plan: Implementar "Cards Gigantes" - Diseño Zero Scroll Adaptativo
 
-## Objetivo
-Reconstruir exactamente el diseño mostrado en la captura de pantalla, ya que el botón de restaurar del historial no funciona.
+## Concepto Visual
 
-## Diferencias Identificadas
-
-### Diseño Actual vs Diseño Objetivo
-
-| Elemento | Actual | Objetivo (captura) |
-|----------|--------|-------------------|
-| Header | Logo + "Buenos días, Juan" + fecha | Logo + "Buenos días" + barra de búsqueda |
-| Métricas | Iconos horizontales pequeños | Tarjetas verticales con número grande y subtítulo detallado |
-| Clientes | Lista vertical de 3 columnas | **Fila horizontal** de tarjetas |
-| Mi Espacio | No existe | Agenda + Notas del equipo + botón "Enviar nota" |
-| Chat IA | Header con "Pregúntame lo que necesites" | Header con "Tu mano derecha ejecutiva" |
-
-## Cambios Técnicos
-
-### Archivo: `src/components/dashboard/DesktopCEODashboard.tsx`
-
-#### 1. Header
-- Mantener logo de Processia
-- Cambiar "Buenos días, Juan" por solo "Buenos días"
-- Añadir barra de búsqueda de clientes debajo del saludo
-- Eliminar la fecha del lado derecho
-
-#### 2. Tarjetas de Métricas (4 columnas)
-Cambiar el diseño de cada tarjeta para que tenga:
-- Icono pequeño en la esquina superior izquierda
-- Número grande debajo
-- Título del métrica (ej: "Hoy", "Incidencias", "Clientes en rojo", "Fechas críticas")
-- Subtítulo descriptivo: "Hoy · 3 incidencias · 1 en rojo · 2 fechas"
-
-Colores por tarjeta:
-- Hoy: Teal/Primary (sparkle icon)
-- Incidencias: Púrpura (warning icon)
-- Clientes en rojo: Naranja (triangle icon)
-- Fechas críticas: Gris (calendar icon)
-
-#### 3. Sección de Clientes
-- Título: "Clientes que requieren atención"
-- Cambiar de grid vertical a **flex horizontal** con tarjetas lado a lado
-- Cada tarjeta muestra: icono, nombre, proyectos activos, indicador de estado, issue, tiempo, botón IA
-
-#### 4. Sección "Mi Espacio" (Nueva)
-Añadir debajo de clientes:
-- Dos bloques rectangulares horizontales:
-  - "Agenda" con icono de reloj + "X evento hoy" + badge con número
-  - "Notas del equipo" con icono de mensaje + "X pendientes" + badge con número
-- Botón full-width: "Enviar nota al equipo" (fondo teal claro)
-
-#### 5. Panel de Chat IA
-- Mantener header pero cambiar subtítulo a "Tu mano derecha ejecutiva"
-- El resto del chat permanece igual
-
-## Estructura Visual Final
+Dos bloques principales de máximo impacto visual que ocupan el 100% del viewport sin scroll:
 
 ```text
+DESKTOP (100vw x 100vh)
 ┌────────────────────────────────────────────────────────────────────────────┐
-│  [Logo]  Buenos días                                        │              │
-│          ┌──────────────────────────────────┐               │  Asistente   │
-│          │ Q  Buscar cliente...             │               │      IA      │
-│          └──────────────────────────────────┘               │              │
-├─────────────────────────────────────────────────────────────┤  Tu mano     │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐        │  derecha     │
-│  │ ✧        │ │ ⚠        │ │ △        │ │ 📅       │        │  ejecutiva   │
-│  │ 3        │ │ 3        │ │ 1        │ │ 2        │        │              │
-│  │ Hoy      │ │Incidenc. │ │ Clientes │ │ Fechas   │        │  [Chat]      │
-│  │ Hoy·3... │ │ Hoy·3... │ │ en rojo  │ │ críticas │        │              │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘        │              │
-├─────────────────────────────────────────────────────────────┤              │
-│  Clientes que requieren atención                            │              │
-│  ┌────────────────┐ ┌────────────────┐ ┌────────────────┐   │              │
-│  │ Nexus Tech   ● │ │ Global Media ● │ │ Startup Lab  ● │   │              │
-│  │ 2 proyectos    │ │ 1 proyecto     │ │ 3 proyectos    │   │              │
-│  │ ⚠ Incidencia...│ │ ⚠ Solicitud... │ │ ⚠ Fecha límite │   │              │
-│  │ Hace 3d   [IA] │ │ Hace 1d   [IA] │ │ Hace 2d   [IA] │   │              │
-│  └────────────────┘ └────────────────┘ └────────────────┘   │              │
-├─────────────────────────────────────────────────────────────┤              │
-│  ┌─────────────────────────┐ ┌─────────────────────────┐    │              │
-│  │ 🕐 Agenda          [1]  │ │ 💬 Notas del equipo [2] │    │              │
-│  │    1 evento hoy         │ │    2 pendientes         │    │              │
-│  └─────────────────────────┘ └─────────────────────────┘    │              │
-│  ┌──────────────────────────────────────────────────────┐   │              │
-│  │           ✈ Enviar nota al equipo                    │   │              │
-│  └──────────────────────────────────────────────────────┘   │              │
+│  [Logo Processia]                                    Buenos días · 27 Ene  │
 ├────────────────────────────────────────────────────────────────────────────┤
-│              [Vista CEO]  [Administración]                                 │
+│                                    │                                       │
+│   ┌────────────────────────────┐   │   ┌─────────────────────────────────┐ │
+│   │                            │   │   │                                 │ │
+│   │    CLIENTES CRÍTICOS       │   │   │       ASISTENTE IA              │ │
+│   │                            │   │   │                                 │ │
+│   │    ●  Nexus Tech     [IA]  │   │   │   ✧ "Hola, soy tu mano          │ │
+│   │       Facturación sin...   │   │   │      derecha ejecutiva"         │ │
+│   │                            │   │   │                                 │ │
+│   │    ●  Global Media   [IA]  │   │   │   [Chat messages...]            │ │
+│   │       Llamada urgente      │   │   │                                 │ │
+│   │                            │   │   │                                 │ │
+│   │    ●  Startup Lab    [IA]  │   │   │                                 │ │
+│   │       Deadline 48h         │   │   │                                 │ │
+│   │                            │   │   │   ┌───────────────────────────┐ │ │
+│   │ ─────────────────────────  │   │   │   │ Pregunta...          ➤   │ │ │
+│   │  📅 3 eventos  💬 2 notas  │   │   │   └───────────────────────────┘ │ │
+│   └────────────────────────────┘   │   └─────────────────────────────────┘ │
+│                                    │                                       │
 └────────────────────────────────────────────────────────────────────────────┘
+
+MÓVIL (100vw x 100vh - sin scroll)
+┌──────────────────────────────┐
+│  Buenos días, Juan!          │
+├──────────────────────────────┤
+│  ┌────────────────────────┐  │
+│  │   ASISTENTE IA    ✧    │  │
+│  │   Toca para hablar     │  │
+│  │   [████████████████]   │  │
+│  └────────────────────────┘  │
+│                              │
+│  ┌────────────────────────┐  │
+│  │  ● Nexus Tech          │  │
+│  │    Facturación...      │  │
+│  ├────────────────────────┤  │
+│  │  ● Global Media        │  │
+│  │    Llamada urgente     │  │
+│  ├────────────────────────┤  │
+│  │  + Ver todos (3)       │  │
+│  └────────────────────────┘  │
+│                              │
+│  📅 3    💬 2    ⚠ 2    📆 2 │
+└──────────────────────────────┘
 ```
 
 ## Archivos a Modificar
 
-1. **`src/components/dashboard/DesktopCEODashboard.tsx`** - Reestructuración completa del layout
+### 1. `src/index.css` - Tema Dark Executive
 
-## Detalles de Implementación
+Actualizar las variables CSS para el tema oscuro corporativo:
 
-### Clases CSS Clave
-- Contenedor principal: `h-full min-h-0 w-full flex overflow-hidden`
-- Panel izquierdo de contenido: `flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden`
-- Panel de chat: `w-[400px] border-l border-border bg-card flex flex-col shrink-0`
-- Tarjetas de clientes: `flex gap-4` (horizontal, no vertical)
-- Botón enviar nota: `w-full bg-primary/10 hover:bg-primary/20 text-primary`
+**Nuevos valores de color:**
+- Background: `240 20% 4%` (negro profundo #0A0A0F)
+- Card: `240 10% 8%` (gris muy oscuro)
+- Border: `240 5% 18%` (borde sutil)
+- Primary: `174 72% 40%` (teal Processia)
+- Muted-foreground: `240 5% 55%` (texto secundario)
 
-### Estado y Funcionalidad
-- Mantener todos los estados existentes (agendaOpen, notesOpen, selectedClient)
-- Añadir estado `sendNoteOpen` para el popup de enviar nota
-- Importar `SendNotePopup` existente
-- Añadir barra de búsqueda con estado `searchQuery` (funcionalidad visual por ahora)
+**Añadir nuevas utilidades:**
+- `.glass-card` - efecto glass morphism sutil
+- `.card-giant` - estilos para cards gigantes
+- Animaciones de entrada suaves
+
+### 2. `src/components/dashboard/DesktopCEODashboard.tsx` - Layout Principal
+
+**Estructura completa nueva:**
+
+```tsx
+<div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
+  {/* Header minimalista */}
+  <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b">
+    <img src={logo} className="h-7" />
+    <span className="text-sm text-muted-foreground">Buenos días · 27 Ene</span>
+  </header>
+  
+  {/* Contenido principal - 2 cards gigantes */}
+  <main className="flex-1 flex gap-6 p-6 min-h-0">
+    {/* Card Izquierda: Clientes */}
+    <div className="flex-1 glass-card rounded-3xl flex flex-col p-6">
+      <h2>Clientes que requieren atención</h2>
+      {/* Lista de clientes con scroll interno si es necesario */}
+      <div className="flex-1 overflow-auto space-y-3">
+        {clients.map(client => <ClientRow />)}
+      </div>
+      {/* Footer con accesos rápidos */}
+      <div className="flex gap-4 pt-4 border-t">
+        <QuickButton icon={Calendar} label="3 eventos" />
+        <QuickButton icon={MessageSquare} label="2 notas" />
+      </div>
+    </div>
+    
+    {/* Card Derecha: Chat IA */}
+    <div className="w-[500px] glass-card rounded-3xl flex flex-col">
+      <AIChat />
+    </div>
+  </main>
+</div>
+```
+
+**Componentes internos:**
+- `ClientRow`: Fila compacta de cliente con estado, nombre, issue y botón IA
+- `QuickButton`: Botón de acceso rápido a agenda/notas
+
+### 3. `src/components/dashboard/MobileHome.tsx` - Adaptación Móvil
+
+**Nueva estructura sin scroll:**
+
+```tsx
+<div className="h-screen w-screen flex flex-col bg-background overflow-hidden p-4">
+  {/* Header */}
+  <header className="shrink-0 mb-4">
+    <h1>Buenos días, Juan!</h1>
+  </header>
+  
+  {/* Card IA - Prominente */}
+  <div className="shrink-0 mb-4">
+    <button onClick={openChat} className="w-full glass-card rounded-2xl p-5">
+      <Sparkles /> Hablar con IA
+    </button>
+  </div>
+  
+  {/* Card Clientes - Flex-1 para llenar espacio */}
+  <div className="flex-1 min-h-0 glass-card rounded-2xl p-4 flex flex-col">
+    <h2>Clientes críticos</h2>
+    <div className="flex-1 overflow-auto">
+      {visibleClients.map(client => <CompactClientRow />)}
+    </div>
+    <button>+ Ver todos ({total})</button>
+  </div>
+  
+  {/* Quick Access Footer - fijo */}
+  <div className="shrink-0 mt-4 grid grid-cols-4 gap-2">
+    <QuickIcon icon={Calendar} count={3} />
+    <QuickIcon icon={MessageSquare} count={2} />
+    <QuickIcon icon={AlertTriangle} count={2} />
+    <QuickIcon icon={CalendarDays} count={2} />
+  </div>
+</div>
+```
+
+### 4. `src/components/dashboard/ClientCard.tsx` - Versión Compacta
+
+Crear variante `compact` para las filas de clientes dentro de los cards gigantes:
+
+```tsx
+interface ClientCardProps {
+  variant?: "default" | "compact";
+  // ... existing props
+}
+```
+
+**Modo compact:**
+- Layout horizontal de una línea
+- Status dot + Nombre + Issue truncado + Tiempo + Botón IA
+- Sin padding extra, altura fija de ~48px
+
+## Estilos CSS Clave
+
+### Variables Dark Executive (index.css)
+
+```css
+:root {
+  --background: 240 20% 4%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 8%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 5% 18%;
+  --primary: 174 72% 40%;
+  --muted-foreground: 240 5% 55%;
+}
+```
+
+### Clases Utilitarias Nuevas
+
+```css
+.glass-card {
+  @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  box-shadow: 0 8px 32px -8px hsl(174 72% 40% / 0.1);
+}
+
+.card-giant {
+  @apply rounded-3xl p-6;
+}
+
+.client-row {
+  @apply flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors;
+}
+```
+
+## Comportamiento Responsivo
+
+| Breakpoint | Layout |
+|------------|--------|
+| < 768px | Stack vertical (IA arriba, Clientes abajo) |
+| >= 768px | Grid horizontal 50/50 |
+| >= 1280px | Grid horizontal con chat de 500px fijo |
+
+## Interactividad
+
+- **Click en cliente**: Abre modal de chat IA con contexto del cliente
+- **Click en IA hero (móvil)**: Abre modal de chat IA
+- **Quick buttons**: Abren popups existentes (Agenda, Notas, etc.)
+- **Hover en cards**: Glow teal sutil en bordes
+
+## Resultado Esperado
+
+- Dashboard que ocupa 100% del viewport (zero scroll en vista principal)
+- Dos bloques visuales de alto impacto
+- Transición fluida de desktop a móvil
+- Estética Dark Executive coherente con processia.es
+- Escaneo instantáneo de información crítica
+- Máximo contraste y legibilidad

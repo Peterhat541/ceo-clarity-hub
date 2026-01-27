@@ -63,9 +63,9 @@ export function DesktopCEODashboard() {
   };
 
   return (
-    <div className="h-full flex">
+    <div className="h-full min-h-0 w-full flex overflow-hidden">
       {/* Main Content Area - Full width, no constraints */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
         {/* Header - Full width */}
         <header className="h-14 border-b border-border bg-card px-6 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
@@ -82,7 +82,7 @@ export function DesktopCEODashboard() {
         </header>
 
         {/* Content Grid - Full width with padding */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 min-h-0 overflow-auto p-6">
           {/* Stats Row - Full width grid */}
           <div className="grid grid-cols-4 gap-4 mb-6">
             <button
@@ -216,7 +216,7 @@ export function DesktopCEODashboard() {
       </div>
 
       {/* Right Panel - AI Chat (fixed width) */}
-      <aside className="w-[400px] border-l border-border bg-card flex flex-col shrink-0">
+      <aside className="w-[400px] border-l border-border bg-card flex flex-col shrink-0 min-h-0">
         <div className="h-14 border-b border-border px-4 flex items-center gap-3 shrink-0">
           <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -226,7 +226,7 @@ export function DesktopCEODashboard() {
             <p className="text-xs text-muted-foreground">Pregúntame lo que necesites</p>
           </div>
         </div>
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <AIChat />
         </div>
       </aside>

@@ -18,8 +18,8 @@ export default function Index() {
 
   // Desktop: full-width professional dashboard
   return (
-    <div className="w-screen min-h-screen flex flex-col bg-background">
-      <main className="flex-1 overflow-hidden">
+    <div className="w-screen min-h-screen h-screen flex flex-col bg-background overflow-x-hidden">
+      <main className="flex-1 min-h-0 overflow-hidden">
         <DesktopCEODashboard />
       </main>
       <ViewSwitcher />

@@ -1,0 +1,278 @@
+import { useState } from "react";
+import { AIHeroCard } from "./AIHeroCard";
+import { FeatureCard } from "./FeatureCard";
+import { QuickAccessGrid } from "./QuickAccessGrid";
+import { AgendaPopup } from "./AgendaPopup";
+import { TeamNotesPopup } from "./TeamNotesPopup";
+import { SendNotePopup } from "./SendNotePopup";
+import { ReminderAlert } from "./ReminderAlert";
+import { ClientChatModal } from "@/components/ai/ClientChatModal";
+import { 
+  Calendar, 
+  Users, 
+  MessageSquare, 
+  Send, 
+  Clock, 
+  AlertTriangle,
+  CalendarDays,
+  User
+} from "lucide-react";
+import { useEventContext } from "@/contexts/EventContext";
+import { useNoteContext } from "@/contexts/NoteContext";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { AIChat } from "@/components/ai/AIChat";
+
+// Mock data
+interface ClientData {
+  name: string;
+  status: "red" | "orange" | "yellow" | "green";
+  lastActivity: string;
+  issue?: string;
+  projectCount: number;
+}
+
+const clientsAttention: ClientData[] = [
+  { name: "Nexus Tech", status: "red", lastActivity: "Hace 3 días", issue: "Incidencia de facturación sin resolver.", projectCount: 2 },
+  { name: "Global Media", status: "orange", lastActivity: "Hace 1 día", issue: "Solicitud de llamada urgente.", projectCount: 1 },
+  { name: "Startup Lab", status: "orange", lastActivity: "Hace 2 días", issue: "Fecha límite en 48 horas.", projectCount: 3 },
+];
+
+const recentIncidents = [
+  { clientName: "Nexus Tech", description: "Error en facturación", status: "red" as const, daysOpen: 3 },
+  { clientName: "Global Media", description: "Cambio de alcance", status: "orange" as const, daysOpen: 1 },
+];
+
+const criticalDates = [
+  { title: "Entrega Startup Lab", subtitle: "Fase 2", days: 2 },
+  { title: "Reunión BlueSky", subtitle: "Seguimiento", days: 4 },
+];
+
+export function MobileHome() {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [agendaOpen, setAgendaOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [sendNoteOpen, setSendNoteOpen] = useState(false);
+  const [clientsOpen, setClientsOpen] = useState(false);
+  const [incidentsOpen, setIncidentsOpen] = useState(false);
+  const [datesOpen, setDatesOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<typeof clientsAttention[0] | null>(null);
+
+  const { getTodayEvents } = useEventContext();
+  const { getTodayCEONotes } = useNoteContext();
+
+  const todayEvents = getTodayEvents();
+  const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
+  const redClients = clientsAttention.filter(c => c.status === "red");
+  const orangeClients = clientsAttention.filter(c => c.status === "orange");
+
+  const handleClientClick = (client: typeof clientsAttention[0]) => {
+    setSelectedClient(client);
+    setClientsOpen(false);
+  };
+
+  const quickAccessItems = [
+    {
+      icon: <Clock className="h-7 w-7 text-primary" />,
+      label: "Agenda",
+      bgClass: "bg-primary/10",
+      onClick: () => setAgendaOpen(true),
+      badge: todayEvents.length,
+    },
+    {
+      icon: <AlertTriangle className="h-7 w-7 text-status-orange" />,
+      label: "Incidencias",
+      bgClass: "bg-status-orange/10",
+      onClick: () => setIncidentsOpen(true),
+      badge: recentIncidents.length,
+    },
+    {
+      icon: <Users className="h-7 w-7 text-status-red" />,
+      label: "Clientes",
+      bgClass: "bg-status-red/10",
+      onClick: () => setClientsOpen(true),
+      badge: redClients.length,
+    },
+    {
+      icon: <CalendarDays className="h-7 w-7 text-accent" />,
+      label: "Fechas",
+      bgClass: "bg-accent/10",
+      onClick: () => setDatesOpen(true),
+      badge: criticalDates.length,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-lg px-4 py-6">
+        {/* Header with greeting */}
+        <header className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Hola, Juan!</h1>
+            <p className="text-muted-foreground">¿Cómo va el día de hoy?</p>
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <User className="h-6 w-6 text-primary" />
+          </div>
+        </header>
+
+        {/* AI Hero Card */}
+        <section className="mb-6">
+          <AIHeroCard onTalkClick={() => setChatOpen(true)} />
+        </section>
+
+        {/* Features Section */}
+        <section className="mb-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Funcionalidades
+          </h2>
+          <div className="space-y-3">
+            <FeatureCard
+              icon={<Calendar className="h-7 w-7 text-primary" />}
+              iconBgClass="bg-primary/10"
+              title="Agenda del día"
+              subtitle={`${todayEvents.length} evento${todayEvents.length !== 1 ? "s" : ""} programado${todayEvents.length !== 1 ? "s" : ""}`}
+              badge={todayEvents.length > 0 ? todayEvents.length : undefined}
+              badgeClass="bg-primary/10 text-primary"
+              onClick={() => setAgendaOpen(true)}
+            />
+            <FeatureCard
+              icon={<Users className="h-7 w-7 text-status-red" />}
+              iconBgClass="bg-status-red/10"
+              title="Clientes que requieren atención"
+              subtitle={`${redClients.length} en rojo, ${orangeClients.length} en naranja`}
+              badge={redClients.length > 0 ? redClients.length : undefined}
+              badgeClass="bg-status-red/10 text-status-red"
+              onClick={() => setClientsOpen(true)}
+            />
+            <FeatureCard
+              icon={<MessageSquare className="h-7 w-7 text-status-purple" />}
+              iconBgClass="bg-status-purple/10"
+              title="Notas del equipo"
+              subtitle={pendingNotes.length > 0 ? `${pendingNotes.length} pendiente${pendingNotes.length !== 1 ? "s" : ""} de revisar` : "Sin notas pendientes"}
+              badge={pendingNotes.length > 0 ? pendingNotes.length : undefined}
+              badgeClass="bg-status-purple/10 text-status-purple"
+              onClick={() => setNotesOpen(true)}
+            />
+            <FeatureCard
+              icon={<Send className="h-7 w-7 text-accent" />}
+              iconBgClass="bg-accent/10"
+              title="Enviar instrucción"
+              subtitle="Crear nota para el equipo"
+              onClick={() => setSendNoteOpen(true)}
+            />
+          </div>
+        </section>
+
+        {/* Quick Access Section */}
+        <section className="mb-6">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Mi espacio
+          </h2>
+          <QuickAccessGrid items={quickAccessItems} />
+        </section>
+
+        {/* Reminder Alert */}
+        <ReminderAlert />
+      </div>
+
+      {/* AI Chat Modal */}
+      <Dialog open={chatOpen} onOpenChange={setChatOpen}>
+        <DialogContent className="max-w-lg h-[80vh] p-0 overflow-hidden">
+          <AIChat />
+        </DialogContent>
+      </Dialog>
+
+      {/* Popups - Using existing props */}
+      <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />
+      <TeamNotesPopup isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
+      <SendNotePopup isOpen={sendNoteOpen} onClose={() => setSendNoteOpen(false)} />
+
+      {/* Clients Modal */}
+      <Dialog open={clientsOpen} onOpenChange={setClientsOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto">
+          <h2 className="text-lg font-semibold mb-4">Clientes que requieren atención</h2>
+          <div className="space-y-3">
+            {clientsAttention.map((client) => (
+              <button
+                key={client.name}
+                onClick={() => handleClientClick(client)}
+                className="flex w-full items-center gap-3 p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-left"
+              >
+                <div className={`h-3 w-3 rounded-full ${
+                  client.status === "red" ? "bg-status-red" :
+                  client.status === "orange" ? "bg-status-orange" :
+                  client.status === "yellow" ? "bg-status-yellow" : "bg-status-green"
+                }`} />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{client.name}</p>
+                  <p className="text-sm text-muted-foreground">{client.issue}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Incidents Modal */}
+      <Dialog open={incidentsOpen} onOpenChange={setIncidentsOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto">
+          <h2 className="text-lg font-semibold mb-4">Incidencias activas</h2>
+          <div className="space-y-3">
+            {recentIncidents.map((incident, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-3 rounded-xl bg-secondary"
+              >
+                <div className={`h-3 w-3 rounded-full ${
+                  incident.status === "red" ? "bg-status-red" :
+                  incident.status === "orange" ? "bg-status-orange" : "bg-status-yellow"
+                }`} />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{incident.clientName}</p>
+                  <p className="text-sm text-muted-foreground">{incident.description}</p>
+                </div>
+                <span className="text-xs text-muted-foreground">{incident.daysOpen}d</span>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dates Modal */}
+      <Dialog open={datesOpen} onOpenChange={setDatesOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto">
+          <h2 className="text-lg font-semibold mb-4">Fechas críticas</h2>
+          <div className="space-y-3">
+            {criticalDates.map((date, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-3 rounded-xl bg-secondary"
+              >
+                <CalendarDays className="h-5 w-5 text-status-orange" />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{date.title}</p>
+                  <p className="text-sm text-muted-foreground">{date.subtitle}</p>
+                </div>
+                <span className="rounded-full bg-status-orange/20 px-2 py-1 text-xs font-medium text-status-orange">
+                  {date.days}d
+                </span>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Client Chat Modal */}
+      {selectedClient && (
+        <ClientChatModal
+          open={!!selectedClient}
+          onOpenChange={(open) => !open && setSelectedClient(null)}
+          clientId={null}
+          clientName={selectedClient.name}
+          clientStatus={selectedClient.status}
+          issue={selectedClient.issue}
+        />
+      )}
+    </div>
+  );
+}

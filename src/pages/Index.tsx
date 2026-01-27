@@ -1,6 +1,5 @@
 import { MobileHome } from "@/components/dashboard/MobileHome";
 import { DesktopCEODashboard } from "@/components/dashboard/DesktopCEODashboard";
-import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Index() {
@@ -16,13 +15,6 @@ export default function Index() {
     return <MobileHome />;
   }
 
-  // Desktop: full-width professional dashboard
-  return (
-    <div className="w-screen min-h-screen h-screen flex flex-col bg-background overflow-x-hidden">
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <DesktopCEODashboard />
-      </main>
-      <ViewSwitcher />
-    </div>
-  );
+  // Desktop: render dashboard directly (handles its own viewport + ViewSwitcher)
+  return <DesktopCEODashboard />;
 }

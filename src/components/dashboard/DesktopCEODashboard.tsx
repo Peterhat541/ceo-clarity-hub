@@ -5,6 +5,7 @@ import { AgendaPopup } from "./AgendaPopup";
 import { TeamNotesPopup } from "./TeamNotesPopup";
 import { SendNotePopup } from "./SendNotePopup";
 import { AIChat } from "@/components/ai/AIChat";
+import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
 import { 
   Calendar, 
   MessageSquare, 
@@ -69,8 +70,8 @@ export function DesktopCEODashboard() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
-      {/* Minimal Header */}
-      <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border bg-card/50 backdrop-blur-sm">
+      {/* Header - Always Visible */}
+      <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border/50 bg-card/30 backdrop-blur-sm">
         <img src={processiaLogo} alt="Processia" className="h-7" />
         <span className="text-sm text-muted-foreground">
           {getGreeting()} · {formatDate()}
@@ -175,6 +176,9 @@ export function DesktopCEODashboard() {
           issue={selectedClient.issue}
         />
       )}
+
+      {/* ViewSwitcher integrado */}
+      <ViewSwitcher />
     </div>
   );
 }

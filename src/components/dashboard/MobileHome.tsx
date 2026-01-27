@@ -122,18 +122,17 @@ export function MobileHome() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Clientes que requieren atención
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          <div className="space-y-3">
             {clientsAttention.map((client) => (
-              <div key={client.name} className="min-w-[280px] flex-shrink-0">
-                <ClientCard
-                  name={client.name}
-                  status={client.status}
-                  lastActivity={client.lastActivity}
-                  issue={client.issue}
-                  projectCount={client.projectCount}
-                  onAIClick={() => handleClientClick(client)}
-                />
-              </div>
+              <ClientCard
+                key={client.name}
+                name={client.name}
+                status={client.status}
+                lastActivity={client.lastActivity}
+                issue={client.issue}
+                projectCount={client.projectCount}
+                onAIClick={() => handleClientClick(client)}
+              />
             ))}
           </div>
         </section>

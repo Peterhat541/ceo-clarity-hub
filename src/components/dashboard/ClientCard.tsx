@@ -33,60 +33,49 @@ export function ClientCard({
     <div
       onClick={onClick}
       className={cn(
-        "group p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all cursor-pointer card-shadow",
+        "group p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-all cursor-pointer card-shadow",
         status === "red" && "border-status-red/30 bg-status-red/5",
         highlighted && "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary"
       )}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-10 h-10 rounded-lg bg-secondary flex items-center justify-center",
-            highlighted && "bg-primary/20"
-          )}>
-            <Building2 className={cn(
-              "w-5 h-5 text-muted-foreground",
-              highlighted && "text-primary"
-            )} />
-          </div>
-          <div>
+      <div className="flex items-center gap-3">
+        <div className={cn(
+          "w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0",
+          highlighted && "bg-primary/20"
+        )}>
+          <Building2 className={cn(
+            "w-4 h-4 text-muted-foreground",
+            highlighted && "text-primary"
+          )} />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
             <h3 className={cn(
-              "font-semibold text-foreground group-hover:text-primary transition-colors",
+              "font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate",
               highlighted && "text-primary"
             )}>
               {name}
             </h3>
-            <p className="text-xs text-muted-foreground">
-              {projectCount} proyecto{projectCount > 1 ? "s" : ""} activo{projectCount > 1 ? "s" : ""}
-            </p>
+            <StatusDot status={status} pulse={status === "red"} />
           </div>
-        </div>
-        <StatusDot status={status} pulse={status === "red"} />
-      </div>
-
-      {issue && (
-        <div className="flex items-start gap-2 mb-3 p-2 rounded-lg bg-secondary/50">
-          <AlertCircle className="w-4 h-4 text-status-orange mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-secondary-foreground leading-relaxed">{issue}</p>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{lastActivity}</span>
+          {issue && (
+            <p className="text-xs text-muted-foreground truncate">{issue}</p>
+          )}
         </div>
         
-        {/* AI Action Button */}
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={handleAIClick}
-          className="h-8 px-3 gap-1.5 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 transition-all"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>IA</span>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] text-muted-foreground">{lastActivity}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleAIClick}
+            className="h-7 px-2 gap-1 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10"
+          >
+            <Sparkles className="w-3 h-3" />
+            IA
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -1,87 +1,107 @@
 
-# Plan: Crear Historial Empresarial por Cliente
+# Plan: Notificación Automática al Agendar Reuniones
 
 ## Objetivo
 
-Poblar la tabla `client_history` con registros de interacciones comerciales reales (llamadas, emails, incidencias, reuniones) para que cuando el CEO pregunte sobre un cliente, la IA tenga contexto histórico para responder.
+Cuando el CEO (Juan) pida agendar una reunión a través de la IA, el sistema deberá:
+1. Crear el evento en la agenda del CEO (ya funciona)
+2. **NUEVO**: Crear automáticamente una nota/notificación para los empleados (María, Luis, Marta) que aparecerá en la campana de notificaciones del panel de Administración
 
 ---
 
-## Diferencia con lo anterior
+## Flujo Actual
 
-| Tabla | Propósito |
-|-------|-----------|
-| `client_conversations` | Chat IA ↔ CEO (ya poblada) |
-| `client_history` | **Historial empresarial real** (llamadas, emails, incidencias) |
-
----
-
-## Historial a Crear por Cliente
-
-### 1. Nexus Tech (Crítico)
-| Fecha | Tipo | Resumen |
-|-------|------|---------|
-| -15 días | call | Llamada inicial: María reporta retrasos en facturación |
-| -10 días | email | Email enviado con propuesta de plan de pagos |
-| -7 días | incident | Incidencia abierta: 3 facturas pendientes (€45,000) |
-| -5 días | call | Seguimiento telefónico, esperando aprobación interna |
-| -2 días | note | Nota interna: Priorizar resolución antes de fin de mes |
-
-### 2. BlueSky Ventures (Atención)
-| Fecha | Tipo | Resumen |
-|-------|------|---------|
-| -20 días | meeting | Reunión renovación: Carlos interesado en ampliar servicios |
-| -14 días | email | Propuesta enviada: ampliación a €180,000/año |
-| -10 días | call | Llamada: Carlos necesita aprobación de dirección |
-| -5 días | note | Alerta: contrato expira 15 febrero |
-
-### 3. Global Media (Pendiente)
-| Fecha | Tipo | Resumen |
-|-------|------|---------|
-| -12 días | meeting | Reunión proyecto digitalización con Ana López |
-| -10 días | email | Presupuesto enviado: €95,000 |
-| -7 días | call | Ana solicita semana extra para revisar con CFO |
-
-### 4. DataCore Solutions (Estable)
-| Fecha | Tipo | Resumen |
-|-------|------|---------|
-| -30 días | meeting | Revisión trimestral Q4 - sin incidencias |
-| -20 días | email | Feedback positivo de Laura Sánchez |
-| -7 días | note | Oportunidad upselling: módulo analytics |
-
-### 5. Startup Lab (Estable)
-| Fecha | Tipo | Resumen |
-|-------|------|---------|
-| -14 días | meeting | Kick-off onboarding con Pedro Martín |
-| -10 días | call | Formación completada al 50% |
-| -5 días | note | Pendiente: integración con CRM |
-| -2 días | event | Sesión técnica programada para jueves |
-
----
-
-## Detalle Técnico
-
-### Inserción de datos
-Se ejecutará un INSERT masivo en `client_history` usando los IDs de los clientes existentes.
-
-### Estructura del INSERT
-```sql
-INSERT INTO client_history 
-  (client_id, type, summary, created_by, visible_to, created_at)
-VALUES
-  ('uuid', 'call', 'Descripción...', 'CEO', 'both', NOW() - INTERVAL 'X days');
+```text
+CEO pide reunión → IA ejecuta create_event → Evento en tabla "events" → Agenda del CEO ✅
 ```
 
-### Tipos disponibles
-- `email` - Comunicaciones por correo
-- `call` - Llamadas telefónicas
-- `meeting` - Reuniones presenciales/virtuales
-- `note` - Notas internas del equipo
-- `incident` - Incidencias o problemas
-- `event` - Eventos programados
+## Flujo Propuesto
+
+```text
+CEO pide reunión → IA ejecuta create_event → Evento en tabla "events" → Agenda del CEO ✅
+                                           → Nota en tabla "notes" → Campana Admin ✅ (NUEVO)
+```
+
+---
+
+## Cambios Necesarios
+
+### 1. Modificar Edge Function `ai-chat/index.ts`
+
+En el caso `create_event`, después de insertar el evento en la base de datos, añadir automáticamente una nota para el equipo:
+
+**Ubicación**: Líneas 395-429 del archivo `supabase/functions/ai-chat/index.ts`
+
+**Lógica a añadir**:
+```typescript
+// Después de crear el evento exitosamente...
+// Crear notificación para el equipo
+if (args.type === "meeting" || args.type === "call") {
+  const eventTime = new Date(args.start_at).toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  const eventDate = new Date(args.start_at).toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  });
+  
+  await supabase.from("notes").insert({
+    text: `📅 Nueva reunión agendada por Juan: "${args.title}" el ${eventDate} a las ${eventTime}.${args.client_name ? ` Cliente: ${args.client_name}.` : ""}`,
+    visible_to: "team",
+    target_employee: null, // Visible para todos: María, Luis, Marta
+    created_by: "Juan",
+    status: "pending",
+    due_at: args.start_at // La fecha del evento
+  });
+}
+```
+
+### 2. Actualizar System Prompt
+
+Modificar el prompt del sistema para que la IA sepa que el CEO se llama Juan y que las reuniones generan notificaciones automáticas.
+
+**Ubicación**: Líneas 137-163 del archivo `supabase/functions/ai-chat/index.ts`
+
+**Cambio**: Añadir al prompt:
+```text
+El CEO se llama Juan. Los empleados del equipo son María, Luis y Marta.
+Cuando crees una reunión, automáticamente se notificará al equipo.
+```
 
 ---
 
 ## Resultado Esperado
 
-Cuando el CEO pregunte "¿Cuál es la situación con Nexus Tech?" o "¿Qué ha pasado con BlueSky?", la IA consultará `client_history` y responderá con el contexto histórico real de la relación comercial.
+| Acción del CEO | Resultado |
+|----------------|-----------|
+| "Agenda una reunión a las 12" | ✅ Evento en agenda de Juan |
+|  | ✅ Notificación en campana de Admin |
+| "Reunión con BlueSky mañana" | ✅ Evento con cliente asociado |
+|  | ✅ Notificación con nombre del cliente |
+
+---
+
+## Detalle Técnico
+
+### Tabla `notes` (estructura existente)
+| Campo | Valor para notificación |
+|-------|------------------------|
+| `text` | "📅 Nueva reunión agendada por Juan: [título] el [fecha] a las [hora]." |
+| `visible_to` | `team` (visible en campana de Admin) |
+| `target_employee` | `null` (para todos) o específico (María/Luis/Marta) |
+| `created_by` | `Juan` |
+| `status` | `pending` |
+| `due_at` | Fecha/hora del evento |
+
+### Sincronización UI
+El frontend ya escucha el evento `processia:noteCreated` que se dispara cuando la IA crea notas, por lo que la campana de notificaciones se actualizará automáticamente sin cambios adicionales.
+
+---
+
+## Archivos a Modificar
+
+1. **`supabase/functions/ai-chat/index.ts`**
+   - Actualizar el caso `create_event` para crear nota automática
+   - Actualizar el system prompt con el nombre del CEO y empleados

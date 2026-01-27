@@ -93,7 +93,7 @@ export default function Index() {
   const [clientPopupOpen, setClientPopupOpen] = useState(false);
   const [selectedClientData, setSelectedClientData] = useState<typeof allClients[0] | null>(null);
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
-  const [chatModalClient, setChatModalClient] = useState<typeof allClients[0] | null>(null);
+  const [openChatClients, setOpenChatClients] = useState<typeof allClients>([]);
   const { selectedClient, setSelectedClient, activateClientWithContext } = useClientContext();
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
@@ -114,20 +114,23 @@ export default function Index() {
     setActiveSection(activeSection === section ? null : section);
   };
 
-  const handleClientClick = (clientName: string) => {
-    // Open chat modal for the client
+  const openClientChat = (clientName: string) => {
     const clientData = allClients.find(c => c.name === clientName);
-    if (clientData) {
-      setChatModalClient(clientData);
+    if (clientData && !openChatClients.some(c => c.name === clientName)) {
+      setOpenChatClients(prev => [...prev, clientData]);
     }
   };
 
+  const closeClientChat = (clientName: string) => {
+    setOpenChatClients(prev => prev.filter(c => c.name !== clientName));
+  };
+
+  const handleClientClick = (clientName: string) => {
+    openClientChat(clientName);
+  };
+
   const handleAIClick = (clientName: string, issue?: string) => {
-    // Open chat modal for the client (same behavior now)
-    const clientData = allClients.find(c => c.name === clientName);
-    if (clientData) {
-      setChatModalClient(clientData);
-    }
+    openClientChat(clientName);
   };
 
   const handleIncidentClick = (clientName: string, description?: string) => {
@@ -530,22 +533,22 @@ export default function Index() {
           onOpenChange={setClientPopupOpen}
           onAIClick={(name, issue) => {
             setClientPopupOpen(false);
-            const clientData = allClients.find(c => c.name === name);
-            if (clientData) {
-              setChatModalClient(clientData);
-            }
+            openClientChat(name);
           }}
         />
 
-        {/* Client Chat Modal */}
-        <ClientChatModal
-          open={!!chatModalClient}
-          onOpenChange={(open) => !open && setChatModalClient(null)}
-          clientId={null}
-          clientName={chatModalClient?.name || ""}
-          clientStatus={chatModalClient?.status || "green"}
-          issue={chatModalClient?.issue}
-        />
+        {/* Client Chat Modals - Multiple simultaneous */}
+        {openChatClients.map((client, index) => (
+          <ClientChatModal
+            key={client.name}
+            open={true}
+            onOpenChange={(open) => !open && closeClientChat(client.name)}
+            clientId={null}
+            clientName={client.name}
+            clientStatus={client.status}
+            issue={client.issue}
+          />
+        ))}
       </div>
     </CEOLayout>
   );

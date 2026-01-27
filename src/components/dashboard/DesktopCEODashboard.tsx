@@ -69,7 +69,7 @@ export function DesktopCEODashboard() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden">
       {/* Header - Always Visible */}
       <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border/50 bg-card/30 backdrop-blur-sm">
         <img src={processiaLogo} alt="Processia" className="h-7" />

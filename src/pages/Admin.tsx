@@ -309,7 +309,7 @@ export default function Admin() {
   const ceoNotes = notes.filter(n => n.visibility === "ceo" || n.visibility === "both");
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background bg-grid">
       {/* Header */}
       <header className="h-16 border-b border-border bg-background flex items-center justify-between px-6">
         <div className="flex items-center gap-3">

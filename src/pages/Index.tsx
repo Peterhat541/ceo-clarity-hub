@@ -8,6 +8,7 @@ import { ClientPopup } from "@/components/dashboard/ClientPopup";
 import { TeamNotesPopup } from "@/components/dashboard/TeamNotesPopup";
 import { ReminderAlert } from "@/components/dashboard/ReminderAlert";
 import { SendNotePopup } from "@/components/dashboard/SendNotePopup";
+import { ClientChatModal } from "@/components/ai/ClientChatModal";
 import { Search, Clock, MessageSquare, AlertTriangle, Calendar, AlertOctagon, Sun, X, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -92,6 +93,7 @@ export default function Index() {
   const [clientPopupOpen, setClientPopupOpen] = useState(false);
   const [selectedClientData, setSelectedClientData] = useState<typeof allClients[0] | null>(null);
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
+  const [chatModalClient, setChatModalClient] = useState<typeof allClients[0] | null>(null);
   const { selectedClient, setSelectedClient, activateClientWithContext } = useClientContext();
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
@@ -113,13 +115,19 @@ export default function Index() {
   };
 
   const handleClientClick = (clientName: string) => {
-    // Set the client in context - this updates the AI
-    setSelectedClient(clientName);
+    // Open chat modal for the client
+    const clientData = allClients.find(c => c.name === clientName);
+    if (clientData) {
+      setChatModalClient(clientData);
+    }
   };
 
   const handleAIClick = (clientName: string, issue?: string) => {
-    // Activate IA chat with full context - no navigation, just chat activation
-    activateClientWithContext(clientName, issue);
+    // Open chat modal for the client (same behavior now)
+    const clientData = allClients.find(c => c.name === clientName);
+    if (clientData) {
+      setChatModalClient(clientData);
+    }
   };
 
   const handleIncidentClick = (clientName: string, description?: string) => {
@@ -520,7 +528,23 @@ export default function Index() {
           client={selectedClientData}
           open={clientPopupOpen}
           onOpenChange={setClientPopupOpen}
-          onAIClick={activateClientWithContext}
+          onAIClick={(name, issue) => {
+            setClientPopupOpen(false);
+            const clientData = allClients.find(c => c.name === name);
+            if (clientData) {
+              setChatModalClient(clientData);
+            }
+          }}
+        />
+
+        {/* Client Chat Modal */}
+        <ClientChatModal
+          open={!!chatModalClient}
+          onOpenChange={(open) => !open && setChatModalClient(null)}
+          clientId={null}
+          clientName={chatModalClient?.name || ""}
+          clientStatus={chatModalClient?.status || "green"}
+          issue={chatModalClient?.issue}
         />
       </div>
     </CEOLayout>

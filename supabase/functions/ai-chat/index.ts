@@ -136,6 +136,9 @@ const tools = [
 // System prompt for the AI
 const systemPrompt = `Eres el asistente ejecutivo de Processia, una plataforma para CEOs.
 
+El CEO se llama Juan. Los empleados del equipo son María, Luis y Marta.
+Cuando crees una reunión o llamada, automáticamente se notificará al equipo.
+
 REGLA PRINCIPAL - RESUMEN DEL DÍA:
 Cuando el usuario pregunte "¿Qué tengo que hacer hoy?", "¿Cómo están las cosas?", "Dame la agenda", "¿Qué hay pendiente?" o similar, SIEMPRE usa la función get_dashboard_summary PRIMERO para obtener datos reales. Luego presenta un resumen claro y accionable:
 - Clientes críticos (rojos/naranjas) que necesitan atención
@@ -155,7 +158,7 @@ REGLAS ADICIONALES:
 
 4. RESPUESTAS BREVES: Confirma acciones en 1-2 líneas.
 
-5. NOTAS AL EQUIPO: Para instrucciones (ej: "dile a Laura que llame"), usa create_note con target_employee y visible_to="team".
+5. NOTAS AL EQUIPO: Para instrucciones (ej: "dile a María que llame"), usa create_note con target_employee y visible_to="team".
 
 Hora actual: {current_time}
 Fecha actual: {current_date}
@@ -400,7 +403,7 @@ serve(async (req) => {
               start_at: args.start_at,
               reminder_minutes: args.reminder_minutes || 15,
               notes: args.notes || null,
-              created_by: "CEO"
+              created_by: "Juan"
             }).select().single();
 
             if (error) {
@@ -413,10 +416,39 @@ serve(async (req) => {
                   client_id: args.client_id,
                   type: args.type === "call" ? "call" : args.type === "meeting" ? "meeting" : "event",
                   summary: `Evento creado: ${args.title}`,
-                  created_by: "CEO",
+                  created_by: "Juan",
                   visible_to: "both"
                 });
               }
+              
+              // Create notification for team when it's a meeting or call
+              if (args.type === "meeting" || args.type === "call") {
+                const eventDate = new Date(args.start_at);
+                const eventTime = eventDate.toLocaleTimeString("es-ES", {
+                  hour: "2-digit",
+                  minute: "2-digit"
+                });
+                const eventDateStr = eventDate.toLocaleDateString("es-ES", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long"
+                });
+                const eventTypeLabel = args.type === "meeting" ? "reunión" : "llamada";
+                const clientInfo = args.client_name ? ` Cliente: ${args.client_name}.` : "";
+                
+                await supabase.from("notes").insert({
+                  text: `📅 Nueva ${eventTypeLabel} agendada por Juan: "${args.title}" el ${eventDateStr} a las ${eventTime}.${clientInfo}`,
+                  visible_to: "team",
+                  target_employee: null,
+                  created_by: "Juan",
+                  status: "pending",
+                  due_at: args.start_at,
+                  client_id: args.client_id || null
+                });
+                
+                console.log("Team notification created for event:", args.title);
+              }
+              
               result = { 
                 success: true, 
                 event_id: data.id, 

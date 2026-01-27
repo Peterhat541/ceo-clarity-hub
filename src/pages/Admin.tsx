@@ -15,7 +15,8 @@ import {
   ArrowUp,
   ArrowDown,
   Filter,
-  X
+  X,
+  Send
 } from "lucide-react";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
@@ -398,16 +399,28 @@ export default function Admin() {
               <p className="text-muted-foreground">{filteredAndSortedClients.length} clientes {statusFilter !== "all" ? `(filtrado por estado)` : "registrados"}</p>
             </div>
             
-            {/* CEO Notes indicator */}
-            {ceoNotes.length > 0 && (
+            {/* CEO Notes indicator and Send General Note button */}
+            <div className="flex items-center gap-3">
+              {ceoNotes.length > 0 && (
+                <button 
+                  onClick={() => openModal("notes")}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                >
+                  <StickyNote className="w-4 h-4" />
+                  <span className="text-sm font-medium">{ceoNotes.length} notas para CEO</span>
+                </button>
+              )}
               <button 
-                onClick={() => openModal("notes")}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                onClick={() => {
+                  setSelectedClient(null);
+                  openModal("newNote");
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-status-purple/10 text-status-purple hover:bg-status-purple/20 transition-colors"
               >
-                <StickyNote className="w-4 h-4" />
-                <span className="text-sm font-medium">{ceoNotes.length} notas para CEO</span>
+                <Send className="w-4 h-4" />
+                <span className="text-sm font-medium">Enviar nota</span>
               </button>
-            )}
+            </div>
           </div>
 
           {/* Table */}

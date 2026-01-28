@@ -2,13 +2,61 @@ import { Phone, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useReminderContext, ActiveReminder } from "@/contexts/ReminderContext";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 interface ReminderAlertItemProps {
   reminder: ActiveReminder;
   onDismiss: () => void;
 }
 
+function calculateTimeRemaining(eventTime: string): { text: string; seconds: number } {
+  const now = new Date();
+  const [hours, minutes] = eventTime.split(":").map(Number);
+  
+  const eventDate = new Date();
+  eventDate.setHours(hours, minutes, 0, 0);
+  
+  const diffMs = eventDate.getTime() - now.getTime();
+  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  
+  if (diffSeconds <= 0) {
+    return { text: "¡Ahora!", seconds: 0 };
+  }
+  
+  if (diffMinutes < 1) {
+    return { text: `En ${diffSeconds}s`, seconds: diffSeconds };
+  }
+  
+  if (diffMinutes < 60) {
+    const remainingSeconds = diffSeconds % 60;
+    return { 
+      text: `En ${diffMinutes}:${remainingSeconds.toString().padStart(2, "0")}`, 
+      seconds: diffSeconds 
+    };
+  }
+  
+  const remainingMinutes = diffMinutes % 60;
+  return { 
+    text: `En ${diffHours}h ${remainingMinutes}min`, 
+    seconds: diffSeconds 
+  };
+}
+
 function ReminderAlertItem({ reminder, onDismiss }: ReminderAlertItemProps) {
+  const [timeRemaining, setTimeRemaining] = useState(() => 
+    calculateTimeRemaining(reminder.eventTime)
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeRemaining(calculateTimeRemaining(reminder.eventTime));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [reminder.eventTime]);
+
   return (
     <div
       className={cn(
@@ -31,7 +79,14 @@ function ReminderAlertItem({ reminder, onDismiss }: ReminderAlertItemProps) {
           {reminder.eventTitle}
         </p>
         <p className="text-sm text-muted-foreground">
-          En 15 minutos · {reminder.eventTime}
+          <span className={cn(
+            "font-medium",
+            timeRemaining.seconds < 300 && "text-status-red"
+          )}>
+            {timeRemaining.text}
+          </span>
+          {" · "}
+          {reminder.eventTime}
         </p>
       </div>
       

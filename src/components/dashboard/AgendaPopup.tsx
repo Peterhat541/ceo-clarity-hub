@@ -1,6 +1,7 @@
-import { Phone, Users, Bell, X, Clock, Trash2 } from "lucide-react";
+import { Phone, Users, Bell, X, Clock, Trash2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEventContext, CalendarEvent } from "@/contexts/EventContext";
+import { useAIChatContext } from "@/contexts/AIChatContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -49,11 +50,18 @@ function formatEventDate(date: Date): string {
   });
 }
 
-function EventItem({ event, onDelete }: { event: CalendarEvent; onDelete: (id: string) => void }) {
+interface EventItemProps {
+  event: CalendarEvent;
+  onDelete: (id: string) => void;
+  onAIClick: (event: CalendarEvent) => void;
+}
+
+function EventItem({ event, onDelete, onAIClick }: EventItemProps) {
   const config = eventTypeConfig[event.type];
   const Icon = config.icon;
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       const { error } = await supabase
         .from("events")
@@ -77,8 +85,15 @@ function EventItem({ event, onDelete }: { event: CalendarEvent; onDelete: (id: s
     }
   };
 
+  const handleClick = () => {
+    onAIClick(event);
+  };
+
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors group">
+    <div 
+      onClick={handleClick}
+      className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors group cursor-pointer"
+    >
       <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", config.bgColor)}>
         <Icon className={cn("w-4 h-4", config.textColor)} />
       </div>
@@ -92,20 +107,35 @@ function EventItem({ event, onDelete }: { event: CalendarEvent; onDelete: (id: s
         <p className="text-xs text-muted-foreground">{formatEventDate(event.date)}</p>
         <p className="text-sm font-medium text-foreground">{event.time}</p>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleDelete}
-        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-      >
-        <Trash2 className="w-4 h-4" />
-      </Button>
+      <div className="flex items-center gap-1 shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClick();
+          }}
+          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary hover:bg-primary/10"
+          title="Consultar con IA"
+        >
+          <Sparkles className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleDelete}
+          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 }
 
 export function AgendaPopup({ isOpen, onClose }: AgendaPopupProps) {
   const { events, refreshEvents } = useEventContext();
+  const { setInput, setActiveClient } = useAIChatContext();
 
   if (!isOpen) return null;
 
@@ -125,6 +155,31 @@ export function AgendaPopup({ isOpen, onClose }: AgendaPopupProps) {
     refreshEvents();
   };
 
+  const handleAIClick = (event: CalendarEvent) => {
+    // Build prefilled prompt
+    const dateStr = formatEventDate(event.date);
+    const hasClient = event.clientName && event.clientName !== "Sin cliente";
+    
+    let prompt = `Dame el contexto y próximos pasos para este evento: "${event.title}" programado para ${dateStr} a las ${event.time}.`;
+    
+    if (hasClient) {
+      prompt += ` Cliente: ${event.clientName}. Incluye teléfono, email, último contacto y tareas pendientes si existen.`;
+      setActiveClient({ id: event.clientId || null, name: event.clientName });
+    } else {
+      prompt += ` Este evento no tiene cliente asociado.`;
+      setActiveClient({ id: null, name: null });
+    }
+    
+    // Set input and close popup
+    setInput(prompt);
+    onClose();
+    
+    toast({
+      title: "Consulta preparada",
+      description: "Tu pregunta está lista en el chat de IA.",
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-24">
       {/* Backdrop */}
@@ -142,6 +197,8 @@ export function AgendaPopup({ isOpen, onClose }: AgendaPopupProps) {
               <h2 className="font-semibold text-foreground">Mi Agenda</h2>
               <p className="text-xs text-muted-foreground">
                 {upcomingEvents.length} evento{upcomingEvents.length !== 1 ? "s" : ""} próximo{upcomingEvents.length !== 1 ? "s" : ""}
+                {" · "}
+                <span className="text-primary">Clic para consultar IA</span>
               </p>
             </div>
           </div>
@@ -170,7 +227,12 @@ export function AgendaPopup({ isOpen, onClose }: AgendaPopupProps) {
                   </h3>
                   <div className="space-y-2">
                     {calls.map((event) => (
-                      <EventItem key={event.id} event={event} onDelete={handleDelete} />
+                      <EventItem 
+                        key={event.id} 
+                        event={event} 
+                        onDelete={handleDelete}
+                        onAIClick={handleAIClick}
+                      />
                     ))}
                   </div>
                 </div>
@@ -184,7 +246,12 @@ export function AgendaPopup({ isOpen, onClose }: AgendaPopupProps) {
                   </h3>
                   <div className="space-y-2">
                     {meetings.map((event) => (
-                      <EventItem key={event.id} event={event} onDelete={handleDelete} />
+                      <EventItem 
+                        key={event.id} 
+                        event={event} 
+                        onDelete={handleDelete}
+                        onAIClick={handleAIClick}
+                      />
                     ))}
                   </div>
                 </div>
@@ -198,7 +265,12 @@ export function AgendaPopup({ isOpen, onClose }: AgendaPopupProps) {
                   </h3>
                   <div className="space-y-2">
                     {reminders.map((event) => (
-                      <EventItem key={event.id} event={event} onDelete={handleDelete} />
+                      <EventItem 
+                        key={event.id} 
+                        event={event} 
+                        onDelete={handleDelete}
+                        onAIClick={handleAIClick}
+                      />
                     ))}
                   </div>
                 </div>

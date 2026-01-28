@@ -6,6 +6,7 @@ export interface CalendarEvent {
   type: "call" | "meeting" | "reminder";
   title: string;
   clientName: string;
+  clientId?: string | null;
   date: Date;
   time: string;
   reminder?: {
@@ -64,6 +65,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
             type: event.type as "call" | "meeting" | "reminder",
             title: event.title,
             clientName: event.clients?.name || "Sin cliente",
+            clientId: event.client_id || null,
             date: startAt,
             time: `${hours}:${minutes}`,
             reminder: event.reminder_minutes ? {

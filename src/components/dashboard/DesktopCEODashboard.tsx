@@ -104,11 +104,11 @@ export function DesktopCEODashboard() {
 
   const handleMarkReviewed = async (client: ClientData) => {
     try {
-      // Update last_contact with current timestamp
       const now = new Date();
       const formattedDate = `${now.getDate().toString().padStart(2, "0")}/${(now.getMonth() + 1).toString().padStart(2, "0")} – Revisado por CEO`;
       
-      const { error } = await supabase
+      // Update client last_contact
+      const { error: clientError } = await supabase
         .from("clients")
         .update({ 
           last_contact: formattedDate,
@@ -116,14 +116,37 @@ export function DesktopCEODashboard() {
         })
         .eq("id", client.id);
 
-      if (error) throw error;
+      if (clientError) throw clientError;
 
-      // Remove from attention list if status is green
+      // Create note for the team about CEO review
+      const noteText = client.issue 
+        ? `✅ El CEO (Juan) ha revisado el cliente "${client.name}". Incidencia/tarea: "${client.issue}". Marcado como revisado.`
+        : `✅ El CEO (Juan) ha revisado el cliente "${client.name}" y lo ha marcado como atendido.`;
+
+      const { error: noteError } = await supabase
+        .from("notes")
+        .insert({
+          text: noteText,
+          visible_to: "team",
+          target_employee: null,
+          created_by: "Juan",
+          status: "pending",
+          client_id: client.id
+        });
+
+      if (noteError) {
+        console.error("Error creating note:", noteError);
+      }
+
+      // Emit event for notification bell refresh
+      window.dispatchEvent(new CustomEvent("processia:noteCreated"));
+
+      // Remove from attention list
       setClientsAttention(prev => prev.filter(c => c.id !== client.id));
       
       toast({
         title: "Cliente revisado",
-        description: `${client.name} ha sido marcado como revisado.`,
+        description: `${client.name} ha sido marcado como revisado. El equipo ha sido notificado.`,
       });
     } catch (err) {
       console.error("Error marking client as reviewed:", err);
@@ -137,7 +160,9 @@ export function DesktopCEODashboard() {
 
   const handleStatusChange = async (client: ClientData, newStatus: Status) => {
     try {
-      const { error } = await supabase
+      const oldStatus = client.status;
+      
+      const { error: clientError } = await supabase
         .from("clients")
         .update({ 
           status: newStatus,
@@ -145,18 +170,7 @@ export function DesktopCEODashboard() {
         })
         .eq("id", client.id);
 
-      if (error) throw error;
-
-      // Update local state
-      if (newStatus === "green") {
-        // Remove from attention list
-        setClientsAttention(prev => prev.filter(c => c.id !== client.id));
-      } else {
-        // Update status in list
-        setClientsAttention(prev => prev.map(c => 
-          c.id === client.id ? { ...c, status: newStatus } : c
-        ));
-      }
+      if (clientError) throw clientError;
 
       const statusLabels: Record<Status, string> = {
         green: "Estable",
@@ -164,10 +178,41 @@ export function DesktopCEODashboard() {
         orange: "Atención",
         red: "Crítico",
       };
+
+      // Create note for the team about status change
+      const statusEmoji = newStatus === "green" ? "🟢" : newStatus === "yellow" ? "🟡" : newStatus === "orange" ? "🟠" : "🔴";
+      const noteText = `${statusEmoji} El CEO (Juan) ha cambiado el estado del cliente "${client.name}" de "${statusLabels[oldStatus]}" a "${statusLabels[newStatus]}".${client.issue ? ` Motivo original: "${client.issue}".` : ""}`;
+
+      const { error: noteError } = await supabase
+        .from("notes")
+        .insert({
+          text: noteText,
+          visible_to: "team",
+          target_employee: null,
+          created_by: "Juan",
+          status: "pending",
+          client_id: client.id
+        });
+
+      if (noteError) {
+        console.error("Error creating note:", noteError);
+      }
+
+      // Emit event for notification bell refresh
+      window.dispatchEvent(new CustomEvent("processia:noteCreated"));
+
+      // Update local state
+      if (newStatus === "green") {
+        setClientsAttention(prev => prev.filter(c => c.id !== client.id));
+      } else {
+        setClientsAttention(prev => prev.map(c => 
+          c.id === client.id ? { ...c, status: newStatus } : c
+        ));
+      }
       
       toast({
         title: "Estado actualizado",
-        description: `${client.name} ahora está en estado "${statusLabels[newStatus]}".`,
+        description: `${client.name} ahora está en estado "${statusLabels[newStatus]}". El equipo ha sido notificado.`,
       });
     } catch (err) {
       console.error("Error changing client status:", err);

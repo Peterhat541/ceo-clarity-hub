@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { X, Send, User, Building2 } from "lucide-react";
+import { X, Send, User, Building2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCEONoteContext } from "@/contexts/CEONoteContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
 interface SendNotePopupProps {
@@ -13,32 +13,70 @@ interface SendNotePopupProps {
 }
 
 export function SendNotePopup({ isOpen, onClose }: SendNotePopupProps) {
-  const { addCEONote } = useCEONoteContext();
   const [content, setContent] = useState("");
   const [targetEmployee, setTargetEmployee] = useState("");
   const [clientName, setClientName] = useState("");
+  const [sending, setSending] = useState(false);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!content.trim()) return;
 
-    addCEONote({
-      content: content.trim(),
-      targetEmployee: targetEmployee.trim() || undefined,
-      clientName: clientName.trim() || undefined,
-    });
+    setSending(true);
+    try {
+      // Try to find client by name if provided
+      let clientId: string | null = null;
+      if (clientName.trim()) {
+        const { data: clientData } = await supabase
+          .from("clients")
+          .select("id")
+          .ilike("name", `%${clientName.trim()}%`)
+          .limit(1)
+          .maybeSingle();
+        
+        if (clientData) {
+          clientId = clientData.id;
+        }
+      }
 
-    toast({
-      title: "Nota enviada",
-      description: targetEmployee 
-        ? `Tu nota para ${targetEmployee} ha sido enviada al equipo.`
-        : "Tu nota ha sido enviada al equipo.",
-    });
+      // Insert note into Supabase
+      const { error } = await supabase
+        .from("notes")
+        .insert({
+          text: content.trim(),
+          visible_to: "team",
+          target_employee: targetEmployee.trim() || null,
+          created_by: "Juan",
+          status: "pending",
+          client_id: clientId
+        });
 
-    // Reset form
-    setContent("");
-    setTargetEmployee("");
-    setClientName("");
-    onClose();
+      if (error) throw error;
+
+      // Emit event for notification bell refresh
+      window.dispatchEvent(new CustomEvent("processia:noteCreated"));
+
+      toast({
+        title: "Nota enviada",
+        description: targetEmployee 
+          ? `Tu nota para ${targetEmployee} ha sido enviada al equipo.`
+          : "Tu nota ha sido enviada al equipo.",
+      });
+
+      // Reset form
+      setContent("");
+      setTargetEmployee("");
+      setClientName("");
+      onClose();
+    } catch (err) {
+      console.error("Error sending note:", err);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la nota. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -78,7 +116,7 @@ export function SendNotePopup({ isOpen, onClose }: SendNotePopupProps) {
             </Label>
             <Input
               id="employee"
-              placeholder="Ej: Laura, Carlos..."
+              placeholder="Ej: María, Luis, Marta..."
               value={targetEmployee}
               onChange={(e) => setTargetEmployee(e.target.value)}
               className="bg-secondary border-border"
@@ -93,7 +131,7 @@ export function SendNotePopup({ isOpen, onClose }: SendNotePopupProps) {
             </Label>
             <Input
               id="client"
-              placeholder="Ej: Global Media, Nexus Tech..."
+              placeholder="Ej: Chalet Familia López-Durán..."
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               className="bg-secondary border-border"
@@ -107,7 +145,7 @@ export function SendNotePopup({ isOpen, onClose }: SendNotePopupProps) {
             </Label>
             <Textarea
               id="content"
-              placeholder="Ej: Mañana llama a Global Media para preguntar a qué hora puede tener una reunión conmigo..."
+              placeholder="Ej: Mañana llama al cliente para preguntar a qué hora puede tener una reunión conmigo..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="bg-secondary border-border min-h-[120px] resize-none"
@@ -117,12 +155,16 @@ export function SendNotePopup({ isOpen, onClose }: SendNotePopupProps) {
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 p-4 border-t border-border">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={sending}>
             Cancelar
           </Button>
-          <Button onClick={handleSend} disabled={!content.trim()} className="gap-2">
-            <Send className="w-4 h-4" />
-            Enviar nota
+          <Button onClick={handleSend} disabled={!content.trim() || sending} className="gap-2">
+            {sending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            {sending ? "Enviando..." : "Enviar nota"}
           </Button>
         </div>
       </div>

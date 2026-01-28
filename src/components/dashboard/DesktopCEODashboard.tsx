@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ClientCard } from "./ClientCard";
 import { ClientChatModal } from "@/components/ai/ClientChatModal";
 import { AgendaPopup } from "./AgendaPopup";
@@ -18,22 +18,20 @@ import {
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { useReminderContext } from "@/contexts/ReminderContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import processiaLogo from "@/assets/processia-logo-new.png";
 import { Button } from "@/components/ui/button";
-// Mock data
+import { Status } from "./StatusBadge";
+
 interface ClientData {
+  id: string;
   name: string;
-  status: "red" | "orange" | "yellow" | "green";
+  status: Status;
   lastActivity: string;
   issue?: string;
   projectCount: number;
 }
-
-const clientsAttention: ClientData[] = [
-  { name: "Nexus Tech", status: "red", lastActivity: "Hace 3 días", issue: "Incidencia de facturación sin resolver.", projectCount: 2 },
-  { name: "Global Media", status: "orange", lastActivity: "Hace 1 día", issue: "Solicitud de llamada urgente.", projectCount: 1 },
-  { name: "Startup Lab", status: "orange", lastActivity: "Hace 2 días", issue: "Fecha límite en 48 horas.", projectCount: 3 },
-];
 
 export function DesktopCEODashboard() {
   const [agendaOpen, setAgendaOpen] = useState(false);
@@ -41,14 +39,60 @@ export function DesktopCEODashboard() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
+  const [clientsAttention, setClientsAttention] = useState<ClientData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
-  const { activeReminders, triggerTestReminder } = useReminderContext();
+  const { activeReminders } = useReminderContext();
 
   const todayEvents = getTodayEvents();
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
   const visibleReminders = activeReminders.filter((r) => !r.dismissed);
+
+  // Fetch clients that need attention (red, orange, yellow status)
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("clients")
+          .select("id, name, status, incidents, pending_tasks, last_contact, updated_at")
+          .in("status", ["red", "orange", "yellow"])
+          .order("updated_at", { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+
+        if (data) {
+          const mapped: ClientData[] = data.map((client) => {
+            const updatedAt = new Date(client.updated_at);
+            const now = new Date();
+            const diffDays = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24));
+            
+            let lastActivity = "Hoy";
+            if (diffDays === 1) lastActivity = "Hace 1 día";
+            else if (diffDays > 1) lastActivity = `Hace ${diffDays} días`;
+
+            return {
+              id: client.id,
+              name: client.name,
+              status: client.status as Status,
+              lastActivity,
+              issue: client.incidents || client.pending_tasks || undefined,
+              projectCount: 1,
+            };
+          });
+          setClientsAttention(mapped);
+        }
+      } catch (err) {
+        console.error("Error fetching clients:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   // Sort by criticality
   const statusPriority = { red: 0, orange: 1, yellow: 2, green: 3 };
@@ -56,6 +100,83 @@ export function DesktopCEODashboard() {
 
   const handleClientClick = (client: ClientData) => {
     setSelectedClient(client);
+  };
+
+  const handleMarkReviewed = async (client: ClientData) => {
+    try {
+      // Update last_contact with current timestamp
+      const now = new Date();
+      const formattedDate = `${now.getDate().toString().padStart(2, "0")}/${(now.getMonth() + 1).toString().padStart(2, "0")} – Revisado por CEO`;
+      
+      const { error } = await supabase
+        .from("clients")
+        .update({ 
+          last_contact: formattedDate,
+          updated_at: now.toISOString()
+        })
+        .eq("id", client.id);
+
+      if (error) throw error;
+
+      // Remove from attention list if status is green
+      setClientsAttention(prev => prev.filter(c => c.id !== client.id));
+      
+      toast({
+        title: "Cliente revisado",
+        description: `${client.name} ha sido marcado como revisado.`,
+      });
+    } catch (err) {
+      console.error("Error marking client as reviewed:", err);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el cliente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStatusChange = async (client: ClientData, newStatus: Status) => {
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", client.id);
+
+      if (error) throw error;
+
+      // Update local state
+      if (newStatus === "green") {
+        // Remove from attention list
+        setClientsAttention(prev => prev.filter(c => c.id !== client.id));
+      } else {
+        // Update status in list
+        setClientsAttention(prev => prev.map(c => 
+          c.id === client.id ? { ...c, status: newStatus } : c
+        ));
+      }
+
+      const statusLabels: Record<Status, string> = {
+        green: "Estable",
+        yellow: "Pendiente",
+        orange: "Atención",
+        red: "Crítico",
+      };
+      
+      toast({
+        title: "Estado actualizado",
+        description: `${client.name} ahora está en estado "${statusLabels[newStatus]}".`,
+      });
+    } catch (err) {
+      console.error("Error changing client status:", err);
+      toast({
+        title: "Error",
+        description: "No se pudo cambiar el estado del cliente.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Get greeting based on time
@@ -101,23 +222,36 @@ export function DesktopCEODashboard() {
           
           {/* Client List - Scrollable */}
           <div className="flex-1 overflow-auto space-y-3 min-h-0 pr-2">
-            {sortedClients.map((client, index) => (
-              <div 
-                key={client.name}
-                className="animate-fade-up"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <ClientCard
-                  variant="compact"
-                  name={client.name}
-                  status={client.status}
-                  lastActivity={client.lastActivity}
-                  issue={client.issue}
-                  projectCount={client.projectCount}
-                  onAIClick={() => handleClientClick(client)}
-                />
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Cargando clientes...
               </div>
-            ))}
+            ) : sortedClients.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No hay clientes que requieran atención</p>
+                <p className="text-xs mt-1">¡Excelente trabajo!</p>
+              </div>
+            ) : (
+              sortedClients.map((client, index) => (
+                <div 
+                  key={client.id}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <ClientCard
+                    variant="compact"
+                    name={client.name}
+                    status={client.status}
+                    lastActivity={client.lastActivity}
+                    issue={client.issue}
+                    projectCount={client.projectCount}
+                    onAIClick={() => handleClientClick(client)}
+                    onMarkReviewed={() => handleMarkReviewed(client)}
+                    onStatusChange={(newStatus) => handleStatusChange(client, newStatus)}
+                  />
+                </div>
+              ))
+            )}
           </div>
 
           {/* Footer with Quick Access */}
@@ -192,7 +326,7 @@ export function DesktopCEODashboard() {
         <ClientChatModal
           open={!!selectedClient}
           onOpenChange={(open) => !open && setSelectedClient(null)}
-          clientId={null}
+          clientId={selectedClient.id}
           clientName={selectedClient.name}
           clientStatus={selectedClient.status}
           issue={selectedClient.issue}

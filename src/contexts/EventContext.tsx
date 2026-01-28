@@ -31,9 +31,40 @@ const EventContext = createContext<EventContextType | undefined>(undefined);
 export function EventProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
 
+  // Delete past events from Supabase (events that already happened)
+  const cleanupPastEvents = useCallback(async () => {
+    try {
+      // Get current time in Madrid timezone
+      const now = new Date();
+      
+      // Delete events where start_at is in the past (with 5 min grace period for reminders)
+      const cutoffTime = new Date(now.getTime() - 5 * 60 * 1000); // 5 minutes grace
+      
+      const { error, count } = await supabase
+        .from("events")
+        .delete()
+        .lt("start_at", cutoffTime.toISOString());
+
+      if (error) {
+        console.error("Error cleaning up past events:", error);
+      } else if (count && count > 0) {
+        console.log(`🧹 Cleaned up ${count} past event(s)`);
+      }
+    } catch (err) {
+      console.error("Error in cleanupPastEvents:", err);
+    }
+  }, []);
+
   // Fetch events from Supabase
   const fetchEvents = useCallback(async () => {
+    // First, cleanup past events
+    await cleanupPastEvents();
+    
     try {
+      // Only fetch future events (with small buffer for just-passed events)
+      const now = new Date();
+      const bufferTime = new Date(now.getTime() - 5 * 60 * 1000); // 5 min buffer
+      
       const { data, error } = await supabase
         .from("events")
         .select(`
@@ -47,6 +78,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
           client_id,
           clients (name)
         `)
+        .gte("start_at", bufferTime.toISOString())
         .order("start_at", { ascending: true });
 
       if (error) {
@@ -82,7 +114,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Error in fetchEvents:", err);
     }
-  }, []);
+  }, [cleanupPastEvents]);
 
   // Initial fetch
   useEffect(() => {

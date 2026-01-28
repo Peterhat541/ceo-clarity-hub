@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
 import { NoteForm } from "@/components/admin/NoteForm";
 import { CEONotificationBell } from "@/components/admin/CEONotificationBell";
+import { TruncatedCell } from "@/components/admin/TruncatedCell";
 import { ClientFormModal } from "@/components/admin/ClientFormModal";
 import processiaLogo from "@/assets/processia-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -348,7 +349,7 @@ export default function Admin() {
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-1">Base de datos de clientes</h1>
@@ -380,11 +381,11 @@ export default function Admin() {
           </div>
 
           {/* Table */}
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-xl border border-border bg-card overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-secondary/50">
-                  <TableHead className="w-[60px]">
+                  <TableHead className="w-[60px] sticky left-0 bg-secondary/50 z-10">
                     <button 
                       onClick={() => handleSort("status")}
                       className="flex items-center hover:text-foreground transition-colors"
@@ -393,7 +394,7 @@ export default function Admin() {
                       {getSortIcon("status")}
                     </button>
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="sticky left-[60px] bg-secondary/50 z-10 min-w-[180px]">
                     <button 
                       onClick={() => handleSort("name")}
                       className="flex items-center hover:text-foreground transition-colors"
@@ -402,81 +403,96 @@ export default function Admin() {
                       {getSortIcon("name")}
                     </button>
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="min-w-[140px]">
                     <button 
                       onClick={() => handleSort("mainContact")}
                       className="flex items-center hover:text-foreground transition-colors"
                     >
-                      Contacto principal
+                      Contacto
                       {getSortIcon("mainContact")}
                     </button>
                   </TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead className="text-center">Contactos</TableHead>
-                  <TableHead className="text-center">Proyectos</TableHead>
-                  <TableHead className="text-center">
+                  <TableHead className="min-w-[160px]">Email</TableHead>
+                  <TableHead className="min-w-[120px]">Teléfono</TableHead>
+                  <TableHead className="min-w-[140px]">Tipo proyecto</TableHead>
+                  <TableHead className="min-w-[180px]">Descripción</TableHead>
+                  <TableHead className="min-w-[160px]">Presupuesto</TableHead>
+                  <TableHead className="min-w-[160px]">Fechas</TableHead>
+                  <TableHead className="min-w-[100px]">Responsable</TableHead>
+                  <TableHead className="min-w-[160px]">Tareas pend.</TableHead>
+                  <TableHead className="min-w-[160px]">
                     <button 
                       onClick={() => handleSort("incidents")}
-                      className="flex items-center justify-center hover:text-foreground transition-colors"
+                      className="flex items-center hover:text-foreground transition-colors"
                     >
                       Incidencias
                       {getSortIcon("incidents")}
                     </button>
                   </TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead className="min-w-[160px]">Último contacto</TableHead>
+                  <TableHead className="text-right min-w-[100px] sticky right-0 bg-secondary/50 z-10">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndSortedClients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-card">
-                    <TableCell>
+                    <TableCell className="sticky left-0 bg-card z-10">
                       <StatusDot status={client.status} pulse={client.status === "red"} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="sticky left-[60px] bg-card z-10">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
                           <Building2 className="w-4 h-4 text-muted-foreground" />
                         </div>
-                        <div>
-                          <p className="font-medium text-foreground">{client.name}</p>
-                          <p className="text-xs text-muted-foreground">{client.address}</p>
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground truncate">{client.name}</p>
+                          {client.address && (
+                            <p className="text-xs text-muted-foreground truncate">{client.address}</p>
+                          )}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-foreground">{client.contact_name || "-"}</TableCell>
-                    <TableCell className="text-muted-foreground">{client.email || "-"}</TableCell>
-                    <TableCell className="text-muted-foreground">{client.phone || "-"}</TableCell>
-                    <TableCell className="text-center">
-                      <button 
-                        onClick={() => openModal("contacts", client)}
-                        className="px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
-                      >
-                        {client.contact_name ? 1 : 0}
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <button 
-                        onClick={() => openModal("projects", client)}
-                        className="px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
-                      >
-                        {client.project_type ? 1 : 0}
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <button 
-                        onClick={() => openModal("incidents", client)}
-                        className={cn(
-                          "px-2 py-1 rounded-md text-sm font-medium transition-colors",
-                          client.incidents 
-                            ? "bg-status-orange/20 text-status-orange hover:bg-status-orange/30" 
-                            : "bg-secondary text-foreground hover:bg-secondary/80"
-                        )}
-                      >
-                        {client.incidents ? 1 : 0}
-                      </button>
+                    <TableCell>
+                      <TruncatedCell value={client.contact_name} maxWidth="max-w-[130px]" />
                     </TableCell>
                     <TableCell>
+                      <TruncatedCell value={client.email} maxWidth="max-w-[150px]" className="text-muted-foreground" />
+                    </TableCell>
+                    <TableCell>
+                      <TruncatedCell value={client.phone} maxWidth="max-w-[110px]" className="text-muted-foreground" />
+                    </TableCell>
+                    <TableCell>
+                      <TruncatedCell value={client.project_type} maxWidth="max-w-[130px]" />
+                    </TableCell>
+                    <TableCell>
+                      <TruncatedCell value={client.work_description} maxWidth="max-w-[170px]" />
+                    </TableCell>
+                    <TableCell>
+                      <TruncatedCell value={client.budget} maxWidth="max-w-[150px]" />
+                    </TableCell>
+                    <TableCell>
+                      <TruncatedCell value={client.project_dates} maxWidth="max-w-[150px]" />
+                    </TableCell>
+                    <TableCell>
+                      <TruncatedCell value={client.project_manager} maxWidth="max-w-[90px]" />
+                    </TableCell>
+                    <TableCell>
+                      <TruncatedCell value={client.pending_tasks} maxWidth="max-w-[150px]" />
+                    </TableCell>
+                    <TableCell>
+                      {client.incidents ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-status-orange/20 text-status-orange text-xs">
+                          <AlertTriangle className="w-3 h-3" />
+                          <TruncatedCell value={client.incidents} maxWidth="max-w-[120px]" className="text-status-orange" />
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <TruncatedCell value={client.last_contact} maxWidth="max-w-[150px]" />
+                    </TableCell>
+                    <TableCell className="sticky right-0 bg-card z-10">
                       <div className="flex items-center justify-end gap-1">
                         <Button 
                           variant="ghost" 

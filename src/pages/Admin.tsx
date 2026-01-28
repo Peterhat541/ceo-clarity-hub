@@ -4,11 +4,8 @@ import {
   Plus, 
   Search,
   Users,
-  FolderOpen,
   AlertTriangle,
   Mail,
-  Phone,
-  MapPin,
   Edit2,
   StickyNote,
   ArrowUpDown,
@@ -18,7 +15,8 @@ import {
   X,
   Send,
   RefreshCw,
-  Database
+  Database,
+  Trash2
 } from "lucide-react";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
@@ -32,6 +30,9 @@ import { CEONotificationBell } from "@/components/admin/CEONotificationBell";
 import { TruncatedCell } from "@/components/admin/TruncatedCell";
 import { ClientFormModal } from "@/components/admin/ClientFormModal";
 import { seedClients } from "@/components/admin/seedData";
+import { ColumnVisibilityToggle, useColumnVisibility } from "@/components/admin/ColumnVisibilityToggle";
+import { DualScrollTable } from "@/components/admin/DualScrollTable";
+import { DeleteClientDialog } from "@/components/admin/DeleteClientDialog";
 import processiaLogo from "@/assets/processia-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -50,7 +51,6 @@ interface Client {
   phone: string;
   address: string;
   contact_name: string;
-  // New business fields
   project_type: string;
   work_description: string;
   budget: string;
@@ -59,28 +59,6 @@ interface Client {
   pending_tasks: string;
   incidents: string;
   last_contact: string;
-}
-
-interface Contact {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  status: string;
-  startDate: string;
-}
-
-interface Incident {
-  id: string;
-  description: string;
-  status: Status;
-  createdAt: string;
 }
 
 interface Note {
@@ -94,7 +72,22 @@ interface Note {
   clientName?: string;
 }
 
-type SortField = "name" | "status" | "mainContact" | "incidents";
+// Extended sort fields to cover all columns
+type SortField = 
+  | "name" 
+  | "status" 
+  | "contact_name" 
+  | "email" 
+  | "phone" 
+  | "project_type" 
+  | "work_description" 
+  | "budget" 
+  | "project_dates" 
+  | "project_manager" 
+  | "pending_tasks" 
+  | "incidents" 
+  | "last_contact";
+
 type SortDirection = "asc" | "desc";
 
 const statusOrder: Record<Status, number> = {
@@ -118,6 +111,14 @@ export default function Admin() {
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
   const [notes, setNotes] = useState<Note[]>([]);
   const { addNote } = useNoteContext();
+
+  // Column visibility
+  const { visibleColumns, toggleColumn, showAll, resetToDefault, isColumnVisible } = useColumnVisibility();
+
+  // Delete client state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch clients from database
   const fetchClients = async () => {
@@ -161,7 +162,6 @@ export default function Admin() {
 
   // Seed demo data
   const handleSeedData = async () => {
-    // Check if we already have seed data (by checking for specific client names)
     const existingNames = clients.map(c => c.name);
     const alreadySeeded = seedClients.some(sc => existingNames.includes(sc.name));
     
@@ -203,6 +203,47 @@ export default function Admin() {
     }
   };
 
+  // Delete client
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", clientToDelete.id);
+
+      if (error) throw error;
+
+      toast.success(`Cliente "${clientToDelete.name}" eliminado correctamente`);
+      setDeleteDialogOpen(false);
+      setClientToDelete(null);
+      await fetchClients();
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      toast.error("Error al eliminar el cliente");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const openDeleteDialog = (client: Client) => {
+    setClientToDelete(client);
+    setDeleteDialogOpen(true);
+  };
+
+  // Generic sort function for all fields
+  const getSortValue = (client: Client, field: SortField): string | number => {
+    if (field === "status") {
+      return statusOrder[client.status];
+    }
+    if (field === "incidents") {
+      return client.incidents ? 1 : 0;
+    }
+    return (client[field] || "").toLowerCase();
+  };
+
   // Filter and sort clients
   const filteredAndSortedClients = useMemo(() => {
     let result = clients.filter((client) => {
@@ -218,21 +259,14 @@ export default function Admin() {
 
     // Sort
     result.sort((a, b) => {
-      let comparison = 0;
+      const aVal = getSortValue(a, sortField);
+      const bVal = getSortValue(b, sortField);
       
-      switch (sortField) {
-        case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case "status":
-          comparison = statusOrder[a.status] - statusOrder[b.status];
-          break;
-        case "mainContact":
-          comparison = (a.contact_name || "").localeCompare(b.contact_name || "");
-          break;
-        case "incidents":
-          comparison = (a.incidents ? 1 : 0) - (b.incidents ? 1 : 0);
-          break;
+      let comparison = 0;
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        comparison = aVal - bVal;
+      } else {
+        comparison = String(aVal).localeCompare(String(bVal));
       }
       
       return sortDirection === "asc" ? comparison : -comparison;
@@ -257,6 +291,16 @@ export default function Admin() {
       : <ArrowDown className="w-4 h-4 ml-1" />;
   };
 
+  const SortableHeader = ({ field, children, className = "" }: { field: SortField; children: React.ReactNode; className?: string }) => (
+    <button 
+      onClick={() => handleSort(field)}
+      className={cn("flex items-center hover:text-foreground transition-colors whitespace-nowrap", className)}
+    >
+      {children}
+      {getSortIcon(field)}
+    </button>
+  );
+
   const openModal = (type: typeof modalType, client?: Client) => {
     if (client) setSelectedClient(client);
     setModalType(type);
@@ -274,20 +318,18 @@ export default function Admin() {
     targetDate: Date;
     clientName?: string;
   }) => {
-    // Save to local state for Admin view
     const newNote: Note = {
       id: Date.now().toString(),
       title: data.title,
       content: data.content,
       visibility: data.visibility,
       createdAt: new Date().toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }),
-      author: "María López", // In a real app, this would be the logged-in user
+      author: "María López",
       targetDate: data.targetDate,
       clientName: data.clientName,
     };
     setNotes([newNote, ...notes]);
 
-    // Also add to NoteContext for CEO view if visibility includes CEO
     if (data.visibility === "ceo" || data.visibility === "both") {
       addNote({
         title: data.title,
@@ -303,7 +345,6 @@ export default function Admin() {
     closeModal();
   };
 
-  // Notes visible to CEO
   const ceoNotes = notes.filter(n => n.visibility === "ceo" || n.visibility === "both");
 
   return (
@@ -327,6 +368,14 @@ export default function Admin() {
             />
           </div>
           
+          {/* Column Visibility Toggle */}
+          <ColumnVisibilityToggle
+            visibleColumns={visibleColumns}
+            toggleColumn={toggleColumn}
+            showAll={showAll}
+            resetToDefault={resetToDefault}
+          />
+
           {/* Status Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -338,7 +387,7 @@ export default function Admin() {
                   statusFilter === "yellow" ? "Amarillos" : "Verdes"}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent className="bg-popover border-border">
               <DropdownMenuItem onClick={() => setStatusFilter("all")}>
                 Todos los estados
               </DropdownMenuItem>
@@ -377,7 +426,6 @@ export default function Admin() {
             </Button>
           )}
 
-          {/* CEO Notification Bell */}
           <CEONotificationBell />
 
           <Button 
@@ -413,7 +461,6 @@ export default function Admin() {
               <p className="text-muted-foreground">{filteredAndSortedClients.length} clientes {statusFilter !== "all" ? `(filtrado por estado)` : "registrados"}</p>
             </div>
             
-            {/* CEO Notes indicator and Send General Note button */}
             <div className="flex items-center gap-3">
               {ceoNotes.length > 0 && (
                 <button 
@@ -437,156 +484,217 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="rounded-xl border border-border bg-card overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-secondary/50">
-                  <TableHead className="w-[60px] sticky left-0 bg-secondary/50 z-10">
-                    <button 
-                      onClick={() => handleSort("status")}
-                      className="flex items-center hover:text-foreground transition-colors"
-                    >
-                      Estado
-                      {getSortIcon("status")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="sticky left-[60px] bg-secondary/50 z-10 min-w-[180px]">
-                    <button 
-                      onClick={() => handleSort("name")}
-                      className="flex items-center hover:text-foreground transition-colors"
-                    >
-                      Cliente
-                      {getSortIcon("name")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="min-w-[140px]">
-                    <button 
-                      onClick={() => handleSort("mainContact")}
-                      className="flex items-center hover:text-foreground transition-colors"
-                    >
-                      Contacto
-                      {getSortIcon("mainContact")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="min-w-[160px]">Email</TableHead>
-                  <TableHead className="min-w-[120px]">Teléfono</TableHead>
-                  <TableHead className="min-w-[140px]">Tipo proyecto</TableHead>
-                  <TableHead className="min-w-[180px]">Descripción</TableHead>
-                  <TableHead className="min-w-[160px]">Presupuesto</TableHead>
-                  <TableHead className="min-w-[160px]">Fechas</TableHead>
-                  <TableHead className="min-w-[100px]">Responsable</TableHead>
-                  <TableHead className="min-w-[160px]">Tareas pend.</TableHead>
-                  <TableHead className="min-w-[160px]">
-                    <button 
-                      onClick={() => handleSort("incidents")}
-                      className="flex items-center hover:text-foreground transition-colors"
-                    >
-                      Incidencias
-                      {getSortIcon("incidents")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="min-w-[160px]">Último contacto</TableHead>
-                  <TableHead className="text-right min-w-[100px] sticky right-0 bg-secondary/50 z-10">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAndSortedClients.map((client) => (
-                  <TableRow key={client.id} className="hover:bg-card">
-                    <TableCell className="sticky left-0 bg-card z-10">
-                      <StatusDot status={client.status} pulse={client.status === "red"} />
-                    </TableCell>
-                    <TableCell className="sticky left-[60px] bg-card z-10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                          <Building2 className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-foreground truncate">{client.name}</p>
-                          {client.address && (
-                            <p className="text-xs text-muted-foreground truncate">{client.address}</p>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.contact_name} maxWidth="max-w-[130px]" />
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.email} maxWidth="max-w-[150px]" className="text-muted-foreground" />
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.phone} maxWidth="max-w-[110px]" className="text-muted-foreground" />
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.project_type} maxWidth="max-w-[130px]" />
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.work_description} maxWidth="max-w-[170px]" />
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.budget} maxWidth="max-w-[150px]" />
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.project_dates} maxWidth="max-w-[150px]" />
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.project_manager} maxWidth="max-w-[90px]" />
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.pending_tasks} maxWidth="max-w-[150px]" />
-                    </TableCell>
-                    <TableCell>
-                      {client.incidents ? (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-status-orange/20 text-status-orange text-xs">
-                          <AlertTriangle className="w-3 h-3" />
-                          <TruncatedCell value={client.incidents} maxWidth="max-w-[120px]" className="text-status-orange" />
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <TruncatedCell value={client.last_contact} maxWidth="max-w-[150px]" />
-                    </TableCell>
-                    <TableCell className="sticky right-0 bg-card z-10">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => openModal("newNote", client)}
-                          title="Nueva nota"
-                        >
-                          <StickyNote className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => openModal("email", client)}
-                          title="Enviar email"
-                        >
-                          <Mail className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => {
-                            setEditingClient(client);
-                            setClientFormOpen(true);
-                          }}
-                          title="Editar"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {/* Table with dual scroll */}
+          <div className="rounded-xl border border-border bg-card">
+            <DualScrollTable>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary/50">
+                    {isColumnVisible("status") && (
+                      <TableHead className="w-[60px] sticky left-0 bg-secondary/50 z-10">
+                        <SortableHeader field="status">Estado</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("name") && (
+                      <TableHead className="sticky left-[60px] bg-secondary/50 z-10 min-w-[180px]">
+                        <SortableHeader field="name">Cliente</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("contact_name") && (
+                      <TableHead className="min-w-[140px]">
+                        <SortableHeader field="contact_name">Contacto</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("email") && (
+                      <TableHead className="min-w-[160px]">
+                        <SortableHeader field="email">Email</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("phone") && (
+                      <TableHead className="min-w-[120px]">
+                        <SortableHeader field="phone">Teléfono</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("project_type") && (
+                      <TableHead className="min-w-[140px]">
+                        <SortableHeader field="project_type">Tipo proyecto</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("work_description") && (
+                      <TableHead className="min-w-[180px]">
+                        <SortableHeader field="work_description">Descripción</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("budget") && (
+                      <TableHead className="min-w-[160px]">
+                        <SortableHeader field="budget">Presupuesto</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("project_dates") && (
+                      <TableHead className="min-w-[160px]">
+                        <SortableHeader field="project_dates">Fechas</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("project_manager") && (
+                      <TableHead className="min-w-[100px]">
+                        <SortableHeader field="project_manager">Responsable</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("pending_tasks") && (
+                      <TableHead className="min-w-[160px]">
+                        <SortableHeader field="pending_tasks">Tareas pend.</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("incidents") && (
+                      <TableHead className="min-w-[160px]">
+                        <SortableHeader field="incidents">Incidencias</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("last_contact") && (
+                      <TableHead className="min-w-[160px]">
+                        <SortableHeader field="last_contact">Último contacto</SortableHeader>
+                      </TableHead>
+                    )}
+                    {isColumnVisible("actions") && (
+                      <TableHead className="text-right min-w-[120px] sticky right-0 bg-secondary/50 z-10">Acciones</TableHead>
+                    )}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredAndSortedClients.map((client) => (
+                    <TableRow key={client.id} className="hover:bg-card">
+                      {isColumnVisible("status") && (
+                        <TableCell className="sticky left-0 bg-card z-10">
+                          <StatusDot status={client.status} pulse={client.status === "red"} />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("name") && (
+                        <TableCell className="sticky left-[60px] bg-card z-10">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                              <Building2 className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground truncate">{client.name}</p>
+                              {client.address && (
+                                <p className="text-xs text-muted-foreground truncate">{client.address}</p>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                      )}
+                      {isColumnVisible("contact_name") && (
+                        <TableCell>
+                          <TruncatedCell value={client.contact_name} maxWidth="max-w-[130px]" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("email") && (
+                        <TableCell>
+                          <TruncatedCell value={client.email} maxWidth="max-w-[150px]" className="text-muted-foreground" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("phone") && (
+                        <TableCell>
+                          <TruncatedCell value={client.phone} maxWidth="max-w-[110px]" className="text-muted-foreground" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("project_type") && (
+                        <TableCell>
+                          <TruncatedCell value={client.project_type} maxWidth="max-w-[130px]" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("work_description") && (
+                        <TableCell>
+                          <TruncatedCell value={client.work_description} maxWidth="max-w-[170px]" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("budget") && (
+                        <TableCell>
+                          <TruncatedCell value={client.budget} maxWidth="max-w-[150px]" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("project_dates") && (
+                        <TableCell>
+                          <TruncatedCell value={client.project_dates} maxWidth="max-w-[150px]" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("project_manager") && (
+                        <TableCell>
+                          <TruncatedCell value={client.project_manager} maxWidth="max-w-[90px]" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("pending_tasks") && (
+                        <TableCell>
+                          <TruncatedCell value={client.pending_tasks} maxWidth="max-w-[150px]" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("incidents") && (
+                        <TableCell>
+                          {client.incidents ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-status-orange/20 text-status-orange text-xs">
+                              <AlertTriangle className="w-3 h-3" />
+                              <TruncatedCell value={client.incidents} maxWidth="max-w-[120px]" className="text-status-orange" />
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                      )}
+                      {isColumnVisible("last_contact") && (
+                        <TableCell>
+                          <TruncatedCell value={client.last_contact} maxWidth="max-w-[150px]" />
+                        </TableCell>
+                      )}
+                      {isColumnVisible("actions") && (
+                        <TableCell className="sticky right-0 bg-card z-10">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => openModal("newNote", client)}
+                              title="Nueva nota"
+                            >
+                              <StickyNote className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => openModal("email", client)}
+                              title="Enviar email"
+                            >
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingClient(client);
+                                setClientFormOpen(true);
+                              }}
+                              title="Editar"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => openDeleteDialog(client)}
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </DualScrollTable>
           </div>
         </div>
       </main>
@@ -594,7 +702,19 @@ export default function Admin() {
       {/* View Switcher */}
       <ViewSwitcher />
 
-      {/* Contacts Modal - simplified */}
+      {/* Delete Confirmation Dialog */}
+      <DeleteClientDialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setClientToDelete(null);
+        }}
+        onConfirm={handleDeleteClient}
+        clientName={clientToDelete?.name || ""}
+        isDeleting={isDeleting}
+      />
+
+      {/* Contacts Modal */}
       <Dialog open={modalType === "contacts"} onOpenChange={closeModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -622,7 +742,7 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
 
-      {/* Projects Modal - shows project info from client */}
+      {/* Projects Modal */}
       <Dialog open={modalType === "projects"} onOpenChange={closeModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -717,7 +837,7 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
 
-      {/* Client Form Modal (New/Edit) */}
+      {/* Client Form Modal */}
       <ClientFormModal
         open={clientFormOpen}
         onClose={() => {
@@ -728,7 +848,7 @@ export default function Admin() {
         onSaved={fetchClients}
       />
 
-      {/* New Note Modal with visibility options */}
+      {/* New Note Modal */}
       <Dialog open={modalType === "newNote"} onOpenChange={closeModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

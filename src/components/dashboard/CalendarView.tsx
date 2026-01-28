@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Phone, Users, Bell, X, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Phone, Users, Bell, X, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEventContext, CalendarEvent } from "@/contexts/EventContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { CreateEventModal } from "./CreateEventModal";
 
 interface CalendarViewProps {
   isOpen: boolean;
@@ -79,6 +80,7 @@ export function CalendarView({ isOpen, onClose }: CalendarViewProps) {
   const { events, refreshEvents } = useEventContext();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -146,6 +148,14 @@ export function CalendarView({ isOpen, onClose }: CalendarViewProps) {
             </Button>
             <Button variant="outline" size="sm" onClick={goToToday} className="ml-2">
               Hoy
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={() => setShowCreateModal(true)} 
+              className="ml-2 gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo
             </Button>
           </div>
           <div className="flex items-center gap-4">
@@ -311,6 +321,13 @@ export function CalendarView({ isOpen, onClose }: CalendarViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Create Event Modal */}
+      <CreateEventModal 
+        open={showCreateModal} 
+        onOpenChange={setShowCreateModal}
+        defaultDate={selectedDate || undefined}
+      />
     </div>
   );
 }

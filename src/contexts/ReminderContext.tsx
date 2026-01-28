@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useEventContext, CalendarEvent } from "./EventContext";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ActiveReminder {
   id: string;
@@ -15,70 +15,132 @@ interface ReminderContextType {
   activeReminders: ActiveReminder[];
   dismissReminder: (id: string) => void;
   dismissAllReminders: () => void;
-  triggerTestReminder: () => void;
 }
 
 const ReminderContext = createContext<ReminderContextType | undefined>(undefined);
 
 export function ReminderProvider({ children }: { children: ReactNode }) {
-  const { events } = useEventContext();
   const [activeReminders, setActiveReminders] = useState<ActiveReminder[]>([]);
-  const [triggeredEventIds, setTriggeredEventIds] = useState<Set<string>>(new Set());
+  const [triggeredEventIds, setTriggeredEventIds] = useState<Set<string>>(() => {
+    // Recuperar del localStorage para persistir entre recargas
+    const saved = localStorage.getItem("triggeredEventIds");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
 
-  // Check for reminders every 30 seconds
+  // Guardar triggeredEventIds en localStorage
   useEffect(() => {
-    const checkReminders = () => {
+    localStorage.setItem("triggeredEventIds", JSON.stringify([...triggeredEventIds]));
+  }, [triggeredEventIds]);
+
+  // Check for reminders directly from Supabase
+  const checkReminders = useCallback(async () => {
+    try {
       const now = new Date();
-      const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+      // Fetch today's events from Supabase
+      const { data: events, error } = await supabase
+        .from("events")
+        .select(`
+          id,
+          title,
+          type,
+          start_at,
+          reminder_minutes,
+          client_id,
+          clients (name)
+        `)
+        .gte("start_at", todayStart.toISOString())
+        .lte("start_at", todayEnd.toISOString());
+
+      if (error) {
+        console.error("Error fetching events for reminders:", error);
+        return;
+      }
+
+      if (!events) return;
+
+      const currentTimeMs = now.getTime();
 
       events.forEach((event) => {
         // Skip if already triggered
         if (triggeredEventIds.has(event.id)) return;
 
-        // Check if event is today
-        const eventDate = new Date(event.date);
-        const isToday =
-          eventDate.getDate() === now.getDate() &&
-          eventDate.getMonth() === now.getMonth() &&
-          eventDate.getFullYear() === now.getFullYear();
-
-        if (!isToday) return;
-
-        // Calculate event time in minutes
-        const [eventHours, eventMinutes] = event.time.split(":").map(Number);
-        const eventTimeMinutes = eventHours * 60 + eventMinutes;
-
+        const eventDate = new Date(event.start_at);
+        const eventTimeMs = eventDate.getTime();
+        
         // Default reminder is 15 minutes before
-        const reminderMinutesBefore = event.reminder?.minutesBefore || 15;
-        const reminderTimeMinutes = eventTimeMinutes - reminderMinutesBefore;
+        const reminderMinutesBefore = event.reminder_minutes || 15;
+        const reminderTimeMs = eventTimeMs - (reminderMinutesBefore * 60 * 1000);
 
-        // Check if it's time to show the reminder (within 1 minute window)
-        if (currentTimeMinutes >= reminderTimeMinutes && currentTimeMinutes <= reminderTimeMinutes + 1) {
-          // Trigger reminder
+        // Grace period: show reminder up to 5 minutes after event time
+        const graceEndMs = eventTimeMs + (5 * 60 * 1000);
+
+        // Check if it's time to show the reminder (from reminder time until 5 min after event)
+        if (currentTimeMs >= reminderTimeMs && currentTimeMs <= graceEndMs) {
+          const hours = eventDate.getHours().toString().padStart(2, "0");
+          const minutes = eventDate.getMinutes().toString().padStart(2, "0");
+          
           const newReminder: ActiveReminder = {
             id: `reminder-${event.id}-${Date.now()}`,
             eventId: event.id,
             eventTitle: event.title,
-            clientName: event.clientName,
-            eventTime: event.time,
+            clientName: event.clients?.name || "Sin cliente",
+            eventTime: `${hours}:${minutes}`,
             triggeredAt: now,
             dismissed: false,
           };
 
-          setActiveReminders((prev) => [...prev, newReminder]);
+          console.log("🔔 Triggering reminder for:", event.title, "at", `${hours}:${minutes}`);
+          
+          setActiveReminders((prev) => {
+            // Avoid duplicates
+            if (prev.some(r => r.eventId === event.id)) return prev;
+            return [...prev, newReminder];
+          });
           setTriggeredEventIds((prev) => new Set([...prev, event.id]));
         }
       });
-    };
+    } catch (err) {
+      console.error("Error checking reminders:", err);
+    }
+  }, [triggeredEventIds]);
 
-    // Check immediately
+  // Check immediately and every 10 seconds
+  useEffect(() => {
     checkReminders();
-
-    // Check every 30 seconds
-    const interval = setInterval(checkReminders, 30000);
+    const interval = setInterval(checkReminders, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
-  }, [events, triggeredEventIds]);
+  }, [checkReminders]);
+
+  // Also check when events are created
+  useEffect(() => {
+    const handleEventCreated = () => {
+      console.log("Event created, checking reminders...");
+      checkReminders();
+    };
+
+    window.addEventListener("processia:eventCreated", handleEventCreated);
+    return () => {
+      window.removeEventListener("processia:eventCreated", handleEventCreated);
+    };
+  }, [checkReminders]);
+
+  // Clear old triggered IDs at midnight
+  useEffect(() => {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const msUntilMidnight = tomorrow.getTime() - now.getTime();
+
+    const timeout = setTimeout(() => {
+      setTriggeredEventIds(new Set());
+      localStorage.removeItem("triggeredEventIds");
+    }, msUntilMidnight);
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   const dismissReminder = (id: string) => {
     setActiveReminders((prev) =>
@@ -94,23 +156,9 @@ export function ReminderProvider({ children }: { children: ReactNode }) {
     setActiveReminders([]);
   };
 
-  const triggerTestReminder = () => {
-    const now = new Date();
-    const testReminder: ActiveReminder = {
-      id: `test-reminder-${Date.now()}`,
-      eventId: "test-event",
-      eventTitle: "Reunión de prueba con cliente",
-      clientName: "Test Client",
-      eventTime: `${now.getHours().toString().padStart(2, "0")}:${(now.getMinutes() + 15).toString().padStart(2, "0")}`,
-      triggeredAt: now,
-      dismissed: false,
-    };
-    setActiveReminders((prev) => [...prev, testReminder]);
-  };
-
   return (
     <ReminderContext.Provider
-      value={{ activeReminders, dismissReminder, dismissAllReminders, triggerTestReminder }}
+      value={{ activeReminders, dismissReminder, dismissAllReminders }}
     >
       {children}
     </ReminderContext.Provider>

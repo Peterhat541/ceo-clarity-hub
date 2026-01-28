@@ -17,7 +17,8 @@ import {
   Filter,
   X,
   Send,
-  RefreshCw
+  RefreshCw,
+  Database
 } from "lucide-react";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import { NoteForm } from "@/components/admin/NoteForm";
 import { CEONotificationBell } from "@/components/admin/CEONotificationBell";
 import { TruncatedCell } from "@/components/admin/TruncatedCell";
 import { ClientFormModal } from "@/components/admin/ClientFormModal";
+import { seedClients } from "@/components/admin/seedData";
 import processiaLogo from "@/assets/processia-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -105,6 +107,7 @@ const statusOrder: Record<Status, number> = {
 export default function Admin() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [modalType, setModalType] = useState<"contacts" | "projects" | "incidents" | "newNote" | "email" | "notes" | null>(null);
@@ -155,6 +158,50 @@ export default function Admin() {
   useEffect(() => {
     fetchClients();
   }, []);
+
+  // Seed demo data
+  const handleSeedData = async () => {
+    // Check if we already have seed data (by checking for specific client names)
+    const existingNames = clients.map(c => c.name);
+    const alreadySeeded = seedClients.some(sc => existingNames.includes(sc.name));
+    
+    if (alreadySeeded) {
+      toast.info("Los datos de ejemplo ya existen en la base de datos");
+      return;
+    }
+
+    setSeeding(true);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .insert(seedClients.map(client => ({
+          name: client.name,
+          status: client.status,
+          email: client.email,
+          phone: client.phone,
+          address: client.address,
+          contact_name: client.contact_name,
+          project_type: client.project_type,
+          work_description: client.work_description,
+          budget: client.budget,
+          project_dates: client.project_dates,
+          project_manager: client.project_manager,
+          pending_tasks: client.pending_tasks,
+          incidents: client.incidents || null,
+          last_contact: client.last_contact,
+        })));
+
+      if (error) throw error;
+      
+      toast.success(`Se han creado ${seedClients.length} clientes de ejemplo`);
+      await fetchClients();
+    } catch (error) {
+      console.error("Error seeding data:", error);
+      toast.error("Error al generar datos de ejemplo");
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   // Filter and sort clients
   const filteredAndSortedClients = useMemo(() => {
@@ -332,6 +379,16 @@ export default function Admin() {
 
           {/* CEO Notification Bell */}
           <CEONotificationBell />
+
+          <Button 
+            onClick={handleSeedData} 
+            variant="outline" 
+            className="gap-2 text-status-purple border-status-purple/30 hover:bg-status-purple/10" 
+            disabled={seeding}
+          >
+            <Database className={cn("w-4 h-4", seeding && "animate-pulse")} />
+            {seeding ? "Generando..." : "Datos ejemplo"}
+          </Button>
 
           <Button onClick={() => fetchClients()} variant="outline" className="gap-2" disabled={loading}>
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />

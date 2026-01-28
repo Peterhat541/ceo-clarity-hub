@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Building2, 
   Plus, 
@@ -16,7 +16,8 @@ import {
   ArrowDown,
   Filter,
   X,
-  Send
+  Send,
+  RefreshCw
 } from "lucide-react";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,10 @@ import { cn } from "@/lib/utils";
 import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
 import { NoteForm } from "@/components/admin/NoteForm";
 import { CEONotificationBell } from "@/components/admin/CEONotificationBell";
+import { ClientFormModal } from "@/components/admin/ClientFormModal";
 import processiaLogo from "@/assets/processia-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,11 +46,16 @@ interface Client {
   email: string;
   phone: string;
   address: string;
-  mainContact: string;
-  contacts: number;
-  projects: number;
-  incidents: number;
-  lastActivity: string;
+  contact_name: string;
+  // New business fields
+  project_type: string;
+  work_description: string;
+  budget: string;
+  project_dates: string;
+  project_manager: string;
+  pending_tasks: string;
+  incidents: string;
+  last_contact: string;
 }
 
 interface Contact {
@@ -85,109 +94,6 @@ interface Note {
 type SortField = "name" | "status" | "mainContact" | "incidents";
 type SortDirection = "asc" | "desc";
 
-const clientsData: Client[] = [
-  { 
-    id: "1", 
-    name: "Nexus Tech", 
-    status: "red", 
-    email: "info@nexustech.com",
-    phone: "+34 912 345 678",
-    address: "Calle Gran Vía 45, Madrid",
-    mainContact: "Carlos Rodríguez",
-    contacts: 3, 
-    projects: 2, 
-    incidents: 1, 
-    lastActivity: "Hace 3 días" 
-  },
-  { 
-    id: "2", 
-    name: "Global Media", 
-    status: "orange", 
-    email: "contact@globalmedia.es",
-    phone: "+34 933 456 789",
-    address: "Av. Diagonal 200, Barcelona",
-    mainContact: "Ana Martínez",
-    contacts: 2, 
-    projects: 1, 
-    incidents: 1, 
-    lastActivity: "Hace 1 día" 
-  },
-  { 
-    id: "3", 
-    name: "Startup Lab", 
-    status: "orange", 
-    email: "hello@startuplab.io",
-    phone: "+34 916 789 012",
-    address: "Calle Serrano 100, Madrid",
-    mainContact: "Miguel Sánchez",
-    contacts: 4, 
-    projects: 3, 
-    incidents: 0, 
-    lastActivity: "Hace 2 días" 
-  },
-  { 
-    id: "4", 
-    name: "CoreData", 
-    status: "yellow", 
-    email: "support@coredata.com",
-    phone: "+34 945 678 901",
-    address: "Plaza España 15, Bilbao",
-    mainContact: "Laura García",
-    contacts: 2, 
-    projects: 1, 
-    incidents: 1, 
-    lastActivity: "Hace 5 días" 
-  },
-  { 
-    id: "5", 
-    name: "BlueSky Ventures", 
-    status: "green", 
-    email: "info@bluesky.vc",
-    phone: "+34 961 234 567",
-    address: "Calle Colón 50, Valencia",
-    mainContact: "Pablo Fernández",
-    contacts: 3, 
-    projects: 2, 
-    incidents: 0, 
-    lastActivity: "Hoy" 
-  },
-  { 
-    id: "6", 
-    name: "TechFlow Solutions", 
-    status: "green", 
-    email: "contact@techflow.es",
-    phone: "+34 952 345 678",
-    address: "Av. Ricardo Soriano 20, Marbella",
-    mainContact: "Elena López",
-    contacts: 2, 
-    projects: 1, 
-    incidents: 0, 
-    lastActivity: "Ayer" 
-  },
-];
-
-const mockContacts: Contact[] = [
-  { id: "1", name: "Carlos Rodríguez", role: "CEO", email: "carlos@nexustech.com", phone: "+34 612 345 678" },
-  { id: "2", name: "María García", role: "CTO", email: "maria@nexustech.com", phone: "+34 623 456 789" },
-  { id: "3", name: "Juan López", role: "Project Manager", email: "juan@nexustech.com", phone: "+34 634 567 890" },
-];
-
-const mockProjects: Project[] = [
-  { id: "1", name: "Migración Cloud", status: "En progreso", startDate: "15 Nov 2025" },
-  { id: "2", name: "App Móvil v2", status: "Planificación", startDate: "01 Feb 2026" },
-];
-
-const mockIncidents: Incident[] = [
-  { id: "1", description: "Error en la facturación del mes de enero", status: "red", createdAt: "23 Ene 2026" },
-];
-
-// Mock notes that would be stored in database
-const mockNotes: Note[] = [
-  { id: "1", content: "Cliente muy importante, priorizar siempre", visibility: "both", createdAt: "20 Ene 2026", author: "Ana" },
-  { id: "2", content: "Prefiere comunicación por email", visibility: "team", createdAt: "18 Ene 2026", author: "Carlos" },
-  { id: "3", content: "Pendiente de decisión sobre renovación", visibility: "ceo", createdAt: "22 Ene 2026", author: "Ana" },
-];
-
 const statusOrder: Record<Status, number> = {
   red: 0,
   orange: 1,
@@ -196,23 +102,66 @@ const statusOrder: Record<Status, number> = {
 };
 
 export default function Admin() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [modalType, setModalType] = useState<"contacts" | "projects" | "incidents" | "edit" | "newClient" | "newNote" | "email" | "notes" | null>(null);
+  const [modalType, setModalType] = useState<"contacts" | "projects" | "incidents" | "newNote" | "email" | "notes" | null>(null);
+  const [clientFormOpen, setClientFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [sortField, setSortField] = useState<SortField>("status");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
-  const [notes, setNotes] = useState<Note[]>(mockNotes);
+  const [notes, setNotes] = useState<Note[]>([]);
   const { addNote } = useNoteContext();
+
+  // Fetch clients from database
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+
+      setClients(data?.map(c => ({
+        id: c.id,
+        name: c.name,
+        status: c.status as Status,
+        email: c.email || "",
+        phone: c.phone || "",
+        address: c.address || "",
+        contact_name: c.contact_name || "",
+        project_type: c.project_type || "",
+        work_description: c.work_description || "",
+        budget: c.budget || "",
+        project_dates: c.project_dates || "",
+        project_manager: c.project_manager || "",
+        pending_tasks: c.pending_tasks || "",
+        incidents: c.incidents || "",
+        last_contact: c.last_contact || "",
+      })) || []);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      toast.error("Error al cargar los clientes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   // Filter and sort clients
   const filteredAndSortedClients = useMemo(() => {
-    let result = clientsData.filter((client) => {
+    let result = clients.filter((client) => {
       const matchesSearch = 
         client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.mainContact.toLowerCase().includes(searchQuery.toLowerCase());
+        client.contact_name.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesStatus = statusFilter === "all" || client.status === statusFilter;
       
@@ -231,10 +180,10 @@ export default function Admin() {
           comparison = statusOrder[a.status] - statusOrder[b.status];
           break;
         case "mainContact":
-          comparison = a.mainContact.localeCompare(b.mainContact);
+          comparison = (a.contact_name || "").localeCompare(b.contact_name || "");
           break;
         case "incidents":
-          comparison = a.incidents - b.incidents;
+          comparison = (a.incidents ? 1 : 0) - (b.incidents ? 1 : 0);
           break;
       }
       
@@ -242,7 +191,7 @@ export default function Admin() {
     });
 
     return result;
-  }, [searchQuery, statusFilter, sortField, sortDirection]);
+  }, [clients, searchQuery, statusFilter, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -383,7 +332,14 @@ export default function Admin() {
           {/* CEO Notification Bell */}
           <CEONotificationBell />
 
-          <Button onClick={() => openModal("newClient")}>
+          <Button onClick={() => fetchClients()} variant="outline" className="gap-2" disabled={loading}>
+            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+          </Button>
+
+          <Button onClick={() => {
+            setEditingClient(null);
+            setClientFormOpen(true);
+          }}>
             <Plus className="w-4 h-4 mr-2" />
             Nuevo cliente
           </Button>
@@ -488,15 +444,15 @@ export default function Admin() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-foreground">{client.mainContact}</TableCell>
-                    <TableCell className="text-muted-foreground">{client.email}</TableCell>
-                    <TableCell className="text-muted-foreground">{client.phone}</TableCell>
+                    <TableCell className="text-foreground">{client.contact_name || "-"}</TableCell>
+                    <TableCell className="text-muted-foreground">{client.email || "-"}</TableCell>
+                    <TableCell className="text-muted-foreground">{client.phone || "-"}</TableCell>
                     <TableCell className="text-center">
                       <button 
                         onClick={() => openModal("contacts", client)}
                         className="px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
                       >
-                        {client.contacts}
+                        {client.contact_name ? 1 : 0}
                       </button>
                     </TableCell>
                     <TableCell className="text-center">
@@ -504,7 +460,7 @@ export default function Admin() {
                         onClick={() => openModal("projects", client)}
                         className="px-2 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
                       >
-                        {client.projects}
+                        {client.project_type ? 1 : 0}
                       </button>
                     </TableCell>
                     <TableCell className="text-center">
@@ -512,12 +468,12 @@ export default function Admin() {
                         onClick={() => openModal("incidents", client)}
                         className={cn(
                           "px-2 py-1 rounded-md text-sm font-medium transition-colors",
-                          client.incidents > 0 
+                          client.incidents 
                             ? "bg-status-orange/20 text-status-orange hover:bg-status-orange/30" 
                             : "bg-secondary text-foreground hover:bg-secondary/80"
                         )}
                       >
-                        {client.incidents}
+                        {client.incidents ? 1 : 0}
                       </button>
                     </TableCell>
                     <TableCell>
@@ -546,7 +502,7 @@ export default function Admin() {
                           className="h-8 w-8"
                           onClick={() => {
                             setEditingClient(client);
-                            openModal("edit", client);
+                            setClientFormOpen(true);
                           }}
                           title="Editar"
                         >
@@ -565,61 +521,75 @@ export default function Admin() {
       {/* View Switcher */}
       <ViewSwitcher />
 
-      {/* Contacts Modal */}
+      {/* Contacts Modal - simplified */}
       <Dialog open={modalType === "contacts"} onOpenChange={closeModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Contactos de {selectedClient?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
-            {mockContacts.map((contact) => (
-              <div key={contact.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary">
+            {selectedClient?.contact_name ? (
+              <div className="flex items-center gap-4 p-3 rounded-lg bg-secondary">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                   <Users className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-foreground">{contact.name}</p>
-                  <p className="text-sm text-muted-foreground">{contact.role}</p>
+                  <p className="font-medium text-foreground">{selectedClient.contact_name}</p>
+                  <p className="text-sm text-muted-foreground">Contacto principal</p>
                 </div>
                 <div className="text-right text-sm">
-                  <p className="text-foreground">{contact.email}</p>
-                  <p className="text-muted-foreground">{contact.phone}</p>
+                  <p className="text-foreground">{selectedClient.email || "Sin email"}</p>
+                  <p className="text-muted-foreground">{selectedClient.phone || "Sin teléfono"}</p>
                 </div>
               </div>
-            ))}
-            <Button className="w-full mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Añadir contacto
-            </Button>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No hay contactos registrados</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Projects Modal */}
+      {/* Projects Modal - shows project info from client */}
       <Dialog open={modalType === "projects"} onOpenChange={closeModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Proyectos de {selectedClient?.name}</DialogTitle>
+            <DialogTitle>Proyecto de {selectedClient?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
-            {mockProjects.map((project) => (
-              <div key={project.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary">
-                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <FolderOpen className="w-5 h-5 text-primary" />
+            {selectedClient?.project_type ? (
+              <div className="space-y-4">
+                <div className="p-3 rounded-lg bg-secondary">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Tipo de proyecto</p>
+                  <p className="font-medium text-foreground">{selectedClient.project_type}</p>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">{project.name}</p>
-                  <p className="text-sm text-muted-foreground">Inicio: {project.startDate}</p>
-                </div>
-                <span className="px-2 py-1 rounded-full bg-status-green/20 text-status-green text-xs font-medium">
-                  {project.status}
-                </span>
+                {selectedClient.work_description && (
+                  <div className="p-3 rounded-lg bg-secondary">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Descripción</p>
+                    <p className="text-foreground">{selectedClient.work_description}</p>
+                  </div>
+                )}
+                {selectedClient.budget && (
+                  <div className="p-3 rounded-lg bg-secondary">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Presupuesto</p>
+                    <p className="text-foreground">{selectedClient.budget}</p>
+                  </div>
+                )}
+                {selectedClient.project_dates && (
+                  <div className="p-3 rounded-lg bg-secondary">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Fechas</p>
+                    <p className="text-foreground">{selectedClient.project_dates}</p>
+                  </div>
+                )}
+                {selectedClient.project_manager && (
+                  <div className="p-3 rounded-lg bg-secondary">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Responsable</p>
+                    <p className="text-foreground">{selectedClient.project_manager}</p>
+                  </div>
+                )}
               </div>
-            ))}
-            <Button className="w-full mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Añadir proyecto
-            </Button>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No hay información de proyecto registrada</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -631,26 +601,16 @@ export default function Admin() {
             <DialogTitle>Incidencias de {selectedClient?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
-            {selectedClient?.incidents === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No hay incidencias registradas</p>
-            ) : (
-              mockIncidents.map((incident) => (
-                <div key={incident.id} className="flex items-start gap-4 p-3 rounded-lg bg-secondary">
-                  <div className="w-10 h-10 rounded-lg bg-status-red/20 flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-status-red" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{incident.description}</p>
-                    <p className="text-sm text-muted-foreground">Creada: {incident.createdAt}</p>
-                  </div>
-                  <StatusDot status={incident.status} pulse />
+            {selectedClient?.incidents ? (
+              <div className="p-3 rounded-lg bg-secondary">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-status-orange mt-0.5" />
+                  <p className="text-foreground">{selectedClient.incidents}</p>
                 </div>
-              ))
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No hay incidencias registradas</p>
             )}
-            <Button className="w-full mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Registrar incidencia
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -684,115 +644,16 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
 
-      {/* New Client Modal */}
-      <Dialog open={modalType === "newClient"} onOpenChange={closeModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Nuevo cliente</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Nombre de la empresa</label>
-              <input 
-                type="text" 
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Ej: Acme Corp"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
-              <input 
-                type="email" 
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="info@empresa.com"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Teléfono</label>
-              <input 
-                type="tel" 
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="+34 912 345 678"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Dirección</label>
-              <input 
-                type="text" 
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Calle, número, ciudad"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Contacto principal</label>
-              <input 
-                type="text" 
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Nombre y apellidos"
-              />
-            </div>
-            <div className="flex gap-3 pt-4">
-              <Button variant="outline" className="flex-1" onClick={closeModal}>Cancelar</Button>
-              <Button className="flex-1">Crear cliente</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Client Modal */}
-      <Dialog open={modalType === "edit"} onOpenChange={closeModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Editar {editingClient?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Nombre de la empresa</label>
-              <input 
-                type="text" 
-                defaultValue={editingClient?.name}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
-              <input 
-                type="email" 
-                defaultValue={editingClient?.email}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Teléfono</label>
-              <input 
-                type="tel" 
-                defaultValue={editingClient?.phone}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Dirección</label>
-              <input 
-                type="text" 
-                defaultValue={editingClient?.address}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Contacto principal</label>
-              <input 
-                type="text" 
-                defaultValue={editingClient?.mainContact}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div className="flex gap-3 pt-4">
-              <Button variant="outline" className="flex-1" onClick={closeModal}>Cancelar</Button>
-              <Button className="flex-1">Guardar cambios</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Client Form Modal (New/Edit) */}
+      <ClientFormModal
+        open={clientFormOpen}
+        onClose={() => {
+          setClientFormOpen(false);
+          setEditingClient(null);
+        }}
+        client={editingClient}
+        onSaved={fetchClients}
+      />
 
       {/* New Note Modal with visibility options */}
       <Dialog open={modalType === "newNote"} onOpenChange={closeModal}>
@@ -804,7 +665,7 @@ export default function Admin() {
             onClose={closeModal} 
             onSave={handleSaveNote}
             clientName={selectedClient?.name}
-            clients={clientsData.map(c => ({ name: c.name }))}
+            clients={clients.map(c => ({ name: c.name }))}
           />
         </DialogContent>
       </Dialog>

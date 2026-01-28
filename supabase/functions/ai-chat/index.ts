@@ -163,6 +163,24 @@ FORMATO DE RESPUESTAS (MUY IMPORTANTE):
 REGLA PRINCIPAL - RESUMEN DEL DÍA:
 Cuando el usuario pregunte "¿Qué tengo que hacer hoy?", "¿Cómo están las cosas?", "Dame la agenda", "¿Qué hay pendiente?" o similar, SIEMPRE usa la función get_dashboard_summary PRIMERO para obtener datos reales. Luego presenta un resumen estructurado con viñetas.
 
+REGLA CRÍTICA - FUENTE ÚNICA DE VERDAD:
+- La base de datos (tabla clients) es la ÚNICA fuente de información sobre clientes y proyectos.
+- SOLO puedes responder con datos que existen en la base de datos.
+- Si un campo no está registrado (missing_fields en get_client_context), DEBES indicarlo explícitamente.
+- NUNCA inventes, inferias o completes información que no existe en la base de datos.
+- Ejemplo correcto: "El presupuesto de este cliente NO está registrado en el sistema."
+- Ejemplo incorrecto: "El presupuesto debe rondar los X€" (NO hacer esto).
+
+CAMPOS DE PROYECTO DISPONIBLES:
+- project_type: Tipo de proyecto (ej: cambio de ventanas, cerramiento)
+- work_description: Descripción detallada del trabajo
+- budget: Presupuesto (total, señal, pendiente)
+- project_dates: Fechas clave (medición, fabricación, instalación)
+- project_manager: Responsable interno del proyecto
+- pending_tasks: Tareas pendientes
+- incidents_notes: Incidencias o retrasos
+- last_contact: Último contacto con el cliente
+
 REGLAS ADICIONALES:
 1. INTENCIÓN > CONTEXTO: Si el usuario pide un recordatorio personal, NO asumas cliente activo. Solo asocia cliente si lo menciona explícitamente.
 
@@ -176,6 +194,8 @@ REGLAS ADICIONALES:
 4. RESPUESTAS BREVES: Confirma acciones en 1-2 líneas con ✓.
 
 5. NOTAS AL EQUIPO: Para instrucciones (ej: "dile a María que llame"), usa create_note con target_employee y visible_to="team".
+
+6. DATOS FALTANTES: Cuando un dato de proyecto no esté registrado, sugiérelo al CEO y ofrece crear una nota para que el equipo lo complete.
 
 Hora actual: {current_time}
 Fecha actual: {current_date}
@@ -584,17 +604,42 @@ serve(async (req) => {
                 .order("created_at", { ascending: false })
                 .limit(5);
 
+              // Build complete client info with ALL fields from database
+              const clientInfo: Record<string, any> = {
+                id: clientData.id,
+                name: clientData.name,
+                status: clientData.status,
+                contact_name: clientData.contact_name,
+                email: clientData.email,
+                phone: clientData.phone,
+                address: clientData.address,
+                updated_at: clientData.updated_at,
+              };
+
+              // Add new business fields - ONLY if they have data
+              if (clientData.project_type) clientInfo.project_type = clientData.project_type;
+              if (clientData.work_description) clientInfo.work_description = clientData.work_description;
+              if (clientData.budget) clientInfo.budget = clientData.budget;
+              if (clientData.project_dates) clientInfo.project_dates = clientData.project_dates;
+              if (clientData.project_manager) clientInfo.project_manager = clientData.project_manager;
+              if (clientData.pending_tasks) clientInfo.pending_tasks = clientData.pending_tasks;
+              if (clientData.incidents) clientInfo.incidents_notes = clientData.incidents;
+              if (clientData.last_contact) clientInfo.last_contact = clientData.last_contact;
+
+              // List fields that are NOT registered in database
+              const missingFields: string[] = [];
+              if (!clientData.project_type) missingFields.push("tipo de proyecto");
+              if (!clientData.work_description) missingFields.push("descripción del trabajo");
+              if (!clientData.budget) missingFields.push("presupuesto");
+              if (!clientData.project_dates) missingFields.push("fechas del proyecto");
+              if (!clientData.project_manager) missingFields.push("responsable interno");
+              if (!clientData.pending_tasks) missingFields.push("tareas pendientes");
+              if (!clientData.last_contact) missingFields.push("último contacto");
+
               result = {
                 success: true,
-                client: {
-                  id: clientData.id,
-                  name: clientData.name,
-                  status: clientData.status,
-                  contact_name: clientData.contact_name,
-                  email: clientData.email,
-                  phone: clientData.phone,
-                  updated_at: clientData.updated_at
-                },
+                client: clientInfo,
+                missing_fields: missingFields.length > 0 ? missingFields : null,
                 history: history || []
               };
             }

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useClientContext } from "@/contexts/ClientContext";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
+import { useAIChatContext } from "@/contexts/AIChatContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -32,18 +33,17 @@ export function AIChat() {
   const { selectedClient, pendingContext, clearPendingContext } = useClientContext();
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: "Hola, soy tu asistente ejecutivo. Puedo ayudarte a gestionar tu agenda, crear recordatorios, enviar notas al equipo y mantenerte al día con tus clientes. ¿Qué necesitas?",
-      timestamp: new Date(),
-    },
-  ]);
-  const [input, setInput] = useState("");
+  const {
+    messages,
+    setMessages,
+    conversationHistory,
+    setConversationHistory,
+    activeClient,
+    setActiveClient,
+    input,
+    setInput,
+  } = useAIChatContext();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeClient, setActiveClient] = useState<{ id: string | null; name: string | null }>({ id: null, name: null });
-  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ClientCard } from "./ClientCard";
 import { ClientChatModal } from "@/components/ai/ClientChatModal";
 import { AgendaPopup } from "./AgendaPopup";
+import { CalendarView } from "./CalendarView";
 import { TeamNotesPopup } from "./TeamNotesPopup";
 import { SendNotePopup } from "./SendNotePopup";
 import { ReminderAlert } from "./ReminderAlert";
@@ -11,7 +12,8 @@ import {
   Calendar, 
   MessageSquare, 
   Sparkles,
-  Send
+  Send,
+  CalendarDays
 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
@@ -35,6 +37,7 @@ const clientsAttention: ClientData[] = [
 
 export function DesktopCEODashboard() {
   const [agendaOpen, setAgendaOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
@@ -140,6 +143,14 @@ export function DesktopCEODashboard() {
               </Button>
               <Button
                 variant="ghost"
+                onClick={() => setCalendarOpen(true)}
+                className="h-12 w-12 bg-primary/10 hover:bg-primary/20 text-primary"
+                title="Ver calendario"
+              >
+                <CalendarDays className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => setNotesOpen(true)}
                 className="flex-1 h-12 gap-2 bg-status-purple/10 hover:bg-status-purple/20 text-status-purple justify-start"
               >
@@ -182,6 +193,7 @@ export function DesktopCEODashboard() {
 
       {/* Popups */}
       <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />
+      <CalendarView isOpen={calendarOpen} onClose={() => setCalendarOpen(false)} />
       <TeamNotesPopup isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
       <SendNotePopup isOpen={sendNoteOpen} onClose={() => setSendNoteOpen(false)} />
 

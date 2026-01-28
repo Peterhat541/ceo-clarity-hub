@@ -8,6 +8,7 @@ import { EventProvider } from "@/contexts/EventContext";
 import { NoteProvider } from "@/contexts/NoteContext";
 import { ReminderProvider } from "@/contexts/ReminderContext";
 import { CEONoteProvider } from "@/contexts/CEONoteContext";
+import { AIChatProvider } from "@/contexts/AIChatContext";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -22,19 +23,21 @@ const App = () => (
           <NoteProvider>
             <ReminderProvider>
               <CEONoteProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/admin" element={<Admin />} />
-                    {/* Redirect old routes to home */}
-                    <Route path="/incidencias" element={<Navigate to="/" replace />} />
-                    <Route path="/clientes-rojo" element={<Navigate to="/" replace />} />
-                    <Route path="/fechas" element={<Navigate to="/" replace />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
+                <AIChatProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/admin" element={<Admin />} />
+                      {/* Redirect old routes to home */}
+                      <Route path="/incidencias" element={<Navigate to="/" replace />} />
+                      <Route path="/clientes-rojo" element={<Navigate to="/" replace />} />
+                      <Route path="/fechas" element={<Navigate to="/" replace />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </BrowserRouter>
+                </AIChatProvider>
               </CEONoteProvider>
             </ReminderProvider>
           </NoteProvider>

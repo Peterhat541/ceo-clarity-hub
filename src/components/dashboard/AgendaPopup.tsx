@@ -139,12 +139,16 @@ export function AgendaPopup({ isOpen, onClose }: AgendaPopupProps) {
 
   if (!isOpen) return null;
 
-  // Get all upcoming events (today and future), sorted by date
+  // Get all upcoming events (filter out past events by exact time, not just date)
   const now = new Date();
-  now.setHours(0, 0, 0, 0);
   
+  // Filter events that haven't happened yet (with 5 min grace period)
+  const graceMs = 5 * 60 * 1000; // 5 minutes grace period
   const upcomingEvents = events
-    .filter((event) => new Date(event.date) >= now)
+    .filter((event) => {
+      const eventTime = new Date(event.date).getTime();
+      return eventTime >= (now.getTime() - graceMs);
+    })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const calls = upcomingEvents.filter((e) => e.type === "call");

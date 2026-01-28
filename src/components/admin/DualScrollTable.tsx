@@ -46,26 +46,46 @@ export function DualScrollTable({ children, className = "" }: DualScrollTablePro
       }
     };
 
-    updateTopScrollWidth();
+    // Initial update with a small delay to ensure content is rendered
+    const timer = setTimeout(updateTopScrollWidth, 100);
 
     const resizeObserver = new ResizeObserver(updateTopScrollWidth);
     if (contentRef.current) {
       resizeObserver.observe(contentRef.current);
     }
 
-    return () => resizeObserver.disconnect();
+    // Also observe mutations for dynamic content
+    const mutationObserver = new MutationObserver(updateTopScrollWidth);
+    if (contentRef.current) {
+      mutationObserver.observe(contentRef.current, { 
+        childList: true, 
+        subtree: true 
+      });
+    }
+
+    return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
   }, []);
 
   return (
     <div className={className}>
-      {/* Top scroll bar */}
+      {/* Top scroll bar - more visible */}
       <div
         ref={topScrollRef}
         onScroll={() => syncScroll("top")}
-        className="overflow-x-auto overflow-y-hidden h-3 border-b border-border bg-secondary/30"
-        style={{ scrollbarWidth: "thin" }}
+        className="overflow-x-auto overflow-y-hidden border-b border-border bg-secondary/50 rounded-t-xl"
+        style={{ 
+          scrollbarWidth: "auto",
+          height: "14px",
+        }}
       >
-        <div className="scroll-spacer h-1" />
+        <div 
+          className="scroll-spacer" 
+          style={{ height: "1px" }}
+        />
       </div>
 
       {/* Table container with bottom scroll */}

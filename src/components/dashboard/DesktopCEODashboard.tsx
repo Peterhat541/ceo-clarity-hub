@@ -79,19 +79,9 @@ export function DesktopCEODashboard() {
       {/* Header - Always Visible */}
       <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border/50 bg-card/30 backdrop-blur-sm">
         <img src={processiaLogo} alt="Processia" className="h-7" />
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={triggerTestReminder}
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            🧪 Test Reminder
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            {getGreeting()} · {formatDate()}
-          </span>
-        </div>
+        <span className="text-sm text-muted-foreground">
+          {getGreeting()} · {formatDate()}
+        </span>
       </header>
 
       {/* Main Content - Two Giant Cards */}

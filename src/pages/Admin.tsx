@@ -428,20 +428,6 @@ export default function Admin() {
 
           <CEONotificationBell />
 
-          <Button 
-            onClick={handleSeedData} 
-            variant="outline" 
-            className="gap-2 text-status-purple border-status-purple/30 hover:bg-status-purple/10" 
-            disabled={seeding}
-          >
-            <Database className={cn("w-4 h-4", seeding && "animate-pulse")} />
-            {seeding ? "Generando..." : "Datos ejemplo"}
-          </Button>
-
-          <Button onClick={() => fetchClients()} variant="outline" className="gap-2" disabled={loading}>
-            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-          </Button>
-
           <Button onClick={() => {
             setEditingClient(null);
             setClientFormOpen(true);

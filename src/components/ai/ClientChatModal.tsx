@@ -283,10 +283,13 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[80vh] flex flex-col p-0 gap-0 bg-card border-border">
         {/* Header */}
-        <DialogHeader className="p-4 border-b border-border shrink-0">
+        <DialogHeader className="p-4 pr-12 border-b border-border shrink-0">
           <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-teal flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4 text-primary-foreground" />
+            </div>
             <div className={cn(
-              "w-3 h-3 rounded-full",
+              "w-3 h-3 rounded-full shrink-0",
               status.color
             )} />
             <DialogTitle className="flex-1 text-left">
@@ -304,9 +307,6 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
             >
               <Trash2 className="w-4 h-4" />
             </Button>
-            <div className="w-8 h-8 rounded-lg bg-gradient-teal flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
           </div>
         </DialogHeader>
 

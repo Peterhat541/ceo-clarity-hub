@@ -22,7 +22,7 @@ export default function Home() {
         <img 
           src={sloganImage} 
           alt="Menos conversaciones. Más control." 
-          className="h-8 sm:h-10 object-contain mb-2"
+          className="h-12 sm:h-16 md:h-20 object-contain mb-4"
         />
         <p className="text-muted-foreground text-lg">
           Selecciona un modo de trabajo

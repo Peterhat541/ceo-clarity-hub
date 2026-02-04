@@ -5,6 +5,7 @@ import { TeamNotesPopup } from "./TeamNotesPopup";
 import { SendNotePopup } from "./SendNotePopup";
 import { ClientCard } from "./ClientCard";
 import { ClientChatModal } from "@/components/ai/ClientChatModal";
+import { AIChat } from "@/components/ai/AIChat";
 import { 
   Calendar, 
   MessageSquare, 
@@ -15,7 +16,6 @@ import {
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { AIChat } from "@/components/ai/AIChat";
 
 // Mock data
 interface ClientData {
@@ -43,7 +43,6 @@ const criticalDates = [
 ];
 
 export function MobileHome() {
-  const [chatOpen, setChatOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
@@ -109,71 +108,71 @@ export function MobileHome() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden p-4">
-      {/* Header */}
-      <header className="shrink-0 mb-4">
-        <h1 className="text-xl font-bold text-foreground">{getGreeting()}, Juan!</h1>
-        <p className="text-sm text-muted-foreground">¿Cómo va el día?</p>
+    <div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden">
+      {/* Compact Header */}
+      <header className="shrink-0 px-4 py-3 border-b border-border/50 bg-card/30 backdrop-blur-sm">
+        <h1 className="text-lg font-bold text-foreground">{getGreeting()}, Juan!</h1>
       </header>
 
-      {/* AI Hero Card - Prominent */}
-      <button
-        onClick={() => setChatOpen(true)}
-        className="shrink-0 mb-4 w-full glass-card rounded-2xl p-5 flex items-center gap-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
-      >
-        <div className="h-12 w-12 rounded-xl bg-gradient-teal flex items-center justify-center glow">
-          <Sparkles className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <div className="flex-1 text-left">
-          <h2 className="font-semibold text-foreground">Asistente IA</h2>
-          <p className="text-sm text-muted-foreground">Toca para hablar con tu mano derecha</p>
-        </div>
-        <div className="h-3 w-3 rounded-full bg-status-green animate-pulse" />
-      </button>
-
-      {/* Clients Card - Fills remaining space */}
-      <div className="flex-1 min-h-0 glass-card rounded-2xl p-4 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between mb-3 shrink-0">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Clientes críticos
-          </h2>
-          {hasMoreClients && (
-            <button 
-              onClick={() => setClientsOpen(true)}
-              className="text-xs font-medium text-primary hover:underline"
-            >
-              Ver todos ({clientsAttention.length})
-            </button>
-          )}
+      {/* AI Chat Section - Main content area */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* AI Header */}
+        <div className="shrink-0 px-4 py-3 border-b border-border/30">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-teal flex items-center justify-center glow">
+              <Sparkles className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-foreground">Asistente IA</h2>
+              <p className="text-xs text-muted-foreground">Tu mano derecha ejecutiva</p>
+            </div>
+          </div>
         </div>
         
-        <div className="flex-1 overflow-auto space-y-2 min-h-0">
-          {visibleClients.map((client) => (
-            <ClientCard
-              key={client.name}
-              variant="compact"
-              name={client.name}
-              status={client.status}
-              lastActivity={client.lastActivity}
-              issue={client.issue}
-              projectCount={client.projectCount}
-              onAIClick={() => handleClientClick(client)}
-            />
-          ))}
+        {/* AI Chat Content - Takes available space */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <AIChat />
+        </div>
+      </div>
+
+      {/* Critical Clients Section - Compact */}
+      <div className="shrink-0 h-[140px] border-t border-border/50 bg-card/30 backdrop-blur-sm">
+        <div className="h-full flex flex-col p-3">
+          <div className="flex items-center justify-between mb-2 shrink-0">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Clientes críticos
+            </h2>
+            {hasMoreClients && (
+              <button 
+                onClick={() => setClientsOpen(true)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Ver todos ({clientsAttention.length})
+              </button>
+            )}
+          </div>
+          
+          <div className="flex-1 overflow-auto space-y-2 min-h-0">
+            {visibleClients.map((client) => (
+              <ClientCard
+                key={client.name}
+                variant="compact"
+                name={client.name}
+                status={client.status}
+                lastActivity={client.lastActivity}
+                issue={client.issue}
+                projectCount={client.projectCount}
+                onAIClick={() => handleClientClick(client)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Quick Access Footer */}
-      <div className="shrink-0 mt-4">
+      <div className="shrink-0 border-t border-border/50 bg-card/50 backdrop-blur-sm px-4 py-2">
         <QuickAccessGrid items={quickAccessItems} />
       </div>
-
-      {/* AI Chat Modal */}
-      <Dialog open={chatOpen} onOpenChange={setChatOpen}>
-        <DialogContent className="max-w-lg h-[85vh] p-0 overflow-hidden bg-card border-border">
-          <AIChat />
-        </DialogContent>
-      </Dialog>
 
       {/* Popups */}
       <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />

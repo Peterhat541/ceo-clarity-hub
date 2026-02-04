@@ -1,183 +1,243 @@
 
-# Plan: Home de Selección + Micrófono Whisper + Nueva Paleta de Colores
+# Plan: Layout Móvil con Chat Completo + Home Rediseñado + Navegación Header
 
 ## Resumen
 
-Este plan implementa tres funcionalidades:
-1. **Pantalla de inicio** con selección de modo (CEO / Administración)
-2. **Micrófono funcional** usando OpenAI Whisper para transcripción de voz
-3. **Nueva paleta de colores** según especificaciones
+Este plan implementa tres cambios principales:
+1. **Móvil**: Chat de IA completo visible (como en desktop), sin necesidad de tocar para iniciar
+2. **Home rediseñado**: Logo grande + slogan "Menos conversaciones. Más control." en verde
+3. **Navegación en header**: Botones Vista CEO / Administración junto al logo (plan previo)
 
 ---
 
-## Parte 1: Nueva Paleta de Colores
+## Parte 1: Rediseño de la Pantalla Home
 
-### Colores especificados
+### Cambios solicitados
 
-| Elemento | Color HEX | Uso |
-|----------|-----------|-----|
-| Fondo | `#131313` | Background principal |
-| Botones/Títulos destacados | `#25E0B7` | Primary, accent, títulos |
-| Texto normal | `#FFFFFF` | Foreground general |
+| Actual | Nuevo |
+|--------|-------|
+| Logo pequeño (h-12) | Logo mucho más grande (h-24 o similar) |
+| "Hola, Juan 👋" | **Slogan**: "Menos conversaciones. Más control." |
+| Color título: blanco | **Color slogan**: #25E0B7 (primary) |
+| Subtítulo: "Selecciona un modo de trabajo" | Mantener igual |
 
-### Conversión a HSL (para variables CSS)
-
-| Color | HSL |
-|-------|-----|
-| `#131313` | 0 0% 7.5% |
-| `#25E0B7` | 161 75% 51% |
-| `#FFFFFF` | 0 0% 100% |
-
-### Archivo a modificar
-
-| Archivo | Acción |
-|---------|--------|
-| `src/index.css` | Actualizar variables CSS `:root` |
-
-### Variables que cambian
-
-```css
---background: 0 0% 7.5%;      /* #131313 */
---foreground: 0 0% 100%;      /* #FFFFFF */
---primary: 161 75% 51%;       /* #25E0B7 */
---accent: 161 75% 51%;        /* #25E0B7 */
-/* Cards y elementos secundarios ajustados para coherencia */
-```
-
----
-
-## Parte 2: Pantalla de Inicio (Home)
-
-### Descripcion
-Una pantalla inicial que muestra el saludo "Hola, Juan" y dos tarjetas grandes para seleccionar el modo de trabajo.
-
-### Archivos a crear/modificar
-
-| Archivo | Acción | Descripcion |
-|---------|--------|-------------|
-| `src/pages/Home.tsx` | Crear | Nueva pagina de seleccion de modo |
-| `src/App.tsx` | Modificar | Nueva ruta "/" para Home, mover CEO a "/ceo" |
-| `src/components/layout/ViewSwitcher.tsx` | Modificar | Actualizar rutas |
-
-### Diseño de la pantalla
+### Diseño visual nuevo
 
 ```text
 ┌─────────────────────────────────────────────────────┐
 │                                                     │
-│              [Logo Processia]                       │
 │                                                     │
-│         Hola, Juan                                  │
-│         Selecciona un modo de trabajo               │
+│              ┌─────────────────┐                    │
+│              │   PROCESSIA     │  ← Logo GRANDE     │
+│              │     (logo)      │    (h-24 o más)    │
+│              └─────────────────┘                    │
+│                                                     │
+│     Menos conversaciones. Más control.              │  ← Slogan en #25E0B7
+│         (tamaño text-4xl, font-bold)               │
+│                                                     │
+│         Selecciona un modo de trabajo               │  ← Subtítulo gris
 │                                                     │
 │   ┌───────────────────┐  ┌───────────────────┐     │
-│   │       TARGET      │  │     CLIPBOARD     │     │
-│   │                   │  │                   │     │
-│   │    VISTA CEO      │  │  ADMINISTRACION   │     │
-│   │                   │  │                   │     │
-│   │   Dashboard       │  │   Base de datos   │     │
-│   │   ejecutivo       │  │   de clientes     │     │
+│   │    VISTA CEO      │  │  ADMINISTRACIÓN   │     │
 │   └───────────────────┘  └───────────────────┘     │
 │                                                     │
 └─────────────────────────────────────────────────────┘
 ```
 
-### Estructura de rutas actualizada
+### Archivo a modificar
 
-- `/` → Home (seleccion de modo)
-- `/ceo` → Dashboard CEO (actual Index)
-- `/admin` → Administracion
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Home.tsx` | Agrandar logo, reemplazar "Hola, Juan" por slogan en color primary |
 
 ---
 
-## Parte 3: Microfono con OpenAI Whisper
+## Parte 2: Layout Móvil con Chat Completo
 
-### Flujo de usuario
+### Situación actual
+- En móvil hay un botón "Asistente IA" que abre un modal con el chat
+- El usuario quiere que el chat esté visible directamente, como en desktop
 
-1. Usuario pulsa el boton de microfono
-2. Se muestra indicador visual "Escuchando..." con animacion roja
-3. Se captura audio del microfono (mantener pulsado o click para toggle)
-4. Al soltar/parar: se envia audio a Edge Function → OpenAI Whisper
-5. Texto transcrito se coloca en el input
-6. Usuario puede editar o enviar directamente
+### Nuevo diseño móvil
+
+El layout móvil será similar al desktop: una vista dividida donde el chat de IA está siempre visible, con los clientes críticos debajo.
+
+```text
+┌────────────────────────────────────────┐
+│  Buenas tardes, Juan!                  │  ← Header compacto
+├────────────────────────────────────────┤
+│                                        │
+│  ┌──────────────────────────────────┐  │
+│  │  🤖 Asistente IA                 │  │  ← Título IA
+│  │                                  │  │
+│  │  ┌────────────────────────────┐  │  │
+│  │  │  Mensajes del chat...      │  │  │  ← AIChat component
+│  │  │  (scrollable)              │  │  │     completo
+│  │  │                            │  │  │
+│  │  └────────────────────────────┘  │  │
+│  │  ┌──────────────────────┬───┐   │  │
+│  │  │ Escribe aquí...      │🎤│   │  │  ← Input + mic
+│  │  └──────────────────────┴───┘   │  │
+│  └──────────────────────────────────┘  │
+│                                        │
+├────────────────────────────────────────┤
+│  CLIENTES CRÍTICOS          Ver todos  │  ← Sección clientes
+│  ● Nexus Tech      3d      ✨          │     (compacta)
+│  ● Global Media    1d      ✨          │
+├────────────────────────────────────────┤
+│  📅      💬      ⚠️       📆          │  ← Quick Access
+└────────────────────────────────────────┘
+```
+
+### Distribución del espacio
+
+- **AIChat**: Ocupa ~60% del espacio vertical disponible
+- **Clientes**: Ocupa ~25% con scroll interno
+- **Quick Access**: Footer fijo
+
+### Archivo a modificar
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/dashboard/MobileHome.tsx` | Eliminar modal, integrar AIChat directamente en el layout |
+
+---
+
+## Parte 3: Navegación en Header (Desktop)
+
+### Cambios
+
+Mover la navegación del ViewSwitcher (bottom) al header (top), junto al logo.
+
+### Nuevo diseño del header
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  [Logo clickeable]  [Vista CEO] [Administración]   Buenas · 4 Feb │
+│       ↓                  ↓            ↓                         │
+│    va a /         activo=verde   activo=verde                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- Click en logo → navega a `/` (Home)
+- Botón activo: `bg-primary text-primary-foreground rounded-full`
+- Botón inactivo: `text-muted-foreground`
 
 ### Archivos a crear/modificar
 
-| Archivo | Accion | Descripcion |
-|---------|--------|-------------|
-| `supabase/functions/transcribe/index.ts` | Crear | Edge Function que llama a Whisper |
-| `src/hooks/useAudioRecorder.ts` | Crear | Hook para grabar audio del microfono |
-| `src/components/ai/AIChat.tsx` | Modificar | Integrar boton de microfono funcional |
-
-### Estados del microfono
-
-- **Inactivo**: Icono normal gris
-- **Grabando**: Animacion de pulso rojo, icono rojo
-- **Procesando**: Spinner, texto "Transcribiendo..."
-- **Error**: Toast con mensaje (ej: "Permiso de microfono denegado")
+| Archivo | Acción | Cambio |
+|---------|--------|--------|
+| `src/components/layout/HeaderNavigation.tsx` | **Crear** | Componente con logo + botones de navegación |
+| `src/components/dashboard/DesktopCEODashboard.tsx` | Modificar | Usar HeaderNavigation, quitar ViewSwitcher |
+| `src/pages/Admin.tsx` | Modificar | Usar HeaderNavigation, quitar ViewSwitcher |
+| `src/components/layout/ViewSwitcher.tsx` | Eliminar o dejar solo para móvil | Ya no se usa en desktop |
 
 ---
 
-## Detalles Tecnicos
+## Detalles Técnicos
 
-### 1. Edge Function `transcribe`
+### 1. Home.tsx - Cambios específicos
 
-```typescript
-// Recibe: audio en base64 (formato webm)
-// Proceso: 
-//   1. Decodifica base64 a Blob
-//   2. Envia a OpenAI Whisper API (model: whisper-1)
-//   3. Idioma: "es" (espanol)
-// Devuelve: { text: "transcripcion..." }
+```tsx
+// Logo grande
+<img src={processiaLogo} className="h-24 object-contain" />
+
+// Slogan en lugar de saludo
+<h1 className="text-4xl font-bold text-primary">
+  Menos conversaciones. Más control.
+</h1>
+
+// Subtítulo mantiene igual
+<p className="text-muted-foreground text-lg">
+  Selecciona un modo de trabajo
+</p>
 ```
 
-### 2. Hook useAudioRecorder
+### 2. MobileHome.tsx - Estructura nueva
 
-```typescript
-interface UseAudioRecorder {
-  startRecording: () => Promise<void>;
-  stopRecording: () => Promise<Blob | null>;
-  isRecording: boolean;
-  isSupported: boolean;
-  error: string | null;
+```tsx
+<div className="h-screen flex flex-col">
+  {/* Header compacto */}
+  <header>...</header>
+  
+  {/* AI Chat - Ocupa espacio principal */}
+  <div className="flex-1 min-h-0 flex flex-col">
+    <AIChat />  {/* Directamente, sin modal */}
+  </div>
+  
+  {/* Clientes críticos - Sección compacta */}
+  <div className="h-[180px] shrink-0">
+    <ClientCard compact ... />
+  </div>
+  
+  {/* Quick Access Footer */}
+  <QuickAccessGrid />
+</div>
+```
+
+### 3. HeaderNavigation.tsx - Nuevo componente
+
+```tsx
+export function HeaderNavigation() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const isCEO = location.pathname === "/ceo";
+  const isAdmin = location.pathname === "/admin";
+
+  return (
+    <header className="h-14 border-b flex items-center justify-between px-6">
+      {/* Logo clickeable → Home */}
+      <div className="flex items-center gap-4">
+        <img 
+          src={processiaLogo} 
+          onClick={() => navigate("/")}
+          className="h-8 cursor-pointer" 
+        />
+        
+        {/* Navigation buttons */}
+        <div className="flex items-center bg-secondary rounded-full p-1">
+          <button className={isCEO ? "bg-primary ..." : "..."}>
+            Vista CEO
+          </button>
+          <button className={isAdmin ? "bg-primary ..." : "..."}>
+            Administración
+          </button>
+        </div>
+      </div>
+      
+      {/* Date/greeting */}
+      <span>Buenas tardes · 4 Feb</span>
+    </header>
+  );
 }
 ```
 
-- Usa MediaRecorder API nativa del navegador
-- Formato de salida: WebM (compatible con Whisper)
-- Duracion maxima: 30 segundos
-- Manejo de permisos de microfono
-
-### 3. Integracion en AIChat
-
-- Click en microfono → inicia grabacion
-- Segundo click → para grabacion → envia a transcribir
-- Mientras graba: boton con animacion de pulso
-- Al recibir texto: lo coloca en el input (no envia automaticamente)
-
 ---
 
-## Requisitos Previos
+## Orden de Implementación
 
-Se necesita configurar tu **OPENAI_API_KEY** como secret en el proyecto para que la Edge Function pueda llamar a Whisper.
-
----
-
-## Orden de Implementacion
-
-1. **Solicitar OPENAI_API_KEY** - Configurar secret
-2. **Actualizar `src/index.css`** - Nueva paleta de colores
-3. **Crear `supabase/functions/transcribe/index.ts`** - Edge Function Whisper
-4. **Crear `src/hooks/useAudioRecorder.ts`** - Hook de grabacion
-5. **Modificar `src/components/ai/AIChat.tsx`** - Boton funcional
-6. **Crear `src/pages/Home.tsx`** - Pantalla de inicio
-7. **Actualizar `src/App.tsx`** - Nuevas rutas
-8. **Actualizar `ViewSwitcher.tsx`** - Rutas actualizadas
+1. **Modificar `src/pages/Home.tsx`** - Logo grande + slogan en primary
+2. **Crear `src/components/layout/HeaderNavigation.tsx`** - Navegación en header
+3. **Modificar `src/components/dashboard/DesktopCEODashboard.tsx`** - Usar HeaderNavigation
+4. **Modificar `src/pages/Admin.tsx`** - Usar HeaderNavigation
+5. **Modificar `src/components/dashboard/MobileHome.tsx`** - Chat completo sin modal
+6. **Limpiar `ViewSwitcher.tsx`** - Eliminar o simplificar
 
 ---
 
 ## Resultado Esperado
 
-- **Colores**: Fondo oscuro #131313, botones y titulos en verde #25E0B7, texto blanco #FFFFFF
-- **Home**: Pantalla inicial con dos tarjetas para elegir modo
-- **Microfono**: Boton funcional que graba voz y la transcribe usando tu API de OpenAI
-- **Rutas**: `/` (Home), `/ceo` (Dashboard), `/admin` (Administracion)
+**Home:**
+- Logo Processia grande y prominente
+- Slogan "Menos conversaciones. Más control." en verde #25E0B7
+- Tarjetas de selección de modo debajo
+
+**Desktop (CEO/Admin):**
+- Header con logo clickeable (→ Home) + botones de navegación
+- Sin ViewSwitcher en la parte inferior
+
+**Móvil:**
+- Chat de IA visible directamente (sin modal)
+- Clientes críticos en sección compacta debajo
+- Quick access en footer

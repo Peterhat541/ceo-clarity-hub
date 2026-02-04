@@ -7,19 +7,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-      {/* Logo */}
+      {/* Logo - Large and prominent */}
       <div className="mb-8">
         <img 
           src={processiaLogo} 
           alt="Processia" 
-          className="h-12 object-contain"
+          className="h-24 object-contain"
         />
       </div>
 
-      {/* Greeting */}
+      {/* Slogan + Subtitle */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-foreground mb-2">
-          Hola, Juan 👋
+        <h1 className="text-4xl font-bold text-primary mb-2">
+          Menos conversaciones. Más control.
         </h1>
         <p className="text-muted-foreground text-lg">
           Selecciona un modo de trabajo

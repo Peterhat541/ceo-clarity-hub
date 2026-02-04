@@ -7,7 +7,7 @@ import { TeamNotesPopup } from "./TeamNotesPopup";
 import { SendNotePopup } from "./SendNotePopup";
 import { ReminderAlert } from "./ReminderAlert";
 import { AIChat } from "@/components/ai/AIChat";
-import { ViewSwitcher } from "@/components/layout/ViewSwitcher";
+import { HeaderNavigation } from "@/components/layout/HeaderNavigation";
 import { 
   Calendar, 
   MessageSquare, 
@@ -20,7 +20,6 @@ import { useNoteContext } from "@/contexts/NoteContext";
 import { useReminderContext } from "@/contexts/ReminderContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import processiaLogo from "@/assets/processia-logo-new.png";
 import { Button } from "@/components/ui/button";
 import { Status } from "./StatusBadge";
 
@@ -242,13 +241,8 @@ export function DesktopCEODashboard() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden">
-      {/* Header - Always Visible */}
-      <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border/50 bg-card/30 backdrop-blur-sm">
-        <img src={processiaLogo} alt="Processia" className="h-7" />
-        <span className="text-sm text-muted-foreground">
-          {getGreeting()} · {formatDate()}
-        </span>
-      </header>
+      {/* Header with Navigation */}
+      <HeaderNavigation />
 
       {/* Main Content - Two Giant Cards */}
       <main className="flex-1 flex gap-6 p-6 min-h-0">
@@ -377,9 +371,6 @@ export function DesktopCEODashboard() {
           issue={selectedClient.issue}
         />
       )}
-
-      {/* ViewSwitcher integrado */}
-      <ViewSwitcher />
     </div>
   );
 }

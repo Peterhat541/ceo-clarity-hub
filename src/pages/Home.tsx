@@ -18,8 +18,8 @@ export default function Home() {
 
       {/* Slogan + Subtitle */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-primary mb-2">
-          Menos conversaciones. Más control.
+        <h1 className="text-4xl font-bold text-foreground mb-2 uppercase tracking-wide">
+          MENOS CONVER<span className="text-primary">S</span><span className="text-primary">S</span> ACIONES. MÁS CONTROL
         </h1>
         <p className="text-muted-foreground text-lg">
           Selecciona un modo de trabajo

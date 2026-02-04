@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Target, ClipboardList } from "lucide-react";
 import processiaLogo from "@/assets/processia-logo-new.png";
+import sloganImage from "@/assets/slogan.png";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -18,9 +19,11 @@ export default function Home() {
 
       {/* Slogan + Subtitle */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-foreground mb-2 uppercase tracking-wide">
-          MENOS CONVER<span className="text-primary">S</span><span className="text-primary">S</span> ACIONES. MÁS CONTROL
-        </h1>
+        <img 
+          src={sloganImage} 
+          alt="Menos conversaciones. Más control." 
+          className="h-8 sm:h-10 object-contain mb-2"
+        />
         <p className="text-muted-foreground text-lg">
           Selecciona un modo de trabajo
         </p>

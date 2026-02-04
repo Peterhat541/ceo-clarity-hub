@@ -6,16 +6,17 @@ export function ViewSwitcher() {
   const navigate = useNavigate();
   const location = useLocation();
   
+  const isCEO = location.pathname === "/ceo";
   const isAdmin = location.pathname === "/admin";
 
   return (
     <div className="h-12 border-t border-border bg-background flex items-center justify-center">
       <div className="flex items-center bg-secondary rounded-full p-1">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/ceo")}
           className={cn(
             "flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
-            !isAdmin
+            isCEO
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground"
           )}

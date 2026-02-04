@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, Loader2 } from "lucide-react";
+import { Send, Mic, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClientContext } from "@/contexts/ClientContext";
@@ -9,6 +9,7 @@ import { useAIChatContext } from "@/contexts/AIChatContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 
 interface Message {
   id: string;
@@ -44,7 +45,10 @@ export function AIChat() {
     setInput,
   } = useAIChatContext();
   const [isLoading, setIsLoading] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { isRecording, isSupported, error: recorderError, startRecording, stopRecording, cancelRecording } = useAudioRecorder();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,6 +57,17 @@ export function AIChat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Show recorder errors
+  useEffect(() => {
+    if (recorderError) {
+      toast({
+        title: "Error de micrófono",
+        description: recorderError,
+        variant: "destructive",
+      });
+    }
+  }, [recorderError]);
 
   // Handle context activation from client cards
   useEffect(() => {
@@ -131,6 +146,56 @@ ${issue ? `**Situación:** ${issue}` : ""}
       fetchClientData();
     }
   }, [selectedClient, pendingContext, activeClient.name]);
+
+  const handleMicClick = async () => {
+    if (isRecording) {
+      // Stop recording and transcribe
+      const audioBlob = await stopRecording();
+      if (audioBlob && audioBlob.size > 0) {
+        setIsTranscribing(true);
+        try {
+          // Convert blob to base64
+          const arrayBuffer = await audioBlob.arrayBuffer();
+          const base64 = btoa(
+            new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+          );
+
+          const { data, error } = await supabase.functions.invoke("transcribe", {
+            body: { 
+              audio: base64,
+              mimeType: audioBlob.type 
+            },
+          });
+
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          if (data?.text) {
+            setInput(prev => prev ? `${prev} ${data.text}` : data.text);
+            toast({
+              title: "Transcripción completada",
+              description: "Texto añadido al input.",
+            });
+          } else if (data?.error) {
+            throw new Error(data.error);
+          }
+        } catch (err) {
+          console.error("Transcription error:", err);
+          toast({
+            title: "Error de transcripción",
+            description: err instanceof Error ? err.message : "No se pudo transcribir el audio.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsTranscribing(false);
+        }
+      }
+    } else {
+      // Start recording
+      await startRecording();
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -264,6 +329,8 @@ ${issue ? `**Situación:** ${issue}` : ""}
     });
   };
 
+  const isMicDisabled = isLoading || isTranscribing || !isSupported;
+
   return (
     <div className="flex flex-col h-full">
       {/* Context indicator (only when client active) */}
@@ -339,6 +406,20 @@ ${issue ? `**Situación:** ${issue}` : ""}
 
       {/* Input */}
       <div className="p-4 border-t border-border">
+        {/* Recording indicator */}
+        {isRecording && (
+          <div className="mb-2 flex items-center gap-2 text-destructive animate-pulse">
+            <div className="w-2 h-2 rounded-full bg-destructive" />
+            <span className="text-sm font-medium">Escuchando... (pulsa para detener)</span>
+          </div>
+        )}
+        {isTranscribing && (
+          <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Transcribiendo...</span>
+          </div>
+        )}
+        
         <div className="flex gap-2">
           <input
             type="text"
@@ -349,17 +430,27 @@ ${issue ? `**Situación:** ${issue}` : ""}
               ? `Pregunta sobre ${activeClient.name}...` 
               : "Pregunta sobre cualquier cliente..."
             }
-            disabled={isLoading}
+            disabled={isLoading || isRecording}
             className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all disabled:opacity-50"
           />
           <Button
-            variant="outline"
+            variant={isRecording ? "destructive" : "outline"}
             size="icon"
-            className="h-12 w-12 rounded-xl"
-            title="Entrada de voz (próximamente)"
-            disabled={isLoading}
+            className={cn(
+              "h-12 w-12 rounded-xl transition-all",
+              isRecording && "animate-pulse"
+            )}
+            onClick={handleMicClick}
+            disabled={isMicDisabled}
+            title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Iniciar grabación de voz"}
           >
-            <Mic className="w-5 h-5" />
+            {isTranscribing ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : isRecording ? (
+              <Square className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
           </Button>
           <Button
             onClick={handleSend}

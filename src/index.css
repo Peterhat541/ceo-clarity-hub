@@ -11,28 +11,28 @@
 
 @layer base {
   :root {
-    /* Dark Executive Theme - Refined for elegance */
-    --background: 240 15% 6%;
-    --foreground: 220 10% 92%;
+    /* Processia Brand Colors - #131313, #25E0B7, #FFFFFF */
+    --background: 0 0% 7.5%;
+    --foreground: 0 0% 100%;
 
-    --card: 240 10% 10%;
-    --card-foreground: 220 10% 92%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 240 10% 12%;
-    --popover-foreground: 220 10% 92%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Teal accent - Processia brand */
-    --primary: 174 72% 40%;
-    --primary-foreground: 0 0% 100%;
+    /* Mint accent - Processia brand #25E0B7 */
+    --primary: 161 75% 51%;
+    --primary-foreground: 0 0% 7.5%;
 
-    --secondary: 240 8% 16%;
-    --secondary-foreground: 220 10% 88%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 240 8% 20%;
-    --muted-foreground: 220 10% 65%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 174 60% 35%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 161 75% 51%;
+    --accent-foreground: 0 0% 7.5%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -44,31 +44,31 @@
     --status-red: 0 84% 55%;
     --status-purple: 271 65% 50%;
 
-    --border: 240 8% 20%;
-    --input: 240 8% 20%;
-    --ring: 174 72% 40%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 161 75% 51%;
 
     --radius: 1rem;
 
     /* Sidebar */
-    --sidebar-background: 240 12% 8%;
-    --sidebar-foreground: 220 10% 65%;
-    --sidebar-primary: 174 72% 40%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 8% 16%;
-    --sidebar-accent-foreground: 220 10% 92%;
-    --sidebar-border: 240 8% 20%;
-    --sidebar-ring: 174 72% 40%;
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 0 0% 65%;
+    --sidebar-primary: 161 75% 51%;
+    --sidebar-primary-foreground: 0 0% 7.5%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 161 75% 51%;
 
     /* Gradients */
-    --gradient-teal: linear-gradient(135deg, hsl(174 72% 40%) 0%, hsl(185 65% 30%) 100%);
-    --gradient-teal-subtle: linear-gradient(135deg, hsl(174 72% 40% / 0.15) 0%, hsl(185 65% 30% / 0.05) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(240 10% 12%) 0%, hsl(240 10% 10%) 100%);
+    --gradient-mint: linear-gradient(135deg, hsl(161 75% 51%) 0%, hsl(161 75% 40%) 100%);
+    --gradient-mint-subtle: linear-gradient(135deg, hsl(161 75% 51% / 0.15) 0%, hsl(161 75% 40% / 0.05) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 12%) 0%, hsl(0 0% 10%) 100%);
 
-    /* Shadows - Dark theme glow (softer) */
-    --shadow-glow: 0 0 60px -15px hsl(174 72% 40% / 0.2);
-    --shadow-card: 0 8px 32px -8px hsl(0 0% 0% / 0.4);
-    --shadow-soft: 0 4px 16px -4px hsl(0 0% 0% / 0.3);
+    /* Shadows - Dark theme glow */
+    --shadow-glow: 0 0 60px -15px hsl(161 75% 51% / 0.25);
+    --shadow-card: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
+    --shadow-soft: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
   }
 }
 
@@ -126,15 +126,15 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-teal);
+    background-image: var(--gradient-mint);
   }
 
-  .bg-gradient-teal {
-    background-image: var(--gradient-teal);
+  .bg-gradient-mint {
+    background-image: var(--gradient-mint);
   }
 
   .bg-gradient-subtle {
-    background-image: var(--gradient-teal-subtle);
+    background-image: var(--gradient-mint-subtle);
   }
 
   .glow {

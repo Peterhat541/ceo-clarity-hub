@@ -1,60 +1,183 @@
 
-## Objetivo (sin “inventar” nada fuera de lo aprobado)
-Que el **grid del fondo sea “sutil pero claramente visible”** (como textura), manteniendo el estilo Processia, sin cambiar el layout ni añadir features nuevos.
+# Plan: Home de Selección + Micrófono Whisper + Nueva Paleta de Colores
 
-## Qué pasa ahora (por qué tú no lo ves)
-He verificado el código actual y el grid **sí está aplicado** (`bg-grid` en Desktop/Mobile/Admin y también en `body`).  
-El problema es que el color del grid es **demasiado parecido al fondo**:
+## Resumen
 
-- Fondo: `--background: hsl(240 15% 6%)`
-- Líneas actuales: `hsl(240 8% 12% / 0.4)` (líneas “oscuras” sobre fondo oscuro)
+Este plan implementa tres funcionalidades:
+1. **Pantalla de inicio** con selección de modo (CEO / Administración)
+2. **Micrófono funcional** usando OpenAI Whisper para transcripción de voz
+3. **Nueva paleta de colores** según especificaciones
 
-En algunos monitores/ajustes de brillo/contraste, eso se vuelve prácticamente invisible aunque exista.
+---
 
-## Cambios exactos que haré (mínimos y concretos)
-### 1) Ajustar SOLO el estilo del grid (1 archivo)
-**Archivo:** `src/index.css`
+## Parte 1: Nueva Paleta de Colores
 
-**Acción:** cambiar el grid para que sea un poco más visible usando líneas **ligeramente más claras** con muy baja opacidad (sin que parezca “rejilla marcada”).  
-Además, añadiré una “grid mayor” (cada 4 celdas) muy sutil, como textura premium, sin cargar el diseño.
+### Colores especificados
 
-Propuesta de CSS (valores “sutil visible”):
+| Elemento | Color HEX | Uso |
+|----------|-----------|-----|
+| Fondo | `#131313` | Background principal |
+| Botones/Títulos destacados | `#25E0B7` | Primary, accent, títulos |
+| Texto normal | `#FFFFFF` | Foreground general |
+
+### Conversión a HSL (para variables CSS)
+
+| Color | HSL |
+|-------|-----|
+| `#131313` | 0 0% 7.5% |
+| `#25E0B7` | 161 75% 51% |
+| `#FFFFFF` | 0 0% 100% |
+
+### Archivo a modificar
+
+| Archivo | Acción |
+|---------|--------|
+| `src/index.css` | Actualizar variables CSS `:root` |
+
+### Variables que cambian
+
 ```css
-/* Sustituir el background-image actual del grid (body y .bg-grid) por: */
-background-image:
-  /* grid fino */
-  linear-gradient(to right, hsl(0 0% 100% / 0.035) 1px, transparent 1px),
-  linear-gradient(to bottom, hsl(0 0% 100% / 0.035) 1px, transparent 1px),
-  /* grid mayor (cada 4) */
-  linear-gradient(to right, hsl(0 0% 100% / 0.06) 1px, transparent 1px),
-  linear-gradient(to bottom, hsl(0 0% 100% / 0.06) 1px, transparent 1px);
-
-background-size:
-  60px 60px,
-  60px 60px,
-  240px 240px,
-  240px 240px;
+--background: 0 0% 7.5%;      /* #131313 */
+--foreground: 0 0% 100%;      /* #FFFFFF */
+--primary: 161 75% 51%;       /* #25E0B7 */
+--accent: 161 75% 51%;        /* #25E0B7 */
+/* Cards y elementos secundarios ajustados para coherencia */
 ```
 
-**Importante:** no tocaré `DesktopCEODashboard.tsx`, `MobileHome.tsx` ni `Admin.tsx` (ya tienen `bg-grid`). Solo haré que el patrón sea visible.
+---
 
-### 2) Mantener consistencia global
-Actualizaré tanto:
-- el grid en `body { ... }` (fallback global), como
-- la utilidad `.bg-grid { ... }` (que es la que usan las páginas)
+## Parte 2: Pantalla de Inicio (Home)
 
-Así siempre se verá igual.
+### Descripcion
+Una pantalla inicial que muestra el saludo "Hola, Juan" y dos tarjetas grandes para seleccionar el modo de trabajo.
 
-## Cómo validaremos (para no “gastar créditos a ciegas”)
-1. Validación en Desktop (route `/`):
-   - Ver el grid en las zonas “vacías” entre cards y en el header.
-2. Validación en Mobile:
-   - Ver el grid detrás del contenido principal.
-3. Si todavía lo percibís muy flojo:
-   - Ajuste puntual de opacidad (solo números): `0.035 → 0.045` y `0.06 → 0.075` (sin tocar nada más).
+### Archivos a crear/modificar
 
-## Nota para ahorrar créditos en cambios visuales futuros
-Para cambios de texto/color/espaciados en elementos estáticos, podéis usar **Visual Edits** (no consume créditos en ediciones directas). En este caso concreto (CSS global), sí requiere cambio de código.
+| Archivo | Acción | Descripcion |
+|---------|--------|-------------|
+| `src/pages/Home.tsx` | Crear | Nueva pagina de seleccion de modo |
+| `src/App.tsx` | Modificar | Nueva ruta "/" para Home, mover CEO a "/ceo" |
+| `src/components/layout/ViewSwitcher.tsx` | Modificar | Actualizar rutas |
 
-## Rollback rápido (si no os gusta)
-Podéis restaurar el estado anterior desde el historial del proyecto (sin rehacer nada).
+### Diseño de la pantalla
+
+```text
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│              [Logo Processia]                       │
+│                                                     │
+│         Hola, Juan                                  │
+│         Selecciona un modo de trabajo               │
+│                                                     │
+│   ┌───────────────────┐  ┌───────────────────┐     │
+│   │       TARGET      │  │     CLIPBOARD     │     │
+│   │                   │  │                   │     │
+│   │    VISTA CEO      │  │  ADMINISTRACION   │     │
+│   │                   │  │                   │     │
+│   │   Dashboard       │  │   Base de datos   │     │
+│   │   ejecutivo       │  │   de clientes     │     │
+│   └───────────────────┘  └───────────────────┘     │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Estructura de rutas actualizada
+
+- `/` → Home (seleccion de modo)
+- `/ceo` → Dashboard CEO (actual Index)
+- `/admin` → Administracion
+
+---
+
+## Parte 3: Microfono con OpenAI Whisper
+
+### Flujo de usuario
+
+1. Usuario pulsa el boton de microfono
+2. Se muestra indicador visual "Escuchando..." con animacion roja
+3. Se captura audio del microfono (mantener pulsado o click para toggle)
+4. Al soltar/parar: se envia audio a Edge Function → OpenAI Whisper
+5. Texto transcrito se coloca en el input
+6. Usuario puede editar o enviar directamente
+
+### Archivos a crear/modificar
+
+| Archivo | Accion | Descripcion |
+|---------|--------|-------------|
+| `supabase/functions/transcribe/index.ts` | Crear | Edge Function que llama a Whisper |
+| `src/hooks/useAudioRecorder.ts` | Crear | Hook para grabar audio del microfono |
+| `src/components/ai/AIChat.tsx` | Modificar | Integrar boton de microfono funcional |
+
+### Estados del microfono
+
+- **Inactivo**: Icono normal gris
+- **Grabando**: Animacion de pulso rojo, icono rojo
+- **Procesando**: Spinner, texto "Transcribiendo..."
+- **Error**: Toast con mensaje (ej: "Permiso de microfono denegado")
+
+---
+
+## Detalles Tecnicos
+
+### 1. Edge Function `transcribe`
+
+```typescript
+// Recibe: audio en base64 (formato webm)
+// Proceso: 
+//   1. Decodifica base64 a Blob
+//   2. Envia a OpenAI Whisper API (model: whisper-1)
+//   3. Idioma: "es" (espanol)
+// Devuelve: { text: "transcripcion..." }
+```
+
+### 2. Hook useAudioRecorder
+
+```typescript
+interface UseAudioRecorder {
+  startRecording: () => Promise<void>;
+  stopRecording: () => Promise<Blob | null>;
+  isRecording: boolean;
+  isSupported: boolean;
+  error: string | null;
+}
+```
+
+- Usa MediaRecorder API nativa del navegador
+- Formato de salida: WebM (compatible con Whisper)
+- Duracion maxima: 30 segundos
+- Manejo de permisos de microfono
+
+### 3. Integracion en AIChat
+
+- Click en microfono → inicia grabacion
+- Segundo click → para grabacion → envia a transcribir
+- Mientras graba: boton con animacion de pulso
+- Al recibir texto: lo coloca en el input (no envia automaticamente)
+
+---
+
+## Requisitos Previos
+
+Se necesita configurar tu **OPENAI_API_KEY** como secret en el proyecto para que la Edge Function pueda llamar a Whisper.
+
+---
+
+## Orden de Implementacion
+
+1. **Solicitar OPENAI_API_KEY** - Configurar secret
+2. **Actualizar `src/index.css`** - Nueva paleta de colores
+3. **Crear `supabase/functions/transcribe/index.ts`** - Edge Function Whisper
+4. **Crear `src/hooks/useAudioRecorder.ts`** - Hook de grabacion
+5. **Modificar `src/components/ai/AIChat.tsx`** - Boton funcional
+6. **Crear `src/pages/Home.tsx`** - Pantalla de inicio
+7. **Actualizar `src/App.tsx`** - Nuevas rutas
+8. **Actualizar `ViewSwitcher.tsx`** - Rutas actualizadas
+
+---
+
+## Resultado Esperado
+
+- **Colores**: Fondo oscuro #131313, botones y titulos en verde #25E0B7, texto blanco #FFFFFF
+- **Home**: Pantalla inicial con dos tarjetas para elegir modo
+- **Microfono**: Boton funcional que graba voz y la transcribe usando tu API de OpenAI
+- **Rutas**: `/` (Home), `/ceo` (Dashboard), `/admin` (Administracion)

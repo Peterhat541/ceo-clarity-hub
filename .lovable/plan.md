@@ -1,75 +1,110 @@
 
-
-# Plan: Reemplazar Branding Lovable por Processia
+# Plan: Fondo Animado con Partículas y Red de Conexiones
 
 ## Resumen
 
-Eliminar todas las referencias visuales a "Lovable" y reemplazarlas con el branding de Processia usando el logo proporcionado.
+Crear un fondo animado profesional para la landing page similar al de processia.es, con partículas brillantes verdes conectadas por líneas que flotan suavemente, creando un efecto de red tecnológica en movimiento.
 
 ---
 
-## Cambios Requeridos
+## Enfoque Técnico
 
-### 1. Favicon del Navegador
+Utilizare **Canvas API con React** para crear el efecto de partículas. Esta es la solución mas ligera y profesional que no requiere librerías externas pesadas.
 
-**Archivo**: `index.html`
+---
 
-Actualmente el favicon es `public/favicon.ico` (un archivo genérico). Se reemplazará por el logo de Processia que proporcionaste.
+## Componentes a Crear
 
-**Acciones**:
-- Copiar `user-uploads://Logo_Processia_1.png` a `public/favicon.png`
-- Actualizar `index.html` para usar el nuevo favicon
+### 1. Componente ParticleNetwork
 
-```html
-<!-- Antes -->
-(sin link explícito, usa favicon.ico por defecto)
+**Archivo**: `src/components/landing/ParticleNetwork.tsx`
 
-<!-- Después -->
-<link rel="icon" href="/favicon.png" type="image/png">
+Un componente React que renderiza un canvas a pantalla completa con:
+
+- **50-80 partículas** flotando con movimiento aleatorio suave
+- **Lineas de conexión** entre partículas cercanas (distancia < 150px)
+- **Color verde menta** (#25E0B7) - el color primario de la marca
+- **Efecto de brillo/glow** en las partículas
+- **Diferentes tamaños** para crear sensación de profundidad
+- **Opacidad variable** en las lineas según la distancia
+
+**Lógica de animación**:
+```text
+Por cada frame:
+  1. Mover cada partícula según su velocidad
+  2. Rebotar en los bordes del canvas
+  3. Dibujar conexiones entre partículas cercanas
+  4. Dibujar cada partícula con su glow
 ```
 
 ---
 
-### 2. Imágenes Open Graph y Twitter
+### 2. Actualizar Landing Page
 
-**Archivo**: `index.html`
+**Archivo**: `src/pages/Landing.tsx`
 
-Las meta images actualmente apuntan a Lovable:
-```html
-<meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-<meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-```
+- Añadir el componente `ParticleNetwork` como fondo absoluto
+- Mantener el contenido actual (imagen hero + botón) por encima
+- Asegurar que el fondo negro puro se mantenga
 
-**Acciones**:
-- Copiar el logo de Processia a `public/og-image.png`
-- Actualizar las meta tags para usar la imagen local
+---
 
-```html
-<meta property="og:image" content="/og-image.png" />
-<meta name="twitter:image" content="/og-image.png" />
+## Estructura del Componente ParticleNetwork
+
+```text
++--------------------------------------------------+
+|  Canvas (position: absolute, inset: 0, z-index: 0)
+|                                                   |
+|     ●━━━━━━━●                    ●                |
+|      \     /                    / \               |
+|       \   /        ●━━━━━━━━━━●   \              |
+|        \ /                          \             |
+|         ●              ●━━━━━●━━━━━━●            |
+|        / \            /                           |
+|       /   ●━━━━━━━━━●                            |
+|      ●                                            |
++--------------------------------------------------+
 ```
 
 ---
 
-## Archivos a Modificar/Crear
+## Archivos a Crear/Modificar
 
-| Archivo | Acción |
+| Archivo | Accion |
 |---------|--------|
-| `public/favicon.png` | **Crear** - Logo Processia como favicon |
-| `public/og-image.png` | **Crear** - Logo Processia para compartir en redes |
-| `index.html` | **Modificar** - Actualizar referencias de favicon y OG images |
+| `src/components/landing/ParticleNetwork.tsx` | **Crear** - Componente canvas animado |
+| `src/pages/Landing.tsx` | **Modificar** - Integrar fondo de partículas |
+
+---
+
+## Detalles de Implementacion
+
+### Configuracion de Particulas
+
+| Parametro | Valor |
+|-----------|-------|
+| Numero de particulas | 60-80 |
+| Tamaño | 1-3px radio |
+| Velocidad | 0.2-0.5 px/frame |
+| Distancia maxima conexión | 150px |
+| Color | hsl(161, 75%, 51%) - Verde menta |
+| Opacidad particulas | 0.6-1.0 |
+| Opacidad lineas | 0.1-0.4 (según distancia) |
+
+### Optimizaciones de Rendimiento
+
+- Uso de `requestAnimationFrame` para animación fluida
+- Cleanup del animation frame al desmontar
+- Canvas responsive que se ajusta al tamaño de ventana
+- Limitar particulas en dispositivos móviles
 
 ---
 
 ## Resultado Esperado
 
-- **Pestaña del navegador**: Mostrará el icono de Processia (las dos flechas entrelazadas verde-azul) en lugar del favicon anterior
-- **Compartir en redes**: Cuando alguien comparta un link, aparecerá el logo de Processia
-- **Sin referencias a Lovable** en el código visible para el usuario
-
----
-
-## Nota
-
-Los archivos internos como `lovable-tagger` en las dependencias son parte del sistema de desarrollo y no afectan la experiencia del usuario final, por lo que se mantienen intactos.
-
+- Fondo animado profesional idéntico al de processia.es
+- Partículas verdes brillantes flotando suavemente
+- Red de conexiones que se forman y desaparecen dinámicamente
+- La imagen hero se mantiene centrada sobre el fondo
+- Rendimiento fluido a 60fps
+- Responsive en todos los dispositivos

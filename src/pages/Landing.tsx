@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import processiaLogo from "@/assets/processia-logo-new.png";
+import landingHero from "@/assets/landing-hero.png";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -18,26 +18,13 @@ export default function Landing() {
         </button>
       </div>
 
-      {/* Centered content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
-        {/* Logo */}
-        <div className="mb-8">
-          <img 
-            src={processiaLogo} 
-            alt="Processia" 
-            className="h-20 sm:h-24 md:h-28 object-contain"
-          />
-        </div>
-
-        {/* Slogan with highlighted SS */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-wide mb-4 text-center">
-          MENOS CONVER<span className="text-primary">S</span>ACIONE<span className="text-primary">S</span>. MÁS CONTROL
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-lg sm:text-xl md:text-2xl font-medium text-primary tracking-wider text-center">
-          SISTEMAS INTERNOS A MEDIDA PARA CEOS
-        </p>
+      {/* Centered content - just the image */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <img 
+          src={landingHero} 
+          alt="Processia - Menos conversaciones. Más control. Sistemas internos a medida para CEOs" 
+          className="max-w-full max-h-[80vh] object-contain"
+        />
       </div>
     </div>
   );

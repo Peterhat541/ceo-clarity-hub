@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Target, ClipboardList } from "lucide-react";
+import { Target, ClipboardList, ArrowLeft } from "lucide-react";
 import processiaLogo from "@/assets/processia-logo-new.png";
 import sloganImage from "@/assets/slogan.png";
 
@@ -7,7 +7,20 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex flex-col relative p-6">
+      {/* Top right button */}
+      <div className="absolute top-6 right-6">
+        <button
+          onClick={() => navigate("/landing")}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border hover:border-primary/50 rounded-full transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Inicio
+        </button>
+      </div>
+
+      {/* Centered content */}
+      <div className="flex-1 flex flex-col items-center justify-center">
       {/* Logo - Large and prominent */}
       <div className="mb-8">
         <img 
@@ -76,6 +89,7 @@ export default function Home() {
           {/* Hover glow effect */}
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
+      </div>
       </div>
     </div>
   );

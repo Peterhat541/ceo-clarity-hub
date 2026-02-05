@@ -9,6 +9,7 @@ import { NoteProvider } from "@/contexts/NoteContext";
 import { ReminderProvider } from "@/contexts/ReminderContext";
 import { CEONoteProvider } from "@/contexts/CEONoteContext";
 import { AIChatProvider } from "@/contexts/AIChatContext";
+import Landing from "./pages/Landing";
 import Home from "./pages/Home";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
@@ -29,6 +30,7 @@ const App = () => (
                   <Sonner />
                   <BrowserRouter>
                     <Routes>
+                      <Route path="/landing" element={<Landing />} />
                       <Route path="/" element={<Home />} />
                       <Route path="/ceo" element={<Index />} />
                       <Route path="/admin" element={<Admin />} />

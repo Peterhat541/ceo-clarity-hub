@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Database } from "lucide-react";
+import { LayoutDashboard, Database, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import processiaLogo from "@/assets/processia-logo-new.png";
 
@@ -66,10 +66,19 @@ export function HeaderNavigation() {
         </div>
       </div>
       
-      {/* Date/greeting */}
-      <span className="text-sm text-muted-foreground">
-        {getGreeting()} · {formatDate()}
-      </span>
+      {/* Right side: Date/greeting + Inicio button */}
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-muted-foreground">
+          {getGreeting()} · {formatDate()}
+        </span>
+        <button
+          onClick={() => navigate("/landing")}
+          className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground border border-border hover:border-primary/50 rounded-full transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Inicio
+        </button>
+      </div>
     </header>
   );
 }

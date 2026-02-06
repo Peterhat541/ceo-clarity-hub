@@ -29,7 +29,7 @@ export default function Home() {
           <img
             src={logoSlogan}
             alt="Processia - Menos conversaciones. Más control."
-            className="w-[80vw] max-w-[600px] sm:max-w-[700px] md:max-w-[800px] object-contain"
+            className="w-[70vw] max-w-[500px] sm:max-w-[550px] md:max-w-[600px] object-contain"
             style={{ mixBlendMode: "screen" }}
           />
         </div>

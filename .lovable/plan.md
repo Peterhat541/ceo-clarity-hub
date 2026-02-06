@@ -1,20 +1,36 @@
 
 
-# Plan: Mejorar calidad de la imagen de fondo
+# Plan: Mejorar la calidad de la imagen de fondo
 
-## Resumen
+## Problema
 
-Reemplazar la imagen de fondo actual (`src/assets/landing-bg.png`) con la nueva imagen de mayor calidad que has adjuntado. No se necesitan cambios en el codigo, solo sustituir el archivo de imagen.
+La imagen se ve borrosa porque:
+1. Se usa `object-cover` que estira la imagen para cubrir toda la pantalla, escalandola mas alla de su resolucion nativa
+2. El fondo del contenedor es negro pero la imagen tiene fondo blanco, lo que podria causar inconsistencias visuales
 
----
+## Solucion
 
-## Cambios
+### 1. Reemplazar la imagen con la nueva version de mayor calidad
 
-### 1. Reemplazar la imagen de fondo
+**Archivo**: `src/assets/landing-bg.png`
+- Copiar `user-uploads://r_7.png` como nueva imagen de fondo
 
-**Accion**: Copiar `user-uploads://r_6.png` a `src/assets/landing-bg.png`, sobrescribiendo la imagen actual.
+### 2. Ajustar la Landing Page
 
-Como el archivo `Landing.tsx` ya importa `landing-bg.png` y lo usa como fondo, no hace falta tocar ningun codigo. La nueva imagen se cargara automaticamente con mejor calidad.
+**Archivo**: `src/pages/Landing.tsx`
+
+Cambios:
+- Cambiar el fondo del contenedor de `bg-black` a `bg-white` para que coincida con el fondo de la imagen
+- Cambiar `object-cover` a `object-contain` para que la imagen no se estire mas alla de su tamanio natural y se vea nitida
+- Ajustar el color del boton "Entrar" para que sea visible sobre fondo blanco (cambiar de blanco a oscuro)
+- Ajustar las particulas para que se vean bien sobre fondo blanco (cambiar color a verde mas intenso)
+
+### 3. Ajustar ParticleNetwork para fondo claro
+
+**Archivo**: `src/components/landing/ParticleNetwork.tsx`
+
+- Las particulas ya son de color verde menta (#25E0B7), que se ve bien sobre fondo blanco
+- No necesita cambios significativos
 
 ---
 
@@ -23,11 +39,14 @@ Como el archivo `Landing.tsx` ya importa `landing-bg.png` y lo usa como fondo, n
 | Archivo | Accion |
 |---------|--------|
 | `src/assets/landing-bg.png` | **Reemplazar** - Nueva imagen de mayor calidad |
+| `src/pages/Landing.tsx` | **Modificar** - Fondo blanco, object-contain, colores del boton |
 
 ---
 
 ## Resultado Esperado
 
-- La imagen de fondo de la landing se vera con mayor resolucion y nitidez
-- Todo lo demas (particulas animadas, boton "Entrar") se mantiene igual
+- La imagen se vera nitida y con su resolucion original, sin estirarse
+- El fondo blanco de la imagen se integra con el fondo del contenedor
+- Las particulas animadas siguen visibles sobre el fondo claro
+- El boton "Entrar" es visible con colores adaptados al fondo blanco
 

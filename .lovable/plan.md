@@ -1,46 +1,53 @@
 
 
-# Plan: Ajustar tamanios y posicionamiento de la Landing
+# Plan: Usar imagen completa directamente como landing
 
-## Problemas detectados
+## Problema
 
-Comparando la referencia con lo actual:
+El enfoque de 3 capas con `mix-blend-mode` no consigue el resultado correcto. El usuario ha proporcionado una imagen final (`r_10.png`) que ya tiene todo combinado: fondo, logo, slogan y subtitulo.
 
-1. **Hero (logo + slogan) demasiado pequenio**: El `max-w` en desktop es `40%`, pero en la referencia ocupa aproximadamente el 55-60% del ancho.
-2. **Subtitulo demasiado pequenio**: El `max-w` en desktop es `22%`, pero en la referencia ocupa aproximadamente el 35-40% del ancho.
-3. **Subtitulo duplicado**: Parece haber un texto residual pequenio mas abajo. Esto puede ser porque el `mix-blend-mode: screen` no elimina completamente el fondo de las imagenes si no es negro puro, o hay algun otro elemento interfiriendo.
-4. **Espaciado entre hero y subtitulo**: El `mt-4` actual es demasiado poco. En la referencia hay un poco mas de separacion.
+## Solucion
 
-## Cambios en `src/pages/Landing.tsx`
+Usar `r_10.png` como unica imagen de la landing, centrada y sin blend modes ni capas.
 
-### Ajustar tamanios del hero
+## Cambios
 
-Cambiar las clases de tamanio:
-- Antes: `max-w-[85%] md:max-w-[50%] lg:max-w-[40%]`
-- Despues: `max-w-[90%] md:max-w-[65%] lg:max-w-[55%]`
+### 1. Copiar el asset
 
-### Ajustar tamanios del subtitulo
+Copiar `r_10.png` a `src/assets/landing-complete.png` para usarlo como imagen principal.
 
-Cambiar las clases de tamanio:
-- Antes: `max-w-[60%] md:max-w-[30%] lg:max-w-[22%]`
-- Despues: `max-w-[70%] md:max-w-[45%] lg:max-w-[35%]`
+### 2. Modificar `src/pages/Landing.tsx`
 
-### Ajustar espaciado
+Simplificar completamente el componente:
 
-Cambiar el margen entre hero y subtitulo:
-- Antes: `mt-4`
-- Despues: `mt-6`
+- Eliminar las 3 imagenes separadas (landing-bg, landing-hero, landing-subtitle)
+- Usar solo `landing-complete.png` como imagen unica centrada
+- Mantener fondo negro para las barras laterales/superiores si la imagen no cubre todo
+- La imagen se mostrara con `object-contain` para que se vea completa sin recortar ni deformar
+- Mantener el boton "Entrar" en la esquina superior derecha
+- Eliminar imports de los assets anteriores que ya no se usan
 
-### Verificar mix-blend-mode
+### Estructura simplificada
 
-Si las imagenes r_7-2.png y r_8-2.png tienen fondo negro (no blanco), entonces `mix-blend-mode: screen` es correcto. Si tienen fondo blanco, `screen` haria que el blanco se vea como blanco brillante, lo cual explicaria el texto fantasma. Revisare las imagenes para confirmar y ajustar el blend mode si es necesario.
+```text
++--------------------------------------------------+
+|  [fondo negro]                         [Entrar ->]|
+|                                                   |
+|         [landing-complete.png]                    |
+|         (centrada, object-contain)                |
+|         (toda la composicion en 1 imagen)         |
+|                                                   |
++--------------------------------------------------+
+```
 
 ## Archivo a modificar
 
-| Archivo | Cambio |
+| Archivo | Accion |
 |---------|--------|
-| `src/pages/Landing.tsx` | Aumentar `max-w` del hero y subtitulo, ajustar espaciado |
+| `src/assets/landing-complete.png` | Nuevo - copiar r_10.png |
+| `src/pages/Landing.tsx` | Simplificar a 1 sola imagen |
 
 ## Resultado esperado
 
-El logo, slogan y subtitulo se veran con el tamanio correcto y proporcionado como en la imagen de referencia, sin texto duplicado ni elementos fantasma.
+La landing se vera exactamente como la imagen proporcionada, sin problemas de tamanio, blend mode, ni capas desalineadas. Simple y directo.
+

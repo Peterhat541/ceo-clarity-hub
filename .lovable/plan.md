@@ -1,57 +1,33 @@
 
 
-# Plan: Poner la imagen como fondo de la landing page
+# Plan: Mejorar calidad de la imagen de fondo
 
 ## Resumen
 
-Usar la imagen subida como fondo completo de la landing page, reemplazando el fondo negro actual. Las particulas animadas se mantendran por encima para dar mas dinamismo.
+Reemplazar la imagen de fondo actual (`src/assets/landing-bg.png`) con la nueva imagen de mayor calidad que has adjuntado. No se necesitan cambios en el codigo, solo sustituir el archivo de imagen.
 
 ---
 
 ## Cambios
 
-### 1. Guardar la imagen
+### 1. Reemplazar la imagen de fondo
 
-**Accion**: Copiar `user-uploads://image-56.png` a `src/assets/landing-bg.png`
+**Accion**: Copiar `user-uploads://r_6.png` a `src/assets/landing-bg.png`, sobrescribiendo la imagen actual.
 
-### 2. Actualizar Landing Page
-
-**Archivo**: `src/pages/Landing.tsx`
-
-- Importar la nueva imagen de fondo
-- Usarla como fondo que cubra toda la pantalla (`object-cover`, `absolute inset-0`)
-- Eliminar la imagen hero central (ya que el fondo YA contiene el logo, slogan y todo el contenido visual)
-- Mantener las particulas animadas por encima del fondo para mayor profundidad
-- Mantener el boton "Entrar" en la esquina superior derecha
-
-**Estructura resultante**:
-
-```text
-+--------------------------------------------------+
-|  Imagen de fondo (absolute, inset-0, z-0)        |
-|  Canvas particulas (absolute, inset-0, z-1)      |
-|                              [Entrar ->] (z-10)  |
-|                                                   |
-|            (contenido visual ya esta              |
-|             en la imagen de fondo)                |
-|                                                   |
-+--------------------------------------------------+
-```
+Como el archivo `Landing.tsx` ya importa `landing-bg.png` y lo usa como fondo, no hace falta tocar ningun codigo. La nueva imagen se cargara automaticamente con mejor calidad.
 
 ---
 
-## Archivos a Crear/Modificar
+## Archivos a Modificar
 
 | Archivo | Accion |
 |---------|--------|
-| `src/assets/landing-bg.png` | **Crear** - Imagen de fondo |
-| `src/pages/Landing.tsx` | **Modificar** - Usar imagen como fondo, quitar hero central |
+| `src/assets/landing-bg.png` | **Reemplazar** - Nueva imagen de mayor calidad |
 
 ---
 
 ## Resultado Esperado
 
-- La imagen con el globo tecnologico, logo Processia y slogan ocupa todo el fondo de la pantalla
-- Las particulas animadas flotan por encima dando profundidad
-- El boton "Entrar" sigue visible y funcional arriba a la derecha
+- La imagen de fondo de la landing se vera con mayor resolucion y nitidez
+- Todo lo demas (particulas animadas, boton "Entrar") se mantiene igual
 

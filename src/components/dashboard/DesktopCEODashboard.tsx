@@ -41,11 +41,10 @@ export function DesktopCEODashboard() {
   const [clientsAttention, setClientsAttention] = useState<ClientData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { getTodayEvents } = useEventContext();
+  const { events } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
   const { activeReminders } = useReminderContext();
 
-  const todayEvents = getTodayEvents();
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
   const visibleReminders = activeReminders.filter((r) => !r.dismissed);
 
@@ -55,7 +54,7 @@ export function DesktopCEODashboard() {
       try {
         const { data, error } = await supabase
           .from("clients")
-          .select("id, name, status, incidents, pending_tasks, last_contact, updated_at")
+          .select("id, name, status, incidents, pending_tasks, last_contact, updated_at, project_type, work_description")
           .in("status", ["red", "orange", "yellow"])
           .order("updated_at", { ascending: false })
           .limit(10);
@@ -63,7 +62,11 @@ export function DesktopCEODashboard() {
         if (error) throw error;
 
         if (data) {
-          const mapped: ClientData[] = data.map((client) => {
+          // Filter out clients without any project data
+          const completeClients = data.filter((client) =>
+            client.project_type || client.work_description || client.incidents || client.pending_tasks
+          );
+          const mapped: ClientData[] = completeClients.map((client) => {
             const updatedAt = new Date(client.updated_at);
             const now = new Date();
             const diffDays = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24));
@@ -111,6 +114,7 @@ export function DesktopCEODashboard() {
         .from("clients")
         .update({ 
           last_contact: formattedDate,
+          status: "green" as const,
           updated_at: now.toISOString()
         })
         .eq("id", client.id);
@@ -302,7 +306,7 @@ export function DesktopCEODashboard() {
                 className="flex-1 h-12 gap-2 bg-primary/10 hover:bg-primary/20 text-primary justify-start"
               >
                 <Calendar className="h-4 w-4" />
-                <span className="font-medium">{todayEvents.length} eventos</span>
+                <span className="font-medium">{events.length} eventos</span>
               </Button>
               <Button
                 variant="ghost"

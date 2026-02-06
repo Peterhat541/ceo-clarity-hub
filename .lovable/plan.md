@@ -1,53 +1,57 @@
 
 
-# Plan: Usar imagen completa directamente como landing
+# Plan: Unificar la pagina Home con particulas y nuevo asset
 
-## Problema
+## Objetivo
 
-El enfoque de 3 capas con `mix-blend-mode` no consigue el resultado correcto. El usuario ha proporcionado una imagen final (`r_10.png`) que ya tiene todo combinado: fondo, logo, slogan y subtitulo.
-
-## Solucion
-
-Usar `r_10.png` como unica imagen de la landing, centrada y sin blend modes ni capas.
+Hacer que la pagina Home (`/`) tenga la animacion de particulas de fondo (los puntos mint conectados) y usar la imagen `r_11.png` (logo + slogan combinados en un solo PNG) en lugar de las dos imagenes separadas actuales.
 
 ## Cambios
 
-### 1. Copiar el asset
+### 1. Copiar el nuevo asset
 
-Copiar `r_10.png` a `src/assets/landing-complete.png` para usarlo como imagen principal.
+Copiar `r_11.png` a `src/assets/logo-slogan.png` para usarlo como imagen combinada de logo + slogan.
 
-### 2. Modificar `src/pages/Landing.tsx`
+### 2. Modificar `src/pages/Home.tsx`
 
-Simplificar completamente el componente:
+- **Anadir ParticleNetwork**: Importar y colocar el componente `ParticleNetwork` como fondo animado (z-0), detras de todo el contenido.
+- **Reemplazar logo + slogan separados**: En lugar de importar `processia-logo-new.png` y `slogan.png` por separado, usar la nueva imagen combinada `logo-slogan.png`. Se mostrara con `mix-blend-mode: screen` para eliminar el fondo blanco y que se integre con el fondo oscuro.
+- **Mantener el resto**: El texto "Selecciona un modo de trabajo", las dos cards (VISTA CEO, ADMINISTRACION) y el boton "Inicio" se mantienen igual.
+- **Asegurar z-index**: El contenido (logo, cards, boton) tendra `z-10` o superior para estar por encima del canvas de particulas.
 
-- Eliminar las 3 imagenes separadas (landing-bg, landing-hero, landing-subtitle)
-- Usar solo `landing-complete.png` como imagen unica centrada
-- Mantener fondo negro para las barras laterales/superiores si la imagen no cubre todo
-- La imagen se mostrara con `object-contain` para que se vea completa sin recortar ni deformar
-- Mantener el boton "Entrar" en la esquina superior derecha
-- Eliminar imports de los assets anteriores que ya no se usan
-
-### Estructura simplificada
+### 3. Estructura visual resultante
 
 ```text
 +--------------------------------------------------+
-|  [fondo negro]                         [Entrar ->]|
+|  [particulas animadas fondo]           [<- Inicio]|
 |                                                   |
-|         [landing-complete.png]                    |
-|         (centrada, object-contain)                |
-|         (toda la composicion en 1 imagen)         |
+|           [logo-slogan.png]                       |
+|      (logo + slogan, blend screen)                |
+|                                                   |
+|      Selecciona un modo de trabajo                |
+|                                                   |
+|   +------------------+  +------------------+      |
+|   |   VISTA CEO      |  |  ADMINISTRACION  |      |
+|   |   Dashboard      |  |  Base de datos   |      |
+|   +------------------+  +------------------+      |
 |                                                   |
 +--------------------------------------------------+
 ```
 
-## Archivo a modificar
+## Archivos a modificar
 
 | Archivo | Accion |
 |---------|--------|
-| `src/assets/landing-complete.png` | Nuevo - copiar r_10.png |
-| `src/pages/Landing.tsx` | Simplificar a 1 sola imagen |
+| `src/assets/logo-slogan.png` | Nuevo - copiar r_11.png |
+| `src/pages/Home.tsx` | Anadir ParticleNetwork + reemplazar logo/slogan por imagen combinada |
+
+## Detalles tecnicos
+
+- `ParticleNetwork` se renderiza como un `<canvas>` con `position: absolute`, `inset: 0`, `z-0`. Ya existe el componente en `src/components/landing/ParticleNetwork.tsx`.
+- La imagen `r_11.png` tiene fondo blanco, asi que se usara `mix-blend-mode: screen` para que el blanco se vuelva transparente sobre el fondo oscuro, mostrando solo el logo y el slogan.
+- Todo el contenido interactivo (cards, boton) estara en un contenedor con `relative z-10` para estar por encima de las particulas.
 
 ## Resultado esperado
 
-La landing se vera exactamente como la imagen proporcionada, sin problemas de tamanio, blend mode, ni capas desalineadas. Simple y directo.
+La pagina Home tendra el mismo estilo visual de particulas que la landing, con el logo y slogan nitidos gracias al PNG combinado, y mantendra las cards de seleccion de modo debajo.
 

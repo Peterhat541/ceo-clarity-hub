@@ -7,11 +7,15 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden flex items-center justify-center">
-      {/* Imagen completa de la landing */}
+      {/* Imagen completa de la landing con bordes difuminados */}
       <img
         src={landingComplete}
         alt="Processia - Menos conversaciones. Más control."
         className="w-full h-full object-contain absolute inset-0"
+        style={{
+          maskImage: "radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)",
+        }}
       />
 
       {/* Botón Entrar */}

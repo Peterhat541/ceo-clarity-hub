@@ -7,7 +7,7 @@ export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
+    <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Full-screen background image */}
       <img
         src={landingBg}

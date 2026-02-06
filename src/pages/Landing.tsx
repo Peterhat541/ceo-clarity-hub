@@ -19,12 +19,12 @@ export default function Landing() {
       {/* Animated particle overlay */}
       <ParticleNetwork />
 
-      {/* Subtitle text */}
-      <div className="absolute inset-0 z-5 flex items-end justify-center pb-[18%]">
+      {/* Subtitle overlay - replaces original text in bg image */}
+      <div className="absolute inset-0 z-[1] flex items-center justify-center" style={{ paddingTop: '13%' }}>
         <img
           src={landingSubtitle}
           alt="Sistemas internos a medida para CEOs"
-          className="w-auto max-w-[60%] md:max-w-[40%] h-auto"
+          className="w-auto max-w-[32%] md:max-w-[22%] h-auto"
         />
       </div>
 

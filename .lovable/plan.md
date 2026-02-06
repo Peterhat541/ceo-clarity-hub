@@ -1,73 +1,46 @@
 
 
-# Plan: Reconstruir la Landing con 3 capas independientes
+# Plan: Ajustar tamanios y posicionamiento de la Landing
 
-## Objetivo
+## Problemas detectados
 
-Montar la landing page superponiendo las 3 imagenes por separado para mantener la maxima calidad, en lugar de usar una sola imagen combinada que pierde resolucion al escalar.
+Comparando la referencia con lo actual:
 
-## Las 3 capas
+1. **Hero (logo + slogan) demasiado pequenio**: El `max-w` en desktop es `40%`, pero en la referencia ocupa aproximadamente el 55-60% del ancho.
+2. **Subtitulo demasiado pequenio**: El `max-w` en desktop es `22%`, pero en la referencia ocupa aproximadamente el 35-40% del ancho.
+3. **Subtitulo duplicado**: Parece haber un texto residual pequenio mas abajo. Esto puede ser porque el `mix-blend-mode: screen` no elimina completamente el fondo de las imagenes si no es negro puro, o hay algun otro elemento interfiriendo.
+4. **Espaciado entre hero y subtitulo**: El `mt-4` actual es demasiado poco. En la referencia hay un poco mas de separacion.
 
-```text
-Capa 0 (fondo):     r_9.png    -> Globo oscuro, cubre toda la pantalla
-Capa 1 (hero):      r_7-2.png  -> Logo + "MENOS CONVERSACIONES. MAS CONTROL"
-Capa 2 (subtitulo): r_8-2.png  -> "SISTEMAS INTERNOS A MEDIDA PARA CEOS"
-```
+## Cambios en `src/pages/Landing.tsx`
 
-## Cambios
+### Ajustar tamanios del hero
 
-### 1. Reemplazar los 3 assets
+Cambiar las clases de tamanio:
+- Antes: `max-w-[85%] md:max-w-[50%] lg:max-w-[40%]`
+- Despues: `max-w-[90%] md:max-w-[65%] lg:max-w-[55%]`
 
-| Archivo destino | Origen | Contenido |
-|-----------------|--------|-----------|
-| `src/assets/landing-bg.png` | `r_9.png` | Fondo oscuro con globo (sin texto) |
-| `src/assets/landing-hero.png` | `r_7-2.png` | Logo + slogan |
-| `src/assets/landing-subtitle.png` | `r_8-2.png` | Subtitulo "SISTEMAS INTERNOS..." |
+### Ajustar tamanios del subtitulo
 
-### 2. Modificar `src/pages/Landing.tsx`
+Cambiar las clases de tamanio:
+- Antes: `max-w-[60%] md:max-w-[30%] lg:max-w-[22%]`
+- Despues: `max-w-[70%] md:max-w-[45%] lg:max-w-[35%]`
 
-Reestructurar completamente la pagina:
+### Ajustar espaciado
 
-- **Fondo** (`landing-bg.png`): Posicion absoluta, `object-cover`, cubre toda la pantalla. Como es solo el globo sin texto, estirar no causa borrosidad visible en textos.
-- **Contenido central**: Un contenedor flex vertical centrado que apila:
-  - `landing-hero.png` (logo + slogan) - centrado, tamanio responsivo
-  - `landing-subtitle.png` (subtitulo) - justo debajo, tamanio mas pequenio
-- **Eliminar ParticleNetwork**: El fondo r_9.png ya tiene su propia estetica de particulas y lineas, no necesita la capa animada extra.
-- **Boton "Entrar"**: Se mantiene en la esquina superior derecha con estilo blanco/transparente.
+Cambiar el margen entre hero y subtitulo:
+- Antes: `mt-4`
+- Despues: `mt-6`
 
-### 3. Estructura del nuevo layout
+### Verificar mix-blend-mode
 
-```text
-+--------------------------------------------------+
-|                                        [Entrar ->]|
-|                                                   |
-|            [fondo: landing-bg.png]                |
-|                                                   |
-|              [landing-hero.png]                   |
-|          (logo + slogan centrado)                 |
-|                                                   |
-|            [landing-subtitle.png]                 |
-|         (subtitulo justo debajo)                  |
-|                                                   |
-+--------------------------------------------------+
-```
+Si las imagenes r_7-2.png y r_8-2.png tienen fondo negro (no blanco), entonces `mix-blend-mode: screen` es correcto. Si tienen fondo blanco, `screen` haria que el blanco se vea como blanco brillante, lo cual explicaria el texto fantasma. Revisare las imagenes para confirmar y ajustar el blend mode si es necesario.
 
-### 4. Detalles tecnicos
+## Archivo a modificar
 
-- Las imagenes hero y subtitle tienen fondo blanco, asi que se usara CSS `mix-blend-mode: screen` para que el fondo blanco se vuelva transparente sobre el fondo oscuro, integrando los textos perfectamente.
-- Si el blend mode no es suficiente, se puede ajustar con `lighten` como alternativa.
-- El hero y subtitle se posicionan con un contenedor absoluto centrado usando flexbox.
-
-## Archivos a modificar
-
-| Archivo | Accion |
+| Archivo | Cambio |
 |---------|--------|
-| `src/assets/landing-bg.png` | Reemplazar con r_9.png |
-| `src/assets/landing-hero.png` | Reemplazar con r_7-2.png |
-| `src/assets/landing-subtitle.png` | Reemplazar con r_8-2.png |
-| `src/pages/Landing.tsx` | Reescribir layout con 3 capas + mix-blend-mode |
+| `src/pages/Landing.tsx` | Aumentar `max-w` del hero y subtitulo, ajustar espaciado |
 
 ## Resultado esperado
 
-La landing se vera exactamente como la imagen de referencia: fondo oscuro con el globo, logo Processia con slogan centrado, y debajo el subtitulo en gradiente verde-azul. Todo nitido porque cada elemento se escala independientemente.
-
+El logo, slogan y subtitulo se veran con el tamanio correcto y proporcionado como en la imagen de referencia, sin texto duplicado ni elementos fantasma.

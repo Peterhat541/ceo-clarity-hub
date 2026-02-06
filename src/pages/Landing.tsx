@@ -1,34 +1,41 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import landingBg from "@/assets/landing-bg.png";
+import landingHero from "@/assets/landing-hero.png";
 import landingSubtitle from "@/assets/landing-subtitle.png";
-import ParticleNetwork from "@/components/landing/ParticleNetwork";
 
 export default function Landing() {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Full-screen background image */}
+      {/* Capa 0: Fondo oscuro con globo */}
       <img
         src={landingBg}
-        alt="Processia - Menos conversaciones. Más control."
-        className="absolute inset-0 w-full h-full object-contain z-0"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover z-0"
       />
 
-      {/* Animated particle overlay */}
-      <ParticleNetwork />
+      {/* Capas 1 y 2: Hero + Subtítulo centrados */}
+      <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center px-4">
+        {/* Hero: Logo + slogan */}
+        <img
+          src={landingHero}
+          alt="Processia - Menos conversaciones. Más control."
+          className="w-auto max-w-[85%] md:max-w-[50%] lg:max-w-[40%] h-auto"
+          style={{ mixBlendMode: "screen" }}
+        />
 
-      {/* Subtitle overlay - replaces original text in bg image */}
-      <div className="absolute inset-0 z-[1] flex items-center justify-center" style={{ paddingTop: '13%' }}>
+        {/* Subtítulo */}
         <img
           src={landingSubtitle}
           alt="Sistemas internos a medida para CEOs"
-          className="w-auto max-w-[32%] md:max-w-[22%] h-auto"
+          className="w-auto max-w-[60%] md:max-w-[30%] lg:max-w-[22%] h-auto mt-4"
+          style={{ mixBlendMode: "screen" }}
         />
       </div>
 
-      {/* Top right button */}
+      {/* Botón Entrar */}
       <div className="absolute top-6 right-6 z-10">
         <button
           onClick={() => navigate("/")}

@@ -22,7 +22,7 @@ export default function Landing() {
         <img
           src={landingHero}
           alt="Processia - Menos conversaciones. Más control."
-          className="w-auto max-w-[85%] md:max-w-[50%] lg:max-w-[40%] h-auto"
+          className="w-auto max-w-[90%] md:max-w-[65%] lg:max-w-[55%] h-auto"
           style={{ mixBlendMode: "screen" }}
         />
 
@@ -30,7 +30,7 @@ export default function Landing() {
         <img
           src={landingSubtitle}
           alt="Sistemas internos a medida para CEOs"
-          className="w-auto max-w-[60%] md:max-w-[30%] lg:max-w-[22%] h-auto mt-4"
+          className="w-auto max-w-[70%] md:max-w-[45%] lg:max-w-[35%] h-auto mt-6"
           style={{ mixBlendMode: "screen" }}
         />
       </div>

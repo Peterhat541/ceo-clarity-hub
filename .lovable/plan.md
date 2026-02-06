@@ -1,45 +1,27 @@
 
 
-# Plan: Mejorar el difuminado de bordes en la Landing Page
+# Plan: Aumentar el tamanio del logo en la pagina Home
 
 ## Problema
 
-La imagen `landing-complete.png` en `/landing` muestra bordes visibles donde termina el contenido visual. El mask radial-gradient actual no es suficiente porque:
-1. La imagen usa `object-contain`, lo que deja areas negras en los lados
-2. El gradiente (80%/80% con fade desde 50%) no difumina lo suficiente los bordes reales del contenido
+El logo+slogan en la pagina Home (`/`) se ve demasiado pequenio. Actualmente usa `h-32 sm:h-40 md:h-48` (128px / 160px / 192px).
 
-## Solucion
+## Cambio
 
-Cambiar la estrategia de la imagen y hacer el gradiente mas agresivo:
+Aumentar las clases de altura del logo en `src/pages/Home.tsx`:
 
-1. Cambiar `object-contain` a `object-cover` para que la imagen cubra todo el viewport sin dejar huecos negros
-2. Ajustar el radial-gradient para que el difuminado sea mas pronunciado en los bordes, especialmente en la parte inferior y laterales donde se nota el corte
+- **Antes**: `h-32 sm:h-40 md:h-48`
+- **Despues**: `h-48 sm:h-56 md:h-72`
 
-## Cambios tecnicos
+Esto sube el tamanio a 192px / 224px / 288px respectivamente, casi el doble en desktop.
+
+## Archivo a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/Landing.tsx` | Cambiar `object-contain` a `object-cover` y ajustar el radial-gradient a un fade mas agresivo con valores tipo `ellipse 70% 65% at center, black 30%, transparent 85%` |
-
-## Detalle del cambio
-
-**Antes:**
-```css
-object-contain
-maskImage: radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)
-```
-
-**Despues:**
-```css
-object-cover
-maskImage: radial-gradient(ellipse 70% 65% at center, black 30%, transparent 85%)
-```
-
-- `object-cover`: la imagen llenara todo el espacio, evitando bandas negras
-- `ellipse 70% 65%`: area visible mas concentrada en el centro
-- `black 30%`: el contenido solido se mantiene solo en el centro
-- `transparent 85%`: el fade comienza antes y termina antes del borde, creando un difuminado suave y natural
+| `src/pages/Home.tsx` | Linea 32: cambiar clases de altura de la imagen |
 
 ## Resultado esperado
 
-Los bordes de la imagen se fundiran suavemente con el fondo negro sin que se note donde termina la imagen, creando una transicion elegante y continua.
+El logo con el slogan se vera considerablemente mas grande y prominente, ocupando mas espacio visual en la pagina antes de las cards de seleccion de modo.
+

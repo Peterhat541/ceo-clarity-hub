@@ -11,10 +11,10 @@ export default function Landing() {
       <img
         src={landingComplete}
         alt="Processia - Menos conversaciones. Más control."
-        className="w-full h-full object-cover absolute inset-0"
+        className="w-full h-full object-contain absolute inset-0"
         style={{
-          maskImage: "radial-gradient(ellipse 70% 65% at center, black 30%, transparent 85%)",
-          WebkitMaskImage: "radial-gradient(ellipse 70% 65% at center, black 30%, transparent 85%)",
+          maskImage: "radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)",
         }}
       />
 

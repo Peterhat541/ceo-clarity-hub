@@ -62,7 +62,7 @@ export default function Landing() {
       />
 
       {/* Formulario de acceso */}
-      <div className="absolute bottom-[15%] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 w-full max-w-xs">
+      <div className="absolute bottom-[35%] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 w-full max-w-xs">
         <div className="flex items-center gap-2 w-full">
           <div className="relative flex-1">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Database, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Database, Home, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import processiaLogo from "@/assets/processia-logo-new.png";
 
@@ -29,16 +29,27 @@ export function HeaderNavigation() {
   return (
     <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border/50 bg-card/30 backdrop-blur-sm">
       <div className="flex items-center gap-4">
-        {/* Logo - clickable to go Home */}
+        {/* Logo */}
         <img 
           src={processiaLogo} 
           alt="Processia" 
-          onClick={() => navigate("/")}
-          className="h-7 cursor-pointer hover:opacity-80 transition-opacity" 
+          className="h-7" 
         />
-        
+
         {/* Navigation buttons */}
         <div className="flex items-center bg-secondary rounded-full p-1">
+          <button
+            onClick={() => navigate("/")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+              !isCEO && !isAdmin
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Home className="w-4 h-4" />
+            Inicio
+          </button>
           <button
             onClick={() => navigate("/ceo")}
             className={cn(
@@ -66,17 +77,20 @@ export function HeaderNavigation() {
         </div>
       </div>
       
-      {/* Right side: Date/greeting + Inicio button */}
+      {/* Right side: Date/greeting + Salir button */}
       <div className="flex items-center gap-4">
         <span className="text-sm text-muted-foreground">
           {getGreeting()} · {formatDate()}
         </span>
         <button
-          onClick={() => navigate("/landing")}
-          className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground border border-border hover:border-primary/50 rounded-full transition-all"
+          onClick={() => {
+            sessionStorage.removeItem("demo_access");
+            navigate("/landing");
+          }}
+          className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-muted-foreground hover:text-destructive border border-border hover:border-destructive/50 rounded-full transition-all"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Inicio
+          <LogOut className="w-4 h-4" />
+          Salir
         </button>
       </div>
     </header>

@@ -9,6 +9,7 @@ import { NoteProvider } from "@/contexts/NoteContext";
 import { ReminderProvider } from "@/contexts/ReminderContext";
 import { CEONoteProvider } from "@/contexts/CEONoteContext";
 import { AIChatProvider } from "@/contexts/AIChatContext";
+import { DemoGuard } from "@/components/auth/DemoGuard";
 import Landing from "./pages/Landing";
 import Home from "./pages/Home";
 import Index from "./pages/Index";
@@ -31,9 +32,9 @@ const App = () => (
                   <BrowserRouter>
                     <Routes>
                       <Route path="/landing" element={<Landing />} />
-                      <Route path="/" element={<Home />} />
-                      <Route path="/ceo" element={<Index />} />
-                      <Route path="/admin" element={<Admin />} />
+                      <Route path="/" element={<DemoGuard><Home /></DemoGuard>} />
+                      <Route path="/ceo" element={<DemoGuard><Index /></DemoGuard>} />
+                      <Route path="/admin" element={<DemoGuard><Admin /></DemoGuard>} />
                       {/* Redirect old routes to home */}
                       <Route path="/incidencias" element={<Navigate to="/" replace />} />
                       <Route path="/clientes-rojo" element={<Navigate to="/" replace />} />

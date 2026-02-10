@@ -147,6 +147,48 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_access_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
+      demo_access_logs: {
+        Row: {
+          access_code: string
+          accessed_at: string
+          id: string
+          user_agent: string | null
+        }
+        Insert: {
+          access_code: string
+          accessed_at?: string
+          id?: string
+          user_agent?: string | null
+        }
+        Update: {
+          access_code?: string
+          accessed_at?: string
+          id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           client_id: string | null

@@ -1,9 +1,52 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { Lock, ArrowRight, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import landingComplete from "@/assets/landing-complete.png";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleAccess = async () => {
+    if (!code.trim()) {
+      setError("Introduce el código de acceso");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const { data, error: dbError } = await supabase
+        .from("demo_access_codes" as any)
+        .select("code")
+        .eq("code", code.trim())
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (dbError || !data) {
+        setError("Código incorrecto");
+        setLoading(false);
+        return;
+      }
+
+      // Log the access
+      await supabase.from("demo_access_logs" as any).insert({
+        access_code: code.trim(),
+        user_agent: navigator.userAgent,
+      });
+
+      sessionStorage.setItem("demo_access", "true");
+      navigate("/");
+    } catch {
+      setError("Error de conexión. Inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden flex items-center justify-center">
@@ -18,15 +61,31 @@ export default function Landing() {
         }}
       />
 
-      {/* Botón Entrar */}
-      <div className="absolute top-6 right-6 z-10">
-        <button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/80 hover:text-white border border-white/20 hover:border-white/40 rounded-full transition-all backdrop-blur-sm"
-        >
-          Entrar
-          <ArrowRight className="w-4 h-4" />
-        </button>
+      {/* Formulario de acceso */}
+      <div className="absolute bottom-[15%] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 w-full max-w-xs">
+        <div className="flex items-center gap-2 w-full">
+          <div className="relative flex-1">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => { setCode(e.target.value); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleAccess()}
+              placeholder="Código de acceso"
+              className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-full text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/50 backdrop-blur-sm"
+            />
+          </div>
+          <button
+            onClick={handleAccess}
+            disabled={loading}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-black bg-white hover:bg-white/90 rounded-full transition-all disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Acceder <ArrowRight className="w-4 h-4" /></>}
+          </button>
+        </div>
+        {error && (
+          <p className="text-red-400 text-xs">{error}</p>
+        )}
       </div>
     </div>
   );

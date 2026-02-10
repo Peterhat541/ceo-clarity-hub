@@ -290,7 +290,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5",
+      model: "google/gemini-3-flash-preview",
         messages,
         tools,
         tool_choice: "auto",
@@ -750,12 +750,13 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-5",
+          model: "google/gemini-3-flash-preview",
           messages: [
             ...messages,
             choice.message,
             ...toolResultMessages
           ],
+          stream: true,
         }),
       });
 
@@ -763,23 +764,48 @@ serve(async (req) => {
         throw new Error("Failed to get follow-up response");
       }
 
-      const followUpData = await followUpResponse.json();
-      const finalContent = followUpData.choices?.[0]?.message?.content || "Acción completada.";
+      // Stream the response with actions prepended
+      const actionsPreamble = `data: ${JSON.stringify({ actions: executedActions })}\n\n`;
+      const encoder = new TextEncoder();
+      
+      const stream = new ReadableStream({
+        async start(controller) {
+          controller.enqueue(encoder.encode(actionsPreamble));
+          const reader = followUpResponse.body!.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+          controller.close();
+        }
+      });
 
-      return new Response(JSON.stringify({
-        message: finalContent,
-        actions: executedActions
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(stream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
     }
 
-    // No tool calls, return direct response
-    return new Response(JSON.stringify({
-      message: choice.message?.content || "No tengo respuesta.",
-      actions: []
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // No tool calls - re-request with streaming
+    const directStreamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages,
+        stream: true,
+      }),
+    });
+
+    if (!directStreamResponse.ok) {
+      throw new Error("Failed to get streaming response");
+    }
+
+    return new Response(directStreamResponse.body, {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
 
   } catch (error) {

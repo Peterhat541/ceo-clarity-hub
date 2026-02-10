@@ -1,46 +1,84 @@
 
+# Plan: Sistema de acceso demo + mejoras de navegacion
 
-# Plan: Corregir 3 bugs en la vista CEO
+## Resumen
 
-## Problemas identificados
-
-### 1. Clientes sin datos completos aparecen en la lista
-Clientes como "Nexus Tech", "BlueSky Ventures" y "Global Media" tienen estado rojo/naranja/amarillo pero **no tienen datos de proyecto** (tipo de proyecto, descripcion, incidencias, tareas pendientes son todos nulos). Estos no deberian mostrarse al CEO porque no aportan informacion util.
-
-### 2. El contador de eventos muestra "0 eventos" pero la agenda muestra 1
-El evento "Reunion con el equipo" esta programado para el 10 de febrero, no para hoy (6 de febrero). El contador en el boton usa `getTodayEvents()` que solo cuenta eventos de hoy, pero la agenda muestra **todos los eventos proximos**. El numero deberia coincidir con lo que muestra la agenda.
-
-### 3. Cliente revisado reaparece al navegar
-Al marcar un cliente como "revisado", el codigo actualiza `last_contact` y `updated_at` pero **no cambia el estado** del cliente. Cuando se navega a Administracion y se vuelve, el componente se monta de nuevo y vuelve a cargar clientes con estado rojo/naranja/amarillo desde la base de datos -- el cliente sigue ahi porque su estado no cambio.
+Tres cambios principales:
+1. Anadir un formulario de acceso con codigo en la landing (debajo de "Sistemas internos a medida para CEOs")
+2. Proteger las rutas internas para que solo se pueda acceder tras introducir el codigo
+3. Mejorar la navegacion del logo en el header para que sea intuitiva
 
 ---
 
-## Solucion
+## 1. Acceso con codigo en la Landing
 
-### Archivo: `src/components/dashboard/DesktopCEODashboard.tsx`
+En la pagina `/landing`, debajo de la imagen (donde aparece "Sistemas internos a medida para CEOs"), se anade:
+- Un campo de texto con placeholder "Codigo de acceso"
+- Un boton "Acceder a la demo"
+- Al introducir el codigo correcto, se guarda en `sessionStorage` y se redirige a `/` (seleccion de modo)
 
-**Cambio 1 - Filtrar clientes incompletos:**
-Despues de obtener los clientes de la base de datos, filtrar aquellos que no tengan al menos uno de estos campos rellenados: `project_type`, `work_description`, `incidents`, o `pending_tasks`. Si un cliente no tiene ninguno de estos datos, se considera incompleto y no se muestra.
+**El codigo se valida contra una tabla en la base de datos** para que puedas cambiarlo sin tocar codigo. Ademas se registra cada acceso en una tabla de logs.
 
-**Cambio 2 - Marcar como revisado cambia el estado a verde:**
-En la funcion `handleMarkReviewed`, ademas de actualizar `last_contact`, tambien se actualizara el `status` a `"green"`. Esto asegura que al recargar la lista el cliente ya no aparezca (la query solo trae red/orange/yellow).
+### Tablas nuevas en la base de datos
 
-**Cambio 3 - Mostrar contador de eventos proximos en vez de hoy:**
-Reemplazar `todayEvents.length` por `events.length` (todos los eventos proximos, que es lo que muestra la agenda). Tambien actualizar el texto del boton para reflejar esto mejor.
+**`demo_access_codes`** - codigos validos:
+- `id` (uuid)
+- `code` (texto, unico) - ej: "PROCESSIA2025"
+- `is_active` (boolean, default true)
+- `created_at` (timestamp)
+
+**`demo_access_logs`** - registro de accesos:
+- `id` (uuid)
+- `access_code` (texto)
+- `accessed_at` (timestamp, default now)
+- `user_agent` (texto)
+
+RLS: SELECT e INSERT abiertos en ambas tablas (acceso anonimo necesario para que funcione sin autenticacion).
+
+Se insertara un codigo inicial, por ejemplo `PROCESSIA2025`, que podras compartir en los emails. Puedes cambiarlo cuando quieras desde la base de datos.
+
+## 2. Proteccion de rutas
+
+Se crea un componente `DemoGuard` que envuelve las rutas `/`, `/ceo` y `/admin`. Verifica que en `sessionStorage` exista la clave `demo_access`. Si no existe, redirige a `/landing`.
+
+## 3. Mejora del logo en el header
+
+El logo en la barra superior actualmente no tiene indicacion visual de que es clickable. Cambios:
+- Anadir un texto "Inicio" o un icono de casa junto al logo
+- O convertirlo en un boton con borde y hover visible, similar a los botones de "Vista CEO" / "Administracion"
+- Al pasar el raton, mostrar un tooltip "Volver a seleccion de modo" o simplemente un efecto visual mas claro
+
+La opcion mas limpia: anadir un boton explicito con icono de casa y texto "Inicio" al lado del logo, y eliminar el boton "Inicio" de la derecha (que actualmente va a `/landing`). El boton de la derecha pasa a ser "Cerrar sesion" o "Salir" que limpia el `sessionStorage` y vuelve a `/landing`.
 
 ---
 
-## Detalles tecnicos
+## Archivos a crear/modificar
 
-| Archivo | Lineas | Cambio |
-|---------|--------|--------|
-| `src/components/dashboard/DesktopCEODashboard.tsx` | ~65-84 | Filtrar clientes sin `project_type`, `work_description`, `incidents` ni `pending_tasks` |
-| `src/components/dashboard/DesktopCEODashboard.tsx` | ~104-157 | En `handleMarkReviewed`, anadir `status: "green"` al update de Supabase |
-| `src/components/dashboard/DesktopCEODashboard.tsx` | ~44-49, ~305 | Usar `events` (del contexto) en vez de `getTodayEvents()` para el contador |
+| Archivo | Accion | Descripcion |
+|---------|--------|-------------|
+| Migracion SQL | Crear | Tablas `demo_access_codes` y `demo_access_logs` + dato inicial |
+| `src/pages/Landing.tsx` | Modificar | Anadir formulario de codigo debajo de la imagen |
+| `src/components/auth/DemoGuard.tsx` | Crear | Componente que protege rutas verificando sessionStorage |
+| `src/App.tsx` | Modificar | Envolver rutas con DemoGuard |
+| `src/components/layout/HeaderNavigation.tsx` | Modificar | Logo + boton "Inicio" explicito a la izquierda, boton "Salir" a la derecha |
 
-## Resultado esperado
+## Flujo del usuario
 
-- Solo se muestran clientes con datos de proyecto rellenados en la vista CEO
-- El contador de eventos coincide con lo que muestra la agenda
-- Al marcar un cliente como revisado, su estado cambia a verde y no reaparece al navegar
-
+```text
+Email con link + codigo
+        |
+        v
+  /landing (ve la imagen de Processia + campo de codigo)
+        |
+        v
+  Introduce codigo -> se valida -> se registra acceso
+        |
+        v
+  / (seleccion de modo: Vista CEO o Administracion)
+        |
+        v
+  /ceo o /admin (navegan libremente)
+        |
+  Logo + "Inicio" -> vuelve a /
+  "Salir" -> limpia sesion, vuelve a /landing
+```

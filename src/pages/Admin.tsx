@@ -16,7 +16,9 @@ import {
   Send,
   RefreshCw,
   Database,
-  Trash2
+  Trash2,
+  Sparkles,
+  MessageSquare
 } from "lucide-react";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,7 @@ import { seedClients } from "@/components/admin/seedData";
 import { ColumnVisibilityToggle, useColumnVisibility } from "@/components/admin/ColumnVisibilityToggle";
 import { DualScrollTable } from "@/components/admin/DualScrollTable";
 import { DeleteClientDialog } from "@/components/admin/DeleteClientDialog";
+import { ClientChatModal } from "@/components/ai/ClientChatModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -119,6 +122,31 @@ export default function Admin() {
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // AI Chat state
+  const [aiChatClient, setAiChatClient] = useState<Client | null>(null);
+
+  // CEO pending notes per client
+  const [ceoNotesByClient, setCeoNotesByClient] = useState<Record<string, number>>({});
+
+  const fetchCeoNotes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("notes")
+        .select("client_id")
+        .eq("visible_to", "team")
+        .eq("status", "pending")
+        .not("client_id", "is", null);
+
+      if (error) { console.error(error); return; }
+
+      const counts: Record<string, number> = {};
+      data?.forEach(n => {
+        if (n.client_id) counts[n.client_id] = (counts[n.client_id] || 0) + 1;
+      });
+      setCeoNotesByClient(counts);
+    } catch (e) { console.error(e); }
+  };
+
   // Fetch clients from database
   const fetchClients = async () => {
     setLoading(true);
@@ -157,6 +185,11 @@ export default function Admin() {
 
   useEffect(() => {
     fetchClients();
+    fetchCeoNotes();
+
+    const handleNoteCreated = () => fetchCeoNotes();
+    window.addEventListener("processia:noteCreated", handleNoteCreated);
+    return () => window.removeEventListener("processia:noteCreated", handleNoteCreated);
   }, []);
 
   // Seed demo data
@@ -353,6 +386,10 @@ export default function Admin() {
 
       {/* Additional Admin Controls */}
       <div className="h-14 border-b border-border bg-background flex items-center justify-end px-6 gap-3">
+        <CEONotificationBell onOpenClientChat={(clientId, clientName) => {
+          const client = clients.find(c => c.id === clientId);
+          if (client) setAiChatClient(client);
+        }} />
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -371,24 +408,6 @@ export default function Admin() {
           showAll={showAll}
           resetToDefault={resetToDefault}
         />
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar cliente, email, contacto..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-80 pl-10 pr-4 py-2 bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          
-          {/* Column Visibility Toggle */}
-          <ColumnVisibilityToggle
-            visibleColumns={visibleColumns}
-            toggleColumn={toggleColumn}
-            showAll={showAll}
-            resetToDefault={resetToDefault}
-          />
 
           {/* Status Filter */}
           <DropdownMenu>
@@ -568,8 +587,13 @@ export default function Admin() {
                       {isColumnVisible("name") && (
                         <TableCell className="sticky left-[60px] bg-card z-10">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0 relative">
                               <Building2 className="w-4 h-4 text-muted-foreground" />
+                              {ceoNotesByClient[client.id] > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                                  {ceoNotesByClient[client.id]}
+                                </span>
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium text-foreground truncate">{client.name}</p>
@@ -645,6 +669,15 @@ export default function Admin() {
                       {isColumnVisible("actions") && (
                         <TableCell className="sticky right-0 bg-card z-10">
                           <div className="flex items-center justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                              onClick={() => setAiChatClient(client)}
+                              title="Hablar con IA sobre este cliente"
+                            >
+                              <Sparkles className="w-4 h-4" />
+                            </Button>
                             <Button 
                               variant="ghost" 
                               size="icon" 
@@ -856,6 +889,16 @@ export default function Admin() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* AI Client Chat Modal */}
+      <ClientChatModal
+        open={!!aiChatClient}
+        onOpenChange={(open) => { if (!open) setAiChatClient(null); }}
+        clientId={aiChatClient?.id || null}
+        clientName={aiChatClient?.name || ""}
+        clientStatus={aiChatClient?.status || "green"}
+        issue={aiChatClient?.incidents || undefined}
+      />
 
       {/* Email Modal */}
       <Dialog open={modalType === "email"} onOpenChange={closeModal}>

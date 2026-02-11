@@ -26,11 +26,12 @@ interface NoteDisplay {
   content: string;
   targetEmployee: string | null;
   clientName: string | null;
+  clientId: string | null;
   createdAt: Date;
   read: boolean;
 }
 
-function NoteItem({ note, onMarkRead }: { note: NoteDisplay; onMarkRead: () => void }) {
+function NoteItem({ note, onMarkRead, onOpenClientChat }: { note: NoteDisplay; onMarkRead: () => void; onOpenClientChat?: (clientId: string, clientName: string) => void }) {
   return (
     <div
       className={cn(
@@ -67,10 +68,16 @@ function NoteItem({ note, onMarkRead }: { note: NoteDisplay; onMarkRead: () => v
           
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             {note.clientName && (
-              <div className="flex items-center gap-1">
+              <button 
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (note.clientId && onOpenClientChat) onOpenClientChat(note.clientId, note.clientName!);
+                }}
+              >
                 <Building2 className="w-3 h-3" />
-                <span>{note.clientName}</span>
-              </div>
+                <span className="underline">{note.clientName}</span>
+              </button>
             )}
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -92,7 +99,11 @@ function NoteItem({ note, onMarkRead }: { note: NoteDisplay; onMarkRead: () => v
   );
 }
 
-export function CEONotificationBell() {
+interface CEONotificationBellProps {
+  onOpenClientChat?: (clientId: string, clientName: string) => void;
+}
+
+export function CEONotificationBell({ onOpenClientChat }: CEONotificationBellProps) {
   const [notes, setNotes] = useState<NoteDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -117,9 +128,17 @@ export function CEONotificationBell() {
         content: note.text,
         targetEmployee: note.target_employee,
         clientName: note.clients?.name || null,
+        clientId: note.client_id,
         createdAt: new Date(note.created_at),
         read: note.status === "seen" || note.status === "done"
       }));
+
+      // Sort: targeted notes first, then general
+      formattedNotes.sort((a, b) => {
+        if (a.targetEmployee && !b.targetEmployee) return -1;
+        if (!a.targetEmployee && b.targetEmployee) return 1;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
 
       setNotes(formattedNotes);
     } catch (error) {
@@ -234,6 +253,7 @@ export function CEONotificationBell() {
                 key={note.id}
                 note={note}
                 onMarkRead={() => markAsRead(note.id)}
+                onOpenClientChat={onOpenClientChat}
               />
             ))
           )}

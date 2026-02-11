@@ -18,7 +18,8 @@ import {
   Database,
   Trash2,
   Sparkles,
-  MessageSquare
+  MessageSquare,
+  Check
 } from "lucide-react";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Button } from "@/components/ui/button";
@@ -154,6 +155,13 @@ export default function Admin() {
         }
       });
       setCeoNotesByClient(grouped);
+    } catch (e) { console.error(e); }
+  };
+
+  const markCeoNoteAsRead = async (noteId: string) => {
+    try {
+      await supabase.from("notes").update({ status: "seen" }).eq("id", noteId);
+      fetchCeoNotes();
     } catch (e) { console.error(e); }
   };
 
@@ -618,9 +626,18 @@ export default function Admin() {
                                             <p className="text-xs font-semibold text-primary mb-1">Para: {note.target_employee}</p>
                                           )}
                                           <p className="text-foreground leading-relaxed">{note.text}</p>
-                                          <p className="text-xs text-muted-foreground mt-1">
-                                            {new Date(note.created_at).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                                          </p>
+                                          <div className="flex items-center justify-between mt-1">
+                                            <p className="text-xs text-muted-foreground">
+                                              {new Date(note.created_at).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                            </p>
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); markCeoNoteAsRead(note.id); }}
+                                              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                                            >
+                                              <Check className="w-3 h-3" />
+                                              Leído
+                                            </button>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>

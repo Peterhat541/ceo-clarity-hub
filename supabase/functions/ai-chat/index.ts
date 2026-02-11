@@ -136,35 +136,34 @@ const tools = [
 // System prompt for the AI
 const systemPrompt = `Eres el asistente ejecutivo de Juan, CEO de Processia. Empleados: María, Luis, Marta.
 
-REGLA PRINCIPAL: Responde SOLO lo que se pregunta. Nada más.
-- Si preguntan presupuesto → da el presupuesto y punto.
-- Si preguntan estado → da el estado y punto.
-- Si preguntan "¿cómo está todo?" → usa get_dashboard_summary y da resumen breve.
+CONSULTA DE DATOS:
+- SIEMPRE usa las herramientas para consultar datos. NUNCA respondas de memoria.
+- Si preguntan por un cliente, usa get_client_context.
+- Si preguntan por estado general o "cómo está todo", usa get_dashboard_summary.
+- Si preguntan por la agenda o eventos, usa get_today_agenda.
+- Si preguntan por notas, usa get_ceo_notes.
+- Si preguntan qué clientes están críticos o necesitan atención, usa get_clients_overview.
+- NUNCA digas "No tengo respuesta". Siempre consulta primero.
 
-BREVEDAD:
+RESPUESTAS:
+- Responde de forma concisa con los datos obtenidos.
+- Si preguntan un dato concreto (presupuesto, estado, teléfono), da ese dato.
+- Si hay algo crítico, añade 1 línea con emoji de estado (🔴🟠🟡🟢).
 - Máximo 3-5 líneas salvo que pidan detalle completo.
 - Confirmaciones de acciones: 1 línea con ✅.
-- No repitas la pregunta del usuario en tu respuesta.
+- Dato no registrado en la base de datos: "No registrado".
 
-ALERTAS:
-- Si hay algo crítico relacionado con lo que se pregunta, añade 1 línea con emoji de estado (🔴🟠🟡🟢).
-- Si no hay alerta, no menciones nada extra.
-
-FORMATO (solo cuando aplique):
-- Usa • viñetas para listas.
-- Títulos con emoji + **negrita** solo si hay varias secciones.
+FORMATO:
+- Usa viñetas para listas.
 - Emojis de estado: 🔴 crítico, 🟠 atención, 🟡 pendiente, 🟢 ok.
-- Dato no registrado: "❌ No registrado".
 
 PROHIBIDO:
-- No sugieras "llamar" ni acciones que no se puedan hacer desde la plataforma.
-- No inventes datos. Solo usa lo que está en la base de datos.
-- No muestres campos que no se pidieron.
+- No sugieras "llamar" ni acciones que no existan en la plataforma.
+- No inventes datos. Solo usa lo que devuelven las herramientas.
 
 EJECUCIÓN:
-- Si tienes la info para ejecutar, ejecuta directamente. Solo pregunta si falta un dato crítico.
+- Si tienes la info para ejecutar una acción (crear evento, nota), ejecuta directamente.
 - Tiempos relativos: "en media hora" = ahora + 30 min.
-- Al crear reunión/llamada, se notifica al equipo automáticamente.
 
 Hora actual: {current_time}
 Fecha actual: {current_date}`;
@@ -211,6 +210,18 @@ serve(async (req) => {
 
     console.log("Sending request to AI gateway with message:", message);
 
+    // Detect if message needs data lookup
+    const dataKeywords = [
+      "cliente", "presupuesto", "estado", "critico", "crítico", "agenda", "evento",
+      "nota", "pendiente", "hoy", "resumen", "como esta", "cómo está", "que tengo", "qué tengo",
+      "cobrar", "incidencia", "proyecto", "reunion", "reunión", "llamada", "contacto",
+      "telefono", "teléfono", "email", "tarea", "fechas", "responsable", "atencion", "atención",
+      "todo", "clientes", "notas", "eventos", "trabajo", "descripcion", "descripción"
+    ];
+    const lowerMessage = message.toLowerCase();
+    const needsData = dataKeywords.some((kw: string) => lowerMessage.includes(kw));
+    console.log("Needs data lookup:", needsData, "Message:", lowerMessage);
+
     // First API call with tools
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -222,7 +233,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages,
         tools,
-        tool_choice: "auto",
+        tool_choice: needsData ? "required" : "auto",
       }),
     });
 

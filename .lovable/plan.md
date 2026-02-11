@@ -1,47 +1,58 @@
 
 
-## Plan: Hacer que el ClientChatModal use streaming como AIChat
+## Plan: Mejorar la vista de Administracion con IA y notificaciones del CEO
 
-### Problema
+### 1. Eliminar el buscador y columnas duplicados
 
-El chat principal (`AIChat.tsx`) usa `fetch()` directo y parsea las respuestas SSE (streaming) correctamente. El **ClientChatModal** usa `supabase.functions.invoke()` que espera JSON, pero la edge function devuelve streaming SSE. Resultado: `data.message` es `undefined` y muestra "No tengo respuesta."
+El archivo `Admin.tsx` tiene duplicado el buscador (lineas 356-365 y 374-383) y el boton de columnas (lineas 368-373 y 386-391). Se eliminara la segunda copia de ambos.
 
-### Solucion
+### 2. Boton de IA en cada fila de cliente
 
-**Archivo: `src/components/ai/ClientChatModal.tsx`**
-
-Reemplazar la llamada `supabase.functions.invoke("ai-chat", ...)` (lineas 272-330) por la misma logica de streaming que usa `AIChat.tsx`:
-
-1. **Usar `fetch()` directo** en vez de `supabase.functions.invoke()`:
-   - URL: `${SUPABASE_URL}/functions/v1/ai-chat`
-   - Headers: Authorization con anon key, Content-Type
-
-2. **Parsear la respuesta SSE con `getReader()`**:
-   - Leer chunks del stream
-   - Parsear lineas `data: {...}` para extraer `choices[0].delta.content`
-   - Detectar el preamble de `actions` para disparar eventos de calendario/notas
-   - Acumular el texto y actualizar el mensaje del asistente en tiempo real
-
-3. **Crear mensaje asistente vacio al inicio** y actualizarlo conforme llega el texto (efecto streaming visual)
-
-4. **Mantener** el guardado en DB, dispatch de eventos y manejo de errores
-
-### Cambios especificos
+Anadir un boton con icono de IA (Sparkles) en la columna de acciones de cada fila de la tabla. Al hacer clic, abre el `ClientChatModal` ya existente con el contexto de ese cliente precargado. Esto permite a los trabajadores hablar con la IA sobre cada cliente directamente desde la tabla.
 
 ```text
-Lineas 271-344 de ClientChatModal.tsx:
-- Eliminar: supabase.functions.invoke("ai-chat", ...)
-- Eliminar: const assistantContent = data.message || "No tengo respuesta."
-- Anadir: fetch() con headers de autorizacion
-- Anadir: Reader SSE con logica identica a AIChat.tsx
-- Anadir: Mensaje asistente que se actualiza en tiempo real
-- Mantener: saveMessageToDb, dispatchEvent, manejo de errores
+Acciones por fila actuales: [Nota] [Email] [Editar] [Eliminar]
+Acciones por fila nuevas:   [IA] [Nota] [Email] [Editar] [Eliminar]
 ```
 
-### Resultado esperado
+### 3. Indicador de notas del CEO en cada fila
 
-- El modal de cliente mostrara respuestas en streaming (tiempo real)
-- La IA consultara la base de datos con las herramientas (get_client_context, etc.)
-- Podras hablar coloquialmente: "como va Nexus Tech?", "que le debemos?", "agenda una reunion con ellos"
-- Respuestas con datos reales del cliente: presupuesto, estado, incidencias, tareas
+Cuando el CEO deja una nota dirigida a un empleado sobre un cliente especifico, se mostrara un pequeno badge/indicador en la fila de ese cliente. Se consultara la tabla `notes` filtrando por `client_id` y `visible_to = 'team'` con `status = 'pending'`.
+
+Esto permite que los trabajadores vean de un vistazo que clientes tienen instrucciones del CEO pendientes.
+
+### 4. Mejorar la campana de notificaciones (CEONotificationBell)
+
+La campana ya existe en la barra superior de Admin. Se mejorara para:
+- Mostrar las notas agrupadas: primero las que tienen `target_employee` (notas dirigidas a alguien concreto), luego las generales
+- Que al hacer clic en una nota con cliente asociado, se abra el chat de IA de ese cliente
+
+### Detalle tecnico
+
+**Archivos a modificar:**
+
+1. **`src/pages/Admin.tsx`**
+   - Eliminar lineas 374-391 (buscador y columnas duplicados)
+   - Importar `ClientChatModal` y `Sparkles` de lucide
+   - Anadir estado para controlar el modal de IA: `aiChatClient` (cliente seleccionado para chat IA)
+   - Anadir boton de IA en la columna de acciones de cada fila (antes de Nota)
+   - Anadir consulta de notas pendientes del CEO por cliente para mostrar badges en las filas
+   - Renderizar `ClientChatModal` al final del componente
+
+2. **`src/components/admin/CEONotificationBell.tsx`**
+   - Anadir el nombre del cliente en cada notificacion de forma mas visible
+   - Anadir prop `onOpenClientChat` para que al tocar una nota con cliente se abra el chat de IA de ese cliente
+
+### Flujo esperado
+
+```text
+CEO (vista /ceo):
+  "Dile a Pedro que revise el presupuesto de Promocion Residencial Mirador"
+  -> IA crea nota con target_employee="Pedro", client_id=X, visible_to="team"
+
+Admin (vista /admin):
+  1. La campana de notificaciones muestra: "Para Pedro: revise el presupuesto..."
+  2. En la fila de "Promocion Residencial Mirador" aparece un badge indicando nota del CEO pendiente
+  3. Pedro puede hacer clic en el boton de IA de esa fila y preguntar detalles
+```
 

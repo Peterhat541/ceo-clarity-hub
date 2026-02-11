@@ -37,6 +37,11 @@ import { DualScrollTable } from "@/components/admin/DualScrollTable";
 import { DeleteClientDialog } from "@/components/admin/DeleteClientDialog";
 import { ClientChatModal } from "@/components/ai/ClientChatModal";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -125,25 +130,30 @@ export default function Admin() {
   // AI Chat state
   const [aiChatClient, setAiChatClient] = useState<Client | null>(null);
 
-  // CEO pending notes per client
-  const [ceoNotesByClient, setCeoNotesByClient] = useState<Record<string, number>>({});
+  // CEO pending notes per client (with text)
+  interface CeoNote { id: string; text: string; target_employee: string | null; created_at: string; }
+  const [ceoNotesByClient, setCeoNotesByClient] = useState<Record<string, CeoNote[]>>({});
 
   const fetchCeoNotes = async () => {
     try {
       const { data, error } = await supabase
         .from("notes")
-        .select("client_id")
+        .select("id, client_id, text, target_employee, created_at")
         .eq("visible_to", "team")
         .eq("status", "pending")
-        .not("client_id", "is", null);
+        .not("client_id", "is", null)
+        .order("created_at", { ascending: false });
 
       if (error) { console.error(error); return; }
 
-      const counts: Record<string, number> = {};
+      const grouped: Record<string, CeoNote[]> = {};
       data?.forEach(n => {
-        if (n.client_id) counts[n.client_id] = (counts[n.client_id] || 0) + 1;
+        if (n.client_id) {
+          if (!grouped[n.client_id]) grouped[n.client_id] = [];
+          grouped[n.client_id].push({ id: n.id, text: n.text, target_employee: n.target_employee, created_at: n.created_at });
+        }
       });
-      setCeoNotesByClient(counts);
+      setCeoNotesByClient(grouped);
     } catch (e) { console.error(e); }
   };
 
@@ -589,10 +599,33 @@ export default function Admin() {
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0 relative">
                               <Building2 className="w-4 h-4 text-muted-foreground" />
-                              {ceoNotesByClient[client.id] > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-                                  {ceoNotesByClient[client.id]}
-                                </span>
+                              {ceoNotesByClient[client.id]?.length > 0 && (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center hover:bg-primary/80 transition-colors cursor-pointer">
+                                      {ceoNotesByClient[client.id].length}
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-72 p-0 bg-card border-border" align="start" sideOffset={8}>
+                                    <div className="p-3 border-b border-border">
+                                      <p className="text-sm font-semibold text-foreground">Notas del CEO</p>
+                                      <p className="text-xs text-muted-foreground">{client.name}</p>
+                                    </div>
+                                    <div className="max-h-48 overflow-y-auto p-2 space-y-2">
+                                      {ceoNotesByClient[client.id].map(note => (
+                                        <div key={note.id} className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-sm">
+                                          {note.target_employee && (
+                                            <p className="text-xs font-semibold text-primary mb-1">Para: {note.target_employee}</p>
+                                          )}
+                                          <p className="text-foreground leading-relaxed">{note.text}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            {new Date(note.created_at).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               )}
                             </div>
                             <div className="min-w-0">

@@ -453,7 +453,7 @@ export default function Admin() {
       {/* Admin Controls - Desktop */}
       {!isMobile && (
         <div className="h-14 border-b border-border bg-background flex items-center justify-end px-6 gap-3">
-          <CEONotificationBell onOpenClientChat={(clientId, clientName) => {
+          <CEONotificationBell selectedEmployee={selectedEmployee} onOpenClientChat={(clientId, clientName) => {
             const client = clients.find(c => c.id === clientId);
             if (client) setAiChatClient(client);
           }} />
@@ -551,7 +551,7 @@ export default function Admin() {
       {isMobile && (
         <div className="border-b border-border bg-background px-4 py-3 space-y-3">
           <div className="flex items-center gap-2">
-            <CEONotificationBell onOpenClientChat={(clientId, clientName) => {
+            <CEONotificationBell selectedEmployee={selectedEmployee} onOpenClientChat={(clientId, clientName) => {
               const client = clients.find(c => c.id === clientId);
               if (client) setAiChatClient(client);
             }} />

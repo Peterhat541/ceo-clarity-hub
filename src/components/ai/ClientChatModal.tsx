@@ -269,69 +269,134 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
     ];
 
     try {
-      const { data, error } = await supabase.functions.invoke("ai-chat", {
-        body: {
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
           message: userInput,
           activeClientId: clientId,
           activeClientName: clientName,
           conversationHistory: newHistory.slice(-10),
-          uiSnapshot: {}
-        }
+          uiSnapshot: {},
+        }),
       });
 
-      if (error) {
-        console.error("Edge function error:", error);
-        throw new Error(error.message || "Error al contactar el asistente");
-      }
-
-      if (data.error) {
-        if (data.error === "rate_limit") {
-          toast({
-            title: "Demasiadas solicitudes",
-            description: "Espera un momento antes de enviar otro mensaje.",
-            variant: "destructive"
-          });
-        } else if (data.error === "payment_required") {
-          toast({
-            title: "Créditos agotados",
-            description: "Contacta con el administrador para agregar créditos.",
-            variant: "destructive"
-          });
+      if (!resp.ok) {
+        if (resp.status === 429) {
+          toast({ title: "Demasiadas solicitudes", description: "Espera un momento.", variant: "destructive" });
+          throw new Error("rate_limit");
         }
-        throw new Error(data.message || "Error del asistente");
+        if (resp.status === 402) {
+          toast({ title: "Créditos agotados", description: "Contacta con el administrador.", variant: "destructive" });
+          throw new Error("payment_required");
+        }
+        throw new Error("Error al contactar el asistente");
       }
 
-      const assistantContent = data.message || "No tengo respuesta.";
+      if (!resp.body) throw new Error("No response body");
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: assistantContent,
-        timestamp: new Date(),
-      };
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let assistantSoFar = "";
+      let streamDone = false;
+      const assistantId = (Date.now() + 1).toString();
+      let executedActions: any[] = [];
 
-      setMessages((prev) => [...prev, assistantMessage]);
-      
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") { streamDone = true; break; }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.actions) { executedActions = parsed.actions; continue; }
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantSoFar += content;
+              const currentContent = assistantSoFar;
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.role === "assistant" && last.id === assistantId) {
+                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: currentContent } : m);
+                }
+                return [...prev, { id: assistantId, role: "assistant" as const, content: currentContent, timestamp: new Date() }];
+              });
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Final flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw) continue;
+          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+          if (raw.startsWith(":") || raw.trim() === "") continue;
+          if (!raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantSoFar += content;
+              const currentContent = assistantSoFar;
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.role === "assistant" && last.id === assistantId) {
+                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: currentContent } : m);
+                }
+                return [...prev, { id: assistantId, role: "assistant" as const, content: currentContent, timestamp: new Date() }];
+              });
+            }
+          } catch { /* ignore */ }
+        }
+      }
+
+      if (!assistantSoFar) {
+        assistantSoFar = "No pude obtener información. Inténtalo de nuevo.";
+        setMessages(prev => [...prev, { id: assistantId, role: "assistant" as const, content: assistantSoFar, timestamp: new Date() }]);
+      }
+
       // Save assistant message to DB
-      saveMessageToDb("assistant", assistantContent);
-      
+      saveMessageToDb("assistant", assistantSoFar);
+
       setConversationHistory([
         ...newHistory,
-        { role: "assistant" as const, content: assistantContent }
+        { role: "assistant" as const, content: assistantSoFar }
       ].slice(-20));
 
       // Trigger events if actions were created
-      if (data.actions?.some((a: any) => a.tool === "create_event" && a.result?.success)) {
+      if (executedActions.some((a: any) => a.tool === "create_event" && a.result?.success)) {
         window.dispatchEvent(new CustomEvent("processia:eventCreated"));
       }
-      
-      if (data.actions?.some((a: any) => a.tool === "create_note" && a.result?.success)) {
+      if (executedActions.some((a: any) => a.tool === "create_note" && a.result?.success)) {
         window.dispatchEvent(new CustomEvent("processia:noteCreated"));
       }
 
     } catch (error) {
       console.error("Error sending message:", error);
-      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",

@@ -101,9 +101,10 @@ function NoteItem({ note, onMarkRead, onOpenClientChat }: { note: NoteDisplay; o
 
 interface CEONotificationBellProps {
   onOpenClientChat?: (clientId: string, clientName: string) => void;
+  selectedEmployee?: string;
 }
 
-export function CEONotificationBell({ onOpenClientChat }: CEONotificationBellProps) {
+export function CEONotificationBell({ onOpenClientChat, selectedEmployee }: CEONotificationBellProps) {
   const [notes, setNotes] = useState<NoteDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -111,12 +112,19 @@ export function CEONotificationBell({ onOpenClientChat }: CEONotificationBellPro
   const fetchNotes = async () => {
     try {
       // Get notes visible to team (sent by CEO to employees)
-      const { data, error } = await supabase
+      let query = supabase
         .from("notes")
         .select("*, clients(name)")
         .eq("visible_to", "team")
         .order("created_at", { ascending: false })
         .limit(20);
+
+      // Filter by selected employee if one is chosen
+      if (selectedEmployee && selectedEmployee !== "all") {
+        query = query.eq("target_employee", selectedEmployee);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching notes:", error);
@@ -160,7 +168,7 @@ export function CEONotificationBell({ onOpenClientChat }: CEONotificationBellPro
     return () => {
       window.removeEventListener("processia:noteCreated", handleNoteCreated);
     };
-  }, []);
+  }, [selectedEmployee]);
 
   const markAsRead = async (noteId: string) => {
     try {

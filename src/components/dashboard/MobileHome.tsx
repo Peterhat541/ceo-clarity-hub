@@ -10,7 +10,7 @@ import { AIChat } from "@/components/ai/AIChat";
 import { 
   Calendar, 
   MessageSquare, 
-  AlertTriangle,
+  Users,
   CalendarDays,
   Sparkles,
   Database,
@@ -37,10 +37,6 @@ const clientsAttention: ClientData[] = [
   { name: "Startup Lab", status: "orange", lastActivity: "Hace 2 días", issue: "Fecha límite en 48 horas.", projectCount: 3 },
 ];
 
-const recentIncidents = [
-  { clientName: "Nexus Tech", description: "Error en facturación", status: "red" as const, daysOpen: 3 },
-  { clientName: "Global Media", description: "Cambio de alcance", status: "orange" as const, daysOpen: 1 },
-];
 
 const criticalDates = [
   { title: "Entrega Startup Lab", subtitle: "Fase 2", days: 2 },
@@ -53,7 +49,7 @@ export function MobileHome() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
   const [clientsOpen, setClientsOpen] = useState(false);
-  const [incidentsOpen, setIncidentsOpen] = useState(false);
+  
   const [datesOpen, setDatesOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<typeof clientsAttention[0] | null>(null);
 
@@ -84,11 +80,11 @@ export function MobileHome() {
       badge: pendingNotes.length,
     },
     {
-      icon: <AlertTriangle className="h-5 w-5 text-status-orange" />,
-      label: "Incidencias",
+      icon: <Users className="h-5 w-5 text-status-orange" />,
+      label: "Clientes",
       bgClass: "bg-status-orange/10",
-      onClick: () => setIncidentsOpen(true),
-      badge: recentIncidents.length,
+      onClick: () => setClientsOpen(true),
+      badge: clientsAttention.length,
     },
     {
       icon: <CalendarDays className="h-5 w-5 text-status-red" />,
@@ -183,45 +179,22 @@ export function MobileHome() {
                 onClick={() => handleClientClick(client)}
                 className="flex w-full items-center gap-3 p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-left"
               >
-                <div className={`h-3 w-3 rounded-full ${
+                <div className={`h-3 w-3 rounded-full shrink-0 ${
                   client.status === "red" ? "bg-status-red" :
                   client.status === "orange" ? "bg-status-orange" :
                   client.status === "yellow" ? "bg-status-yellow" : "bg-status-green"
                 }`} />
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground">{client.name}</p>
-                  <p className="text-sm text-muted-foreground">{client.issue}</p>
+                  <p className="text-sm text-muted-foreground truncate">{client.issue}</p>
                 </div>
+                <Sparkles className="h-4 w-4 text-primary shrink-0" />
               </button>
             ))}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Incidents Modal */}
-      <Dialog open={incidentsOpen} onOpenChange={setIncidentsOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto bg-card border-border">
-          <h2 className="text-lg font-semibold mb-4 text-foreground">Incidencias activas</h2>
-          <div className="space-y-3">
-            {recentIncidents.map((incident, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 p-3 rounded-xl bg-secondary"
-              >
-                <div className={`h-3 w-3 rounded-full ${
-                  incident.status === "red" ? "bg-status-red" :
-                  incident.status === "orange" ? "bg-status-orange" : "bg-status-yellow"
-                }`} />
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">{incident.clientName}</p>
-                  <p className="text-sm text-muted-foreground">{incident.description}</p>
-                </div>
-                <span className="text-xs text-muted-foreground">{incident.daysOpen}d</span>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Dates Modal */}
       <Dialog open={datesOpen} onOpenChange={setDatesOpen}>

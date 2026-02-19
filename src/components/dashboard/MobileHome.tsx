@@ -141,22 +141,22 @@ export function MobileHome() {
         </div>
       </header>
 
-      {/* AI Chat Section - Main content area */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      {/* AI Chat Section - Limited height */}
+      <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: "40vh" }}>
         {/* AI Header */}
-        <div className="shrink-0 px-5 py-3 border-b border-border/30">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-teal flex items-center justify-center glow">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
+        <div className="shrink-0 px-5 py-2 border-b border-border/30">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-teal flex items-center justify-center glow">
+              <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-semibold text-foreground">Asistente IA</h2>
-              <p className="text-xs text-muted-foreground">Tu mano derecha ejecutiva</p>
+              <h2 className="font-semibold text-sm text-foreground">Asistente IA</h2>
+              <p className="text-[10px] text-muted-foreground">Tu mano derecha ejecutiva</p>
             </div>
           </div>
         </div>
         
-        {/* AI Chat Content - Takes available space */}
+        {/* AI Chat Content */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <AIChat />
         </div>

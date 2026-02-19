@@ -78,11 +78,11 @@ export default function Landing() {
 
   if (isMobile) {
     return (
-      <div className="h-screen w-screen bg-black relative overflow-hidden flex flex-col items-center justify-end">
+      <div className="fixed inset-0 bg-black overflow-hidden flex flex-col items-center justify-end">
         <img
           src={landingMobile}
           alt="Processia"
-          className="w-full h-full object-cover absolute inset-0"
+          className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="relative z-10 mb-12 pb-[env(safe-area-inset-bottom,0px)]">
           {formBlock}

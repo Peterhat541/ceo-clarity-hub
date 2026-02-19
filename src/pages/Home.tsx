@@ -7,7 +7,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-black flex flex-col relative overflow-hidden">
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* Particle background */}
       <ParticleNetwork />
 

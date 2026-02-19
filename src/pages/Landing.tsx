@@ -48,12 +48,12 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden flex items-center justify-center">
+    <div className="h-screen w-screen bg-black relative overflow-hidden flex flex-col items-center justify-end md:justify-center">
       {/* Imagen de fondo */}
       <img
         src={landingComplete}
         alt="Processia - Menos conversaciones. Más control."
-        className="w-full h-full object-cover md:object-contain absolute inset-0"
+        className="w-full h-full object-contain absolute inset-0"
         style={{
           maskImage: "radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)",
           WebkitMaskImage: "radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)",
@@ -61,7 +61,7 @@ export default function Landing() {
       />
 
       {/* Formulario de acceso */}
-      <div className="absolute bottom-[8%] md:bottom-[18%] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 w-full max-w-sm px-6 md:px-0 md:max-w-xs">
+      <div className="relative md:absolute md:bottom-[18%] md:left-1/2 md:-translate-x-1/2 z-10 flex flex-col items-center gap-3 w-full max-w-sm px-6 pb-[env(safe-area-inset-bottom,24px)] mb-8 md:mb-0 md:px-0 md:max-w-xs md:pb-0">
         <div className="flex items-center gap-2 w-full">
           <div className="relative flex-1">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />

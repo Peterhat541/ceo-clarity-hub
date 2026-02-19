@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { QuickAccessGrid } from "./QuickAccessGrid";
 import { AgendaPopup } from "./AgendaPopup";
 import { TeamNotesPopup } from "./TeamNotesPopup";
@@ -11,11 +12,15 @@ import {
   MessageSquare, 
   AlertTriangle,
   CalendarDays,
-  Sparkles
+  Sparkles,
+  Database,
+  LogOut,
+  Home
 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import processiaLogo from "@/assets/processia-logo-new.png";
 
 // Mock data
 interface ClientData {
@@ -43,6 +48,7 @@ const criticalDates = [
 ];
 
 export function MobileHome() {
+  const navigate = useNavigate();
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
@@ -110,8 +116,29 @@ export function MobileHome() {
   return (
     <div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden">
       {/* Compact Header */}
-      <header className="shrink-0 px-5 py-3 border-b border-border/50 bg-card/30 backdrop-blur-sm safe-area-top">
-        <h1 className="text-lg font-bold text-foreground">{getGreeting()}, Juan!</h1>
+      <header className="shrink-0 px-4 py-2.5 border-b border-border/50 bg-card/30 backdrop-blur-sm safe-area-top flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <img src={processiaLogo} alt="Processia" className="h-5" />
+          <span className="text-sm font-semibold text-foreground">{getGreeting()}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/admin")}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border rounded-full transition-all"
+          >
+            <Database className="w-3.5 h-3.5" />
+            Admin
+          </button>
+          <button
+            onClick={() => {
+              sessionStorage.removeItem("demo_access");
+              navigate("/landing");
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-destructive border border-border hover:border-destructive/50 rounded-full transition-all"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </header>
 
       {/* AI Chat Section - Main content area */}

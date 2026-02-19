@@ -42,50 +42,46 @@ export default function Home() {
         </div>
 
         {/* Mode Cards */}
-        <div className="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
+        <div className="flex flex-row gap-4 w-full max-w-2xl px-4 sm:gap-6 sm:px-0">
           {/* Vista CEO Card */}
           <button
             onClick={() => navigate("/ceo")}
-            className="flex-1 group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 transition-all hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/10"
+            className="flex-1 group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-8 transition-all hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/10"
           >
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                <Target className="w-8 h-8 text-emerald-400" />
+            <div className="flex flex-col items-center text-center gap-2 sm:gap-4">
+              <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                <Target className="w-5 h-5 sm:w-8 sm:h-8 text-emerald-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2">
+                <h2 className="text-base sm:text-2xl font-bold text-white mb-1">
                   VISTA CEO
                 </h2>
-                <p className="text-white/50">
+                <p className="text-white/50 text-xs sm:text-base">
                   Dashboard ejecutivo
                 </p>
               </div>
             </div>
-
-            {/* Hover glow effect */}
             <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
 
           {/* Administración Card */}
           <button
             onClick={() => navigate("/admin")}
-            className="flex-1 group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 transition-all hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/10"
+            className="flex-1 group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-8 transition-all hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/10"
           >
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                <ClipboardList className="w-8 h-8 text-emerald-400" />
+            <div className="flex flex-col items-center text-center gap-2 sm:gap-4">
+              <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                <ClipboardList className="w-5 h-5 sm:w-8 sm:h-8 text-emerald-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2">
+                <h2 className="text-base sm:text-2xl font-bold text-white mb-1">
                   ADMINISTRACIÓN
                 </h2>
-                <p className="text-white/50">
+                <p className="text-white/50 text-xs sm:text-base">
                   Base de datos de clientes
                 </p>
               </div>
             </div>
-
-            {/* Hover glow effect */}
             <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
         </div>

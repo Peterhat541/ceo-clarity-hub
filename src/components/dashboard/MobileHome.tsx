@@ -114,7 +114,7 @@ export function MobileHome() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-background bg-grid overflow-hidden">
       {/* Compact Header */}
       <header className="shrink-0 px-4 py-2.5 border-b border-border/50 bg-card/30 backdrop-blur-sm safe-area-top flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -159,40 +159,6 @@ export function MobileHome() {
         {/* AI Chat Content - Takes available space */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <AIChat />
-        </div>
-      </div>
-
-      {/* Critical Clients Section - Compact */}
-      <div className="shrink-0 h-[140px] border-t border-border/50 bg-card/30 backdrop-blur-sm">
-        <div className="h-full flex flex-col px-5 py-3">
-          <div className="flex items-center justify-between mb-2 shrink-0">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Clientes críticos
-            </h2>
-            {hasMoreClients && (
-              <button 
-                onClick={() => setClientsOpen(true)}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Ver todos ({clientsAttention.length})
-              </button>
-            )}
-          </div>
-          
-          <div className="flex-1 overflow-auto space-y-2 min-h-0">
-            {visibleClients.map((client) => (
-              <ClientCard
-                key={client.name}
-                variant="compact"
-                name={client.name}
-                status={client.status}
-                lastActivity={client.lastActivity}
-                issue={client.issue}
-                projectCount={client.projectCount}
-                onAIClick={() => handleClientClick(client)}
-              />
-            ))}
-          </div>
         </div>
       </div>
 

@@ -22,18 +22,18 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Logo at top */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10">
-        <img
-          src={logoSlogan}
-          alt="Prossium - Menos conversaciones. Más control."
-          className="w-[60vw] max-w-[400px] sm:max-w-[500px] md:max-w-[550px] object-contain"
-          style={{ mixBlendMode: "screen" }}
-        />
-      </div>
-
       {/* Centered content */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-6">
+        {/* Logo */}
+        <div className="mb-8">
+          <img
+            src={logoSlogan}
+            alt="Prossium - Menos conversaciones. Más control."
+            className="w-[50vw] max-w-[350px] sm:max-w-[450px] md:max-w-[500px] object-contain"
+            style={{ mixBlendMode: "screen" }}
+          />
+        </div>
+
         {/* Subtitle */}
         <div className="text-center mb-6">
           <p className="text-white/60 text-lg">

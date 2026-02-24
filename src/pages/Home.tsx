@@ -42,7 +42,7 @@ export default function Home() {
         </div>
 
         {/* Mode Cards */}
-        <div className="flex flex-row gap-4 w-full max-w-2xl px-4 sm:gap-6 sm:px-0">
+        <div className="flex flex-row gap-4 w-full max-w-2xl px-4 sm:gap-6 sm:px-0 -mt-4 sm:-mt-8">
           {/* Vista CEO Card */}
           <button
             onClick={() => navigate("/ceo")}

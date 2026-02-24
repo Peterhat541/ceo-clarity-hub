@@ -20,7 +20,7 @@ import {
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import processiaLogo from "@/assets/processia-logo-new.png";
+import processiaLogo from "@/assets/prossium-logo.png";
 
 // Mock data
 interface ClientData {

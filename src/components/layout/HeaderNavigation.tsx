@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, Database, Home, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import processiaLogo from "@/assets/processia-logo-new.png";
+import processiaLogo from "@/assets/prossium-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function HeaderNavigation() {

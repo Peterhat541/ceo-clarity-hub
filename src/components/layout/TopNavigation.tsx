@@ -1,4 +1,4 @@
-import processiaLogo from "@/assets/processia-logo-new.png";
+import processiaLogo from "@/assets/prossium-logo.png";
 
 // Simplified header - no search, only logo
 export function TopNavigation() {

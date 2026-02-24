@@ -81,7 +81,7 @@ export default function Landing() {
       <div className="fixed inset-0 bg-black overflow-hidden flex flex-col items-center justify-end">
         <img
           src={landingMobile}
-          alt="Processia"
+          alt="Prossium"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="relative z-10 mb-12 pb-[env(safe-area-inset-bottom,0px)]">
@@ -95,7 +95,7 @@ export default function Landing() {
     <div className="h-screen w-screen bg-black relative overflow-hidden flex flex-col items-center justify-center">
       <img
         src={landingComplete}
-        alt="Processia - Menos conversaciones. Más control."
+        alt="Prossium - Menos conversaciones. Más control."
         className="w-full h-full object-contain absolute inset-0"
         style={{
           maskImage: "radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)",

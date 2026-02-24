@@ -29,14 +29,11 @@ export default function Home() {
           <img
             src={logoIcon}
             alt="Prossium"
-            className="w-16 h-16 sm:w-20 sm:h-20 mb-4 object-contain"
+            className="w-14 h-14 sm:w-20 sm:h-20 mb-3 object-contain"
           />
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-widest text-white uppercase">
-            Prossium
-          </h1>
-          <p className="mt-2 text-sm sm:text-base tracking-[0.2em] text-white/50 uppercase">
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-[0.15em] text-white uppercase">
             Menos conversaciones. Más control.
-          </p>
+          </h1>
         </div>
 
         {/* Subtitle */}

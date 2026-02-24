@@ -32,9 +32,9 @@ export default function Home() {
             className="w-44 h-44 sm:w-56 sm:h-56 md:w-64 md:h-64 mb-4 object-contain"
           />
           <h1 className="text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] text-white uppercase flex items-center gap-0">
-            MENOS CONVERSA
-            <img src={logoIcon} alt="SS" className="inline h-[1em] w-auto mx-[-0.05em] relative top-[0.02em]" />
-            ACIONES. MÁS CONTROL
+            <span>MENOS CONVER</span>
+            <img src={logoIcon} alt="SS" className="inline h-[1.1em] w-auto" />
+            <span>ACIONES. MÁS CONTROL</span>
           </h1>
         </div>
 

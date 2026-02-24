@@ -30,11 +30,11 @@ export default function Home() {
           <img
             src={logoIcon}
             alt="Prossium"
-            className="w-44 h-44 sm:w-56 sm:h-56 md:w-64 md:h-64 mb-4 object-contain"
+            className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 mb-6 object-contain"
           />
-          <h1 className="text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] text-white uppercase flex items-center gap-0">
+          <h1 className="text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] text-white uppercase flex items-center gap-0 leading-none">
             <span>MENOS CONVER</span>
-            <img src={ssIcon} alt="SS" className="inline h-[1.4em] w-auto" />
+            <img src={ssIcon} alt="SS" className="inline h-[1.2em] w-auto align-middle mx-[0.05em]" />
             <span>ACIONES. MÁS CONTROL</span>
           </h1>
         </div>

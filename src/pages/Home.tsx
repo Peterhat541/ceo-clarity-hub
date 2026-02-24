@@ -25,24 +25,24 @@ export default function Home() {
       {/* Centered content */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-6">
         {/* Logo + Slogan combined image */}
-        <div className="mb-2">
+        <div className="mb-3">
           <img
             src={logoSlogan}
             alt="Prossium - Menos conversaciones. Más control."
-            className="w-[50vw] max-w-[350px] sm:max-w-[450px] md:max-w-[500px] object-contain"
+            className="w-[60vw] max-w-[400px] sm:max-w-[500px] md:max-w-[550px] object-contain"
             style={{ mixBlendMode: "screen" }}
           />
         </div>
 
         {/* Subtitle */}
-        <div className="text-center mb-2">
-          <p className="text-white/60 text-base sm:text-lg">
+        <div className="text-center mb-3">
+          <p className="text-white/60 text-lg">
             Selecciona un modo de trabajo
           </p>
         </div>
 
         {/* Mode Cards */}
-        <div className="flex flex-row gap-4 w-full max-w-2xl px-4 sm:gap-6 sm:px-0 -mt-4 sm:-mt-8">
+        <div className="flex flex-row gap-4 w-full max-w-2xl px-4 sm:gap-6 sm:px-0">
           {/* Vista CEO Card */}
           <button
             onClick={() => navigate("/ceo")}

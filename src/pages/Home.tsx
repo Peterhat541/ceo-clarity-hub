@@ -25,17 +25,17 @@ export default function Home() {
       {/* Centered content */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-6">
         {/* Logo + Slogan combined image */}
-        <div className="mb-8">
+        <div className="mb-6">
           <img
             src={logoSlogan}
             alt="Prossium - Menos conversaciones. Más control."
-            className="w-[70vw] max-w-[500px] sm:max-w-[550px] md:max-w-[600px] object-contain"
+            className="w-[60vw] max-w-[400px] sm:max-w-[500px] md:max-w-[550px] object-contain"
             style={{ mixBlendMode: "screen" }}
           />
         </div>
 
         {/* Subtitle */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-6">
           <p className="text-white/60 text-lg">
             Selecciona un modo de trabajo
           </p>

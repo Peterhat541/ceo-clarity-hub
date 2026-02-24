@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Target, ClipboardList, ArrowLeft } from "lucide-react";
 import ParticleNetwork from "@/components/landing/ParticleNetwork";
 import logoIcon from "@/assets/prossium-logo.png";
+import ssIcon from "@/assets/ss-icon.png";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function Home() {
           />
           <h1 className="text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] text-white uppercase flex items-center gap-0">
             <span>MENOS CONVER</span>
-            <img src={logoIcon} alt="SS" className="inline h-[1.1em] w-auto" />
+            <img src={ssIcon} alt="SS" className="inline h-[1.4em] w-auto" />
             <span>ACIONES. MÁS CONTROL</span>
           </h1>
         </div>

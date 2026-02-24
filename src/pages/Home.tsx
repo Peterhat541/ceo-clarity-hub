@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Target, ClipboardList, ArrowLeft } from "lucide-react";
 import ParticleNetwork from "@/components/landing/ParticleNetwork";
-import logoSlogan from "@/assets/logo-slogan.png";
+import logoSlogan from "@/assets/prossium-logo-slogan.png";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export default function Home() {
         <div className="mb-8">
           <img
             src={logoSlogan}
-            alt="Processia - Menos conversaciones. Más control."
+            alt="Prossium - Menos conversaciones. Más control."
             className="w-[70vw] max-w-[500px] sm:max-w-[550px] md:max-w-[600px] object-contain"
             style={{ mixBlendMode: "screen" }}
           />

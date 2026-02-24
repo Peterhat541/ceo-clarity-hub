@@ -29,9 +29,9 @@ export default function Home() {
           <img
             src={logoIcon}
             alt="Prossium"
-            className="w-14 h-14 sm:w-20 sm:h-20 mb-3 object-contain"
+            className="w-24 h-24 sm:w-32 sm:h-32 mb-4 object-contain"
           />
-          <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-[0.15em] text-white uppercase">
+          <h1 className="text-sm sm:text-base md:text-lg font-semibold tracking-[0.2em] text-white/90 uppercase">
             Menos conversaciones. Más control.
           </h1>
         </div>

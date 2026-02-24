@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Target, ClipboardList, ArrowLeft } from "lucide-react";
 import ParticleNetwork from "@/components/landing/ParticleNetwork";
-import logoSlogan from "@/assets/prossium-logo-slogan.png";
+import logoIcon from "@/assets/prossium-logo.png";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -24,14 +24,19 @@ export default function Home() {
 
       {/* Centered content */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-6">
-        {/* Logo */}
-        <div className="mb-8">
+        {/* Brand block */}
+        <div className="flex flex-col items-center mb-8">
           <img
-            src={logoSlogan}
-            alt="Prossium - Menos conversaciones. Más control."
-            className="w-[50vw] max-w-[350px] sm:max-w-[450px] md:max-w-[500px] object-contain"
-            style={{ mixBlendMode: "screen" }}
+            src={logoIcon}
+            alt="Prossium"
+            className="w-16 h-16 sm:w-20 sm:h-20 mb-4 object-contain"
           />
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-widest text-white uppercase">
+            Prossium
+          </h1>
+          <p className="mt-2 text-sm sm:text-base tracking-[0.2em] text-white/50 uppercase">
+            Menos conversaciones. Más control.
+          </p>
         </div>
 
         {/* Subtitle */}

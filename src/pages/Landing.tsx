@@ -102,7 +102,7 @@ export default function Landing() {
           WebkitMaskImage: "radial-gradient(ellipse 80% 80% at center, black 50%, transparent 100%)",
         }}
       />
-      <div className="absolute bottom-[18%] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 w-full max-w-xs">
+      <div className="absolute bottom-[14%] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 w-full max-w-xs">
         {formBlock}
       </div>
     </div>

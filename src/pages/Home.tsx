@@ -25,7 +25,7 @@ export default function Home() {
       {/* Centered content */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-6">
         {/* Logo + Slogan combined image */}
-        <div className="mb-6">
+        <div className="mb-3">
           <img
             src={logoSlogan}
             alt="Prossium - Menos conversaciones. Más control."
@@ -35,7 +35,7 @@ export default function Home() {
         </div>
 
         {/* Subtitle */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-3">
           <p className="text-white/60 text-lg">
             Selecciona un modo de trabajo
           </p>

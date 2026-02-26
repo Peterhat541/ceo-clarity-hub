@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, Loader2, Square, Sparkles, Users, FolderOpen, CalendarDays, TrendingUp } from "lucide-react";
+import { Send, Mic, Loader2, Square, Users, FolderOpen, CalendarDays, TrendingUp } from "lucide-react";
+import AIBrainSphere from "@/components/ai/AIBrainSphere";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClientContext } from "@/contexts/ClientContext";
@@ -234,10 +235,8 @@ export function AIChat() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {showWelcome && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-mint flex items-center justify-center mb-6 glow">
-              <Sparkles className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-semibold text-foreground mb-2">
+            <AIBrainSphere size={140} isThinking={false} />
+            <h1 className="text-2xl font-semibold text-foreground mb-2 mt-2">
               Hola Carlos, soy tu <span className="text-gradient">IA de empresa</span>
             </h1>
             <p className="text-sm text-muted-foreground max-w-md mb-8">
@@ -269,11 +268,9 @@ export function AIChat() {
         ))}
         
         {isLoading && (
-          <div className="animate-fade-in">
-            <div className="bg-secondary rounded-2xl px-4 py-3 inline-flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Pensando...</span>
-            </div>
+          <div className="animate-fade-in flex items-center gap-3 py-2">
+            <AIBrainSphere size={48} isThinking={true} />
+            <span className="text-sm text-muted-foreground">Pensando...</span>
           </div>
         )}
         <div ref={messagesEndRef} />

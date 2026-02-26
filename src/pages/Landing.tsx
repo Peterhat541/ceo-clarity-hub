@@ -4,7 +4,7 @@ import { Lock, ArrowRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ParticleNetwork from "@/components/landing/ParticleNetwork";
-import ssLogo from "@/assets/ss-logo-new.png";
+import logoSlogan from "@/assets/logo-with-slogan.png";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -57,31 +57,21 @@ export default function Landing() {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 max-w-2xl w-full">
-        {/* Logo */}
+        {/* Logo + Slogan */}
         <img
-          src={ssLogo}
-          alt="Prossium"
-          className={isMobile ? "w-28 h-auto" : "w-40 h-auto"}
+          src={logoSlogan}
+          alt="Prossium - Menos conversaciones. Más control."
+          className={isMobile ? "w-64 h-auto" : "w-96 h-auto"}
         />
 
-        {/* Headline */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <h1
-            className={`font-bold tracking-tight text-white leading-tight ${
-              isMobile ? "text-2xl" : "text-4xl"
-            }`}
-          >
-            Menos conversaciones.{" "}
-            <span className="text-primary">Más control.</span>
-          </h1>
-          <p
-            className={`text-white/50 font-light ${
-              isMobile ? "text-sm" : "text-lg"
-            }`}
-          >
-            ¿Y si tu negocio tuviera su propia inteligencia artificial?
-          </p>
-        </div>
+        {/* Subtitle */}
+        <p
+          className={`text-white/40 font-light text-center ${
+            isMobile ? "text-sm" : "text-lg"
+          }`}
+        >
+          ¿Y si tu negocio tuviera su propia inteligencia artificial?
+        </p>
 
         {/* Access form */}
         <div className="flex flex-col items-center gap-3 w-full max-w-sm">

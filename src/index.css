@@ -4,14 +4,14 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* Processia Design System
+/* Prossium Design System
    Dark Executive aesthetic - Zero Scroll Dashboard
    All colors in HSL
 */
 
 @layer base {
   :root {
-    /* Processia Brand Colors - #131313, #25E0B7, #FFFFFF */
+    /* Prossium Brand Colors - #131313, #25E0B7, #FFFFFF */
     --background: 0 0% 7.5%;
     --foreground: 0 0% 100%;
 
@@ -21,7 +21,7 @@
     --popover: 0 0% 12%;
     --popover-foreground: 0 0% 100%;
 
-    /* Mint accent - Processia brand #25E0B7 */
+    /* Mint accent - Prossium brand #25E0B7 */
     --primary: 161 75% 51%;
     --primary-foreground: 0 0% 7.5%;
 

@@ -70,7 +70,7 @@ export function CreateEventModal({ open, onOpenChange, defaultDate }: CreateEven
       if (error) throw error;
 
       await refreshEvents();
-      window.dispatchEvent(new CustomEvent("processia:eventCreated"));
+      window.dispatchEvent(new CustomEvent("prossium:eventCreated"));
 
       toast({
         title: "Evento creado",

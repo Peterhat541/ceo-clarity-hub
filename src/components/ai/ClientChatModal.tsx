@@ -389,10 +389,10 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
 
       // Trigger events if actions were created
       if (executedActions.some((a: any) => a.tool === "create_event" && a.result?.success)) {
-        window.dispatchEvent(new CustomEvent("processia:eventCreated"));
+        window.dispatchEvent(new CustomEvent("prossium:eventCreated"));
       }
       if (executedActions.some((a: any) => a.tool === "create_note" && a.result?.success)) {
-        window.dispatchEvent(new CustomEvent("processia:noteCreated"));
+        window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
       }
 
     } catch (error) {

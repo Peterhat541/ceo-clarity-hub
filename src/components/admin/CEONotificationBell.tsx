@@ -163,10 +163,10 @@ export function CEONotificationBell({ onOpenClientChat, selectedEmployee }: CEON
     const handleNoteCreated = () => {
       fetchNotes();
     };
-    window.addEventListener("processia:noteCreated", handleNoteCreated);
+    window.addEventListener("prossium:noteCreated", handleNoteCreated);
     
     return () => {
-      window.removeEventListener("processia:noteCreated", handleNoteCreated);
+      window.removeEventListener("prossium:noteCreated", handleNoteCreated);
     };
   }, [selectedEmployee]);
 

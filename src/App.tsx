@@ -11,7 +11,6 @@ import { CEONoteProvider } from "@/contexts/CEONoteContext";
 import { AIChatProvider } from "@/contexts/AIChatContext";
 import { DemoGuard } from "@/components/auth/DemoGuard";
 import Landing from "./pages/Landing";
-import Home from "./pages/Home";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -32,10 +31,11 @@ const App = () => (
                   <BrowserRouter>
                     <Routes>
                       <Route path="/landing" element={<Landing />} />
-                      <Route path="/" element={<DemoGuard><Home /></DemoGuard>} />
-                      <Route path="/ceo" element={<DemoGuard><Index /></DemoGuard>} />
+                      <Route path="/" element={<DemoGuard><Index /></DemoGuard>} />
                       <Route path="/admin" element={<DemoGuard><Admin /></DemoGuard>} />
-                      {/* Redirect old routes to home */}
+                      {/* Redirect old routes */}
+                      <Route path="/ceo" element={<Navigate to="/" replace />} />
+                      <Route path="/home" element={<Navigate to="/" replace />} />
                       <Route path="/incidencias" element={<Navigate to="/" replace />} />
                       <Route path="/clientes-rojo" element={<Navigate to="/" replace />} />
                       <Route path="/fechas" element={<Navigate to="/" replace />} />

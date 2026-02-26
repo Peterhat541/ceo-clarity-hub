@@ -34,7 +34,7 @@ const AIChatContext = createContext<AIChatContextType | undefined>(undefined);
 const initialMessage: Message = {
   id: "1",
   role: "assistant",
-  content: "Hola, soy tu asistente ejecutivo. Puedo ayudarte a gestionar tu agenda, crear recordatorios, enviar notas al equipo y mantenerte al día con tus clientes. ¿Qué necesitas?",
+  content: "Hola. Soy tu IA empresarial.\nEstoy conectada a tus datos y herramientas.\nPregúntame lo que necesites saber.",
   timestamp: new Date(),
 };
 

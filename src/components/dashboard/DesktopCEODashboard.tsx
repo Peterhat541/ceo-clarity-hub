@@ -142,7 +142,7 @@ export function DesktopCEODashboard() {
       }
 
       // Emit event for notification bell refresh
-      window.dispatchEvent(new CustomEvent("processia:noteCreated"));
+      window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
 
       // Remove from attention list
       setClientsAttention(prev => prev.filter(c => c.id !== client.id));
@@ -202,7 +202,7 @@ export function DesktopCEODashboard() {
       }
 
       // Emit event for notification bell refresh
-      window.dispatchEvent(new CustomEvent("processia:noteCreated"));
+      window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
 
       // Update local state
       if (newStatus === "green") {
@@ -260,7 +260,7 @@ export function DesktopCEODashboard() {
           )}
           
           <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">
-            Clientes que requieren atención
+            Seguimientos activos
           </h2>
           
           {/* Client List - Scrollable */}
@@ -345,8 +345,8 @@ export function DesktopCEODashboard() {
                 <Sparkles className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">Asistente IA</h2>
-                <p className="text-sm text-muted-foreground">Tu mano derecha ejecutiva</p>
+                <h2 className="font-semibold text-foreground">Tu IA empresarial</h2>
+                <p className="text-sm text-muted-foreground">Conectada a tus datos y herramientas</p>
               </div>
             </div>
           </div>
@@ -357,6 +357,11 @@ export function DesktopCEODashboard() {
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="shrink-0 py-2 text-center">
+        <span className="text-[0.65rem] text-muted-foreground/40 tracking-wider">Infrastructure by Prossium</span>
+      </footer>
 
       {/* Popups */}
       <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />

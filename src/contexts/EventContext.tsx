@@ -128,9 +128,9 @@ export function EventProvider({ children }: { children: ReactNode }) {
       fetchEvents();
     };
 
-    window.addEventListener("processia:eventCreated", handleEventCreated);
+    window.addEventListener("prossium:eventCreated", handleEventCreated);
     return () => {
-      window.removeEventListener("processia:eventCreated", handleEventCreated);
+      window.removeEventListener("prossium:eventCreated", handleEventCreated);
     };
   }, [fetchEvents]);
 

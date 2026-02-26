@@ -53,7 +53,7 @@ export function SendNotePopup({ isOpen, onClose }: SendNotePopupProps) {
       if (error) throw error;
 
       // Emit event for notification bell refresh
-      window.dispatchEvent(new CustomEvent("processia:noteCreated"));
+      window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
 
       toast({
         title: "Nota enviada",
@@ -97,7 +97,7 @@ export function SendNotePopup({ isOpen, onClose }: SendNotePopupProps) {
             <div>
               <h2 className="font-semibold text-foreground">Enviar nota al equipo</h2>
               <p className="text-xs text-muted-foreground">
-                Esta nota aparecerá en Administración
+                Esta nota aparecerá en el panel de gestión
               </p>
             </div>
           </div>

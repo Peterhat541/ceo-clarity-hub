@@ -13,14 +13,13 @@ import {
   Users,
   CalendarDays,
   Sparkles,
-  Database,
+  Settings,
   LogOut,
-  Home
 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import processiaLogo from "@/assets/prossium-logo.png";
+import prossiumLogo from "@/assets/prossium-logo.png";
 
 // Mock data
 interface ClientData {
@@ -98,39 +97,30 @@ export function MobileHome() {
   // Sort by criticality and show first 2
   const statusPriority = { red: 0, orange: 1, yellow: 2, green: 3 };
   const sortedClients = [...clientsAttention].sort((a, b) => statusPriority[a.status] - statusPriority[b.status]);
-  const visibleClients = sortedClients.slice(0, 2);
-  const hasMoreClients = sortedClients.length > 2;
-
-  // Get greeting based on time
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Buenos días";
-    if (hour < 19) return "Buenas tardes";
-    return "Buenas noches";
-  };
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background bg-grid overflow-hidden">
       {/* Compact Header */}
       <header className="shrink-0 px-4 py-2.5 border-b border-border/50 bg-card/30 backdrop-blur-sm safe-area-top flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src={processiaLogo} alt="Processia" className="h-5" />
-          <span className="text-sm font-semibold text-foreground">{getGreeting()}</span>
+        <div className="flex items-center gap-2.5">
+          <img src={prossiumLogo} alt="Prossium" className="h-5" />
+          <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">IA activa</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => navigate("/admin")}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border rounded-full transition-all"
+            className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+            title="Configuración"
           >
-            <Database className="w-3.5 h-3.5" />
-            Admin
+            <Settings className="w-4 h-4" />
           </button>
           <button
             onClick={() => {
               sessionStorage.removeItem("demo_access");
               navigate("/landing");
             }}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-destructive border border-border hover:border-destructive/50 rounded-full transition-all"
+            className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+            title="Salir"
           >
             <LogOut className="w-3.5 h-3.5" />
           </button>
@@ -146,8 +136,8 @@ export function MobileHome() {
               <Sparkles className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-semibold text-foreground">Asistente IA</h2>
-              <p className="text-xs text-muted-foreground">Tu mano derecha ejecutiva</p>
+              <h2 className="font-semibold text-foreground">Tu IA empresarial</h2>
+              <p className="text-xs text-muted-foreground">Conectada a tus datos y herramientas</p>
             </div>
           </div>
         </div>
@@ -161,6 +151,7 @@ export function MobileHome() {
       {/* Quick Access Footer */}
       <div className="shrink-0 border-t border-border/50 bg-card/50 backdrop-blur-sm px-5 py-2.5 safe-area-bottom">
         <QuickAccessGrid items={quickAccessItems} />
+        <p className="text-center mt-1.5 text-[0.55rem] text-muted-foreground/30 tracking-wider">Infrastructure by Prossium</p>
       </div>
 
       {/* Popups */}
@@ -171,7 +162,7 @@ export function MobileHome() {
       {/* Clients Modal */}
       <Dialog open={clientsOpen} onOpenChange={setClientsOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-auto bg-card border-border">
-          <h2 className="text-lg font-semibold mb-4 text-foreground">Clientes que requieren atención</h2>
+          <h2 className="text-lg font-semibold mb-4 text-foreground">Seguimientos activos</h2>
           <div className="space-y-3">
             {clientsAttention.map((client) => (
               <button

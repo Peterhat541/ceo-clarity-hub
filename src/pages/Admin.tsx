@@ -221,8 +221,8 @@ export default function Admin() {
     fetchCeoNotes();
 
     const handleNoteCreated = () => fetchCeoNotes();
-    window.addEventListener("processia:noteCreated", handleNoteCreated);
-    return () => window.removeEventListener("processia:noteCreated", handleNoteCreated);
+    window.addEventListener("prossium:noteCreated", handleNoteCreated);
+    return () => window.removeEventListener("prossium:noteCreated", handleNoteCreated);
   }, []);
 
   // Seed demo data
@@ -409,7 +409,7 @@ export default function Admin() {
       toast.success("Nota guardada correctamente");
       
       // Emit event so notification bell updates
-      window.dispatchEvent(new Event("processia:noteCreated"));
+      window.dispatchEvent(new Event("prossium:noteCreated"));
 
       // Also update local state for CEO notes display
       const newNote: Note = {

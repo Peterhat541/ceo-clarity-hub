@@ -150,7 +150,7 @@ export function TeamNotesPopup({ isOpen, onClose }: TeamNotesPopupProps) {
                 <MessageSquare className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No hay notas para hoy</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  El equipo puede dejarte notas desde Administración
+                  El equipo puede dejarte notas desde el panel de gestión
                 </p>
               </div>
             ) : (

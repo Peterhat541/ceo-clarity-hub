@@ -12,7 +12,7 @@ export function HeaderNavigation() {
 
   if (isMobile) {
     return (
-      <header className="shrink-0 border-b border-border/50 bg-sidebar-background/80 backdrop-blur-sm safe-area-top">
+      <header className="shrink-0 border-b border-border/50 bg-card/80 backdrop-blur-sm safe-area-top">
         <div className="flex items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-2.5">
             <img src={ssIcon} alt="Prossium" className="h-6 w-6 rounded-lg" />
@@ -47,7 +47,7 @@ export function HeaderNavigation() {
   }
 
   return (
-    <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border/50 bg-sidebar-background/80 backdrop-blur-sm">
+    <header className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-border/50 bg-card/80 backdrop-blur-sm">
       {/* Left: Logo + Brand */}
       <div className="flex items-center gap-3">
         <img 
@@ -65,9 +65,12 @@ export function HeaderNavigation() {
         <span className="text-xs text-muted-foreground">IA activa para <span className="text-foreground font-medium">Agencia Nexus</span></span>
       </div>
       
-      {/* Right: TU IA button + User + Settings */}
+      {/* Right: TU IA button (navigates to chat) + Settings + Salir */}
       <div className="flex items-center gap-3">
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 transition-all">
+        <button 
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 transition-all"
+        >
           <Sparkles className="w-3.5 h-3.5" />
           TU IA
         </button>

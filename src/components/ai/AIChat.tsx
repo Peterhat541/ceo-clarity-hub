@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, Loader2, Square, Sparkles, Users, FolderOpen, CalendarDays, TrendingUp, Paperclip } from "lucide-react";
+import { Send, Mic, Loader2, Square, Sparkles, Users, FolderOpen, CalendarDays, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClientContext } from "@/contexts/ClientContext";
@@ -25,10 +25,10 @@ interface ConversationMessage {
 }
 
 const suggestionCards = [
-  { icon: Users, text: "¿Qué clientes necesitan atención urgente?", color: "text-status-orange" },
-  { icon: FolderOpen, text: "Resumen de proyectos activos", color: "text-primary" },
-  { icon: CalendarDays, text: "Reuniones de seguimiento pendientes", color: "text-status-purple" },
-  { icon: TrendingUp, text: "Oportunidades de venta abiertas", color: "text-status-yellow" },
+  { icon: Users, text: "¿Qué clientes necesitan atención urgente?" },
+  { icon: FolderOpen, text: "Resumen de proyectos activos" },
+  { icon: CalendarDays, text: "Reuniones de seguimiento pendientes" },
+  { icon: TrendingUp, text: "Oportunidades de venta abiertas" },
 ];
 
 export function AIChat() {
@@ -36,60 +36,34 @@ export function AIChat() {
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
   const {
-    messages,
-    setMessages,
-    conversationHistory,
-    setConversationHistory,
-    activeClient,
-    setActiveClient,
-    input,
-    setInput,
+    messages, setMessages, conversationHistory, setConversationHistory,
+    activeClient, setActiveClient, input, setInput,
   } = useAIChatContext();
   const [isLoading, setIsLoading] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { isRecording, isSupported, error: recorderError, startRecording, stopRecording, cancelRecording } = useAudioRecorder();
+  const { isRecording, isSupported, error: recorderError, startRecording, stopRecording } = useAudioRecorder();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    if (recorderError) {
-      toast({ title: "Error de micrófono", description: recorderError, variant: "destructive" });
-    }
-  }, [recorderError]);
+  const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
+  useEffect(() => { scrollToBottom(); }, [messages]);
+  useEffect(() => { if (recorderError) toast({ title: "Error de micrófono", description: recorderError, variant: "destructive" }); }, [recorderError]);
 
   // Handle context activation from client cards
   useEffect(() => {
     if (pendingContext) {
       const { clientName, issue } = pendingContext;
       const fetchClientId = async () => {
-        const { data } = await supabase
-          .from("clients")
-          .select("id, name, status, contact_name, phone, email")
-          .ilike("name", `%${clientName}%`)
-          .limit(1)
-          .maybeSingle();
-        
+        const { data } = await supabase.from("clients").select("id, name, status, contact_name, phone, email").ilike("name", `%${clientName}%`).limit(1).maybeSingle();
         if (data) {
           setActiveClient({ id: data.id, name: data.name });
           const statusEmoji = data.status === "red" ? "🔴" : data.status === "orange" ? "🟠" : data.status === "yellow" ? "🟡" : "🟢";
           const statusText = data.status === "red" ? "crítico" : data.status === "orange" ? "atención" : data.status === "yellow" ? "pendiente" : "estable";
-          
-          const contextMessage: Message = {
-            id: Date.now().toString(),
-            role: "assistant",
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(), role: "assistant",
             content: `**${data.name}** ${statusEmoji} Estado: ${statusText}\n\n${issue ? `**Situación:** ${issue}` : ""}\n\n📞 **Contacto:** ${data.contact_name || "No especificado"} — ${data.phone || "Sin teléfono"}\n✉️ **Email:** ${data.email || "Sin email"}\n\n¿Qué quieres hacer con este cliente?`,
-            timestamp: new Date(),
-            clientContext: data.name,
-          };
-          setMessages(prev => [...prev, contextMessage]);
+            timestamp: new Date(), clientContext: data.name,
+          }]);
         }
       };
       fetchClientId();
@@ -97,28 +71,18 @@ export function AIChat() {
     }
   }, [pendingContext, clearPendingContext]);
 
-  // Sync with external client selection
   useEffect(() => {
     if (selectedClient && selectedClient !== activeClient.name && !pendingContext) {
       const fetchClientData = async () => {
-        const { data } = await supabase
-          .from("clients")
-          .select("id, name, status, contact_name, phone")
-          .ilike("name", `%${selectedClient}%`)
-          .limit(1)
-          .maybeSingle();
-        
+        const { data } = await supabase.from("clients").select("id, name, status, contact_name, phone").ilike("name", `%${selectedClient}%`).limit(1).maybeSingle();
         if (data) {
           setActiveClient({ id: data.id, name: data.name });
           const statusEmoji = data.status === "red" ? "🔴" : data.status === "orange" ? "🟠" : data.status === "yellow" ? "🟡" : "🟢";
-          const autoMessage: Message = {
-            id: Date.now().toString(),
-            role: "assistant",
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(), role: "assistant",
             content: `**${data.name}** seleccionado. ${statusEmoji}\n\n📞 ${data.contact_name || "Contacto"}: ${data.phone || "Sin teléfono"}\n\n¿Qué quieres saber o hacer?`,
-            timestamp: new Date(),
-            clientContext: data.name,
-          };
-          setMessages(prev => [...prev, autoMessage]);
+            timestamp: new Date(), clientContext: data.name,
+          }]);
         }
       };
       fetchClientData();
@@ -133,49 +97,29 @@ export function AIChat() {
         try {
           const arrayBuffer = await audioBlob.arrayBuffer();
           const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
-          const { data, error } = await supabase.functions.invoke("transcribe", {
-            body: { audio: base64, mimeType: audioBlob.type },
-          });
+          const { data, error } = await supabase.functions.invoke("transcribe", { body: { audio: base64, mimeType: audioBlob.type } });
           if (error) throw new Error(error.message);
-          if (data?.text) {
-            setInput(prev => prev ? `${prev} ${data.text}` : data.text);
-            toast({ title: "Transcripción completada", description: "Texto añadido al input." });
-          } else if (data?.error) throw new Error(data.error);
+          if (data?.text) { setInput(prev => prev ? `${prev} ${data.text}` : data.text); toast({ title: "Transcripción completada" }); }
+          else if (data?.error) throw new Error(data.error);
         } catch (err) {
           console.error("Transcription error:", err);
-          toast({ title: "Error de transcripción", description: err instanceof Error ? err.message : "No se pudo transcribir el audio.", variant: "destructive" });
-        } finally {
-          setIsTranscribing(false);
-        }
+          toast({ title: "Error de transcripción", description: err instanceof Error ? err.message : "No se pudo transcribir.", variant: "destructive" });
+        } finally { setIsTranscribing(false); }
       }
-    } else {
-      await startRecording();
-    }
+    } else { await startRecording(); }
   };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-
+    const userMessage: Message = { id: Date.now().toString(), role: "user", content: input, timestamp: new Date() };
     setMessages((prev) => [...prev, userMessage]);
     const userInput = input;
     setInput("");
     setIsLoading(true);
 
-    const newHistory: ConversationMessage[] = [
-      ...conversationHistory,
-      { role: "user", content: userInput }
-    ];
-
+    const newHistory: ConversationMessage[] = [...conversationHistory, { role: "user", content: userInput }];
     const todayEvents = getTodayEvents();
     const todayNotes = getTodayCEONotes();
-    
     const uiSnapshot = {
       todayEvents: todayEvents.map(e => ({ title: e.title, type: e.type, time: e.time, clientName: e.clientName })),
       pendingNotes: todayNotes.filter(n => n.status === "pending").map(n => ({ content: n.content, clientName: n.clientName, author: n.author })),
@@ -184,28 +128,17 @@ export function AIChat() {
 
     try {
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
-      
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          message: userInput,
-          activeClientId: activeClient.id,
-          activeClientName: activeClient.name,
-          conversationHistory: newHistory.slice(-10),
-          uiSnapshot
-        }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ message: userInput, activeClientId: activeClient.id, activeClientName: activeClient.name, conversationHistory: newHistory.slice(-10), uiSnapshot }),
       });
 
       if (!resp.ok) {
-        if (resp.status === 429) { toast({ title: "Demasiadas solicitudes", description: "Espera un momento.", variant: "destructive" }); throw new Error("rate_limit"); }
-        if (resp.status === 402) { toast({ title: "Créditos agotados", description: "Contacta con el administrador.", variant: "destructive" }); throw new Error("payment_required"); }
+        if (resp.status === 429) { toast({ title: "Demasiadas solicitudes", variant: "destructive" }); throw new Error("rate_limit"); }
+        if (resp.status === 402) { toast({ title: "Créditos agotados", variant: "destructive" }); throw new Error("payment_required"); }
         throw new Error("Error al contactar el asistente");
       }
-
       if (!resp.body) throw new Error("No response body");
 
       const reader = resp.body.getReader();
@@ -220,7 +153,6 @@ export function AIChat() {
         const { done, value } = await reader.read();
         if (done) break;
         textBuffer += decoder.decode(value, { stream: true });
-
         let newlineIndex: number;
         while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
           let line = textBuffer.slice(0, newlineIndex);
@@ -239,9 +171,7 @@ export function AIChat() {
               const currentContent = assistantSoFar;
               setMessages(prev => {
                 const last = prev[prev.length - 1];
-                if (last?.role === "assistant" && last.id === assistantId) {
-                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: currentContent } : m);
-                }
+                if (last?.role === "assistant" && last.id === assistantId) return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: currentContent } : m);
                 return [...prev, { id: assistantId, role: "assistant" as const, content: currentContent, timestamp: new Date(), clientContext: activeClient.name || undefined }];
               });
             }
@@ -249,7 +179,6 @@ export function AIChat() {
         }
       }
 
-      // Final flush
       if (textBuffer.trim()) {
         for (let raw of textBuffer.split("\n")) {
           if (!raw) continue;
@@ -266,9 +195,7 @@ export function AIChat() {
               const currentContent = assistantSoFar;
               setMessages(prev => {
                 const last = prev[prev.length - 1];
-                if (last?.role === "assistant" && last.id === assistantId) {
-                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: currentContent } : m);
-                }
+                if (last?.role === "assistant" && last.id === assistantId) return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: currentContent } : m);
                 return [...prev, { id: assistantId, role: "assistant" as const, content: currentContent, timestamp: new Date(), clientContext: activeClient.name || undefined }];
               });
             }
@@ -282,67 +209,40 @@ export function AIChat() {
       }
 
       setConversationHistory([...newHistory, { role: "assistant" as const, content: assistantSoFar }].slice(-20));
-
-      if (executedActions.some((a: any) => a.tool === "create_event" && a.result?.success)) {
-        window.dispatchEvent(new CustomEvent("prossium:eventCreated"));
-      }
-      if (executedActions.some((a: any) => a.tool === "create_note" && a.result?.success)) {
-        window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
-      }
-
+      if (executedActions.some((a: any) => a.tool === "create_event" && a.result?.success)) window.dispatchEvent(new CustomEvent("prossium:eventCreated"));
+      if (executedActions.some((a: any) => a.tool === "create_note" && a.result?.success)) window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
     } catch (error) {
       console.error("Error sending message:", error);
-      const errorMessage: Message = { id: (Date.now() + 1).toString(), role: "assistant", content: "Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.", timestamp: new Date() };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: "Lo siento, ha ocurrido un error. Inténtalo de nuevo.", timestamp: new Date() }]);
+    } finally { setIsLoading(false); }
   };
 
-  const handleSuggestion = (question: string) => {
-    setInput(question);
-  };
-
-  const clearContext = () => {
-    setActiveClient({ id: null, name: null });
-    toast({ title: "Contexto limpiado", description: "Ya no hay cliente activo." });
-  };
-
+  const handleSuggestion = (question: string) => { setInput(question); };
+  const clearContext = () => { setActiveClient({ id: null, name: null }); toast({ title: "Contexto limpiado" }); };
   const isMicDisabled = isLoading || isTranscribing || !isSupported;
   const showWelcome = messages.length <= 1;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Context indicator */}
       {activeClient.name && (
         <div className="px-4 py-2 border-b border-border bg-primary/5 flex items-center justify-between">
-          <p className="text-xs text-primary">
-            Contexto: <span className="font-medium">{activeClient.name}</span>
-          </p>
-          <Button variant="ghost" size="sm" onClick={clearContext} className="text-xs text-muted-foreground hover:text-foreground h-6 px-2">
-            Limpiar
-          </Button>
+          <p className="text-xs text-primary">Contexto: <span className="font-medium">{activeClient.name}</span></p>
+          <Button variant="ghost" size="sm" onClick={clearContext} className="text-xs text-muted-foreground hover:text-foreground h-6 px-2">Limpiar</Button>
         </div>
       )}
 
-      {/* Messages or Welcome */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {showWelcome && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            {/* Sparkle icon */}
             <div className="h-16 w-16 rounded-2xl bg-gradient-mint flex items-center justify-center mb-6 glow">
               <Sparkles className="h-8 w-8 text-primary-foreground" />
             </div>
-            
-            {/* Welcome text */}
             <h1 className="text-2xl font-semibold text-foreground mb-2">
               Hola Carlos, soy tu <span className="text-gradient">IA de empresa</span>
             </h1>
             <p className="text-sm text-muted-foreground max-w-md mb-8">
-              Estoy conectada a tus datos, clientes, proyectos y herramientas. Pregúntame lo que necesites saber sobre tu negocio.
+              Estoy conectada a tus datos, clientes, proyectos y herramientas. Pregúntame lo que necesites.
             </p>
-
-            {/* 2x2 Suggestion Cards */}
             <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
               {suggestionCards.map((card) => (
                 <button
@@ -350,7 +250,7 @@ export function AIChat() {
                   onClick={() => handleSuggestion(card.text)}
                   className="flex flex-col items-start gap-2 p-4 rounded-xl border border-border/50 bg-card/50 hover:bg-secondary/60 hover:border-primary/30 transition-all text-left group"
                 >
-                  <card.icon className={cn("h-5 w-5", card.color)} />
+                  <card.icon className="h-5 w-5 text-primary" />
                   <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-relaxed">{card.text}</p>
                 </button>
               ))}
@@ -359,18 +259,8 @@ export function AIChat() {
         )}
 
         {!showWelcome && messages.map((message) => (
-          <div
-            key={message.id}
-            className={cn("animate-fade-in", message.role === "user" ? "flex justify-end" : "")}
-          >
-            <div
-              className={cn(
-                "max-w-[85%] rounded-2xl px-4 py-3",
-                message.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground"
-              )}
-            >
+          <div key={message.id} className={cn("animate-fade-in", message.role === "user" ? "flex justify-end" : "")}>
+            <div className={cn("max-w-[85%] rounded-2xl px-4 py-3", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground")}>
               <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
                 <ReactMarkdown>{message.content}</ReactMarkdown>
               </div>
@@ -386,11 +276,10 @@ export function AIChat() {
             </div>
           </div>
         )}
-        
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Input area */}
       <div className="p-4 border-t border-border/30">
         {isRecording && (
           <div className="mb-2 flex items-center gap-2 text-destructive animate-pulse">
@@ -404,7 +293,6 @@ export function AIChat() {
             <span className="text-sm">Transcribiendo...</span>
           </div>
         )}
-        
         <div className="flex gap-2">
           <input
             type="text"
@@ -421,34 +309,13 @@ export function AIChat() {
             className={cn("h-12 w-12 rounded-xl transition-all", isRecording && "animate-pulse")}
             onClick={handleMicClick}
             disabled={isMicDisabled}
-            title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Iniciar grabación de voz"}
+            title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Grabación de voz"}
           >
             {isTranscribing ? <Loader2 className="w-5 h-5 animate-spin" /> : isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </Button>
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            size="icon"
-            className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90"
-          >
+          <Button onClick={handleSend} disabled={!input.trim() || isLoading} size="icon" className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90">
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </Button>
-        </div>
-        
-        {/* Attach + Voice labels */}
-        <div className="flex gap-4 mt-2 px-1">
-          <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            <Paperclip className="h-3.5 w-3.5" />
-            Adjuntar
-          </button>
-          <button 
-            onClick={handleMicClick}
-            disabled={isMicDisabled}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-          >
-            <Mic className="h-3.5 w-3.5" />
-            Voz
-          </button>
         </div>
       </div>
     </div>

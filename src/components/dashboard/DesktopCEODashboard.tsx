@@ -10,10 +10,8 @@ import { AIChat } from "@/components/ai/AIChat";
 import { HeaderNavigation } from "@/components/layout/HeaderNavigation";
 import { 
   Calendar, 
-  MessageSquare, 
   Sparkles,
   Send,
-  CalendarDays,
   FolderOpen,
   Users,
   ClipboardList,
@@ -30,6 +28,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Status } from "./StatusBadge";
 import { useAIChatContext } from "@/contexts/AIChatContext";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface ClientData {
   id: string;
@@ -45,6 +44,7 @@ export function DesktopCEODashboard() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
+  const [clientsOpen, setClientsOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
   const [clientsAttention, setClientsAttention] = useState<ClientData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,6 @@ export function DesktopCEODashboard() {
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
   const visibleReminders = activeReminders.filter((r) => !r.dismissed);
 
-  // Fetch clients that need attention
   useEffect(() => {
     const fetchClients = async () => {
       try {
@@ -109,6 +108,7 @@ export function DesktopCEODashboard() {
 
   const handleClientClick = (client: ClientData) => {
     setSelectedClient(client);
+    setClientsOpen(false);
   };
 
   const handleMarkReviewed = async (client: ClientData) => {
@@ -118,11 +118,7 @@ export function DesktopCEODashboard() {
       
       const { error: clientError } = await supabase
         .from("clients")
-        .update({ 
-          last_contact: formattedDate,
-          status: "green" as const,
-          updated_at: now.toISOString()
-        })
+        .update({ last_contact: formattedDate, status: "green" as const, updated_at: now.toISOString() })
         .eq("id", client.id);
 
       if (clientError) throw clientError;
@@ -131,26 +127,12 @@ export function DesktopCEODashboard() {
         ? `✅ El CEO (Juan) ha revisado el cliente "${client.name}". Incidencia/tarea: "${client.issue}". Marcado como revisado.`
         : `✅ El CEO (Juan) ha revisado el cliente "${client.name}" y lo ha marcado como atendido.`;
 
-      const { error: noteError } = await supabase
-        .from("notes")
-        .insert({
-          text: noteText,
-          visible_to: "team",
-          target_employee: null,
-          created_by: "Juan",
-          status: "pending",
-          client_id: client.id
-        });
-
-      if (noteError) console.error("Error creating note:", noteError);
+      await supabase.from("notes").insert({ text: noteText, visible_to: "team", target_employee: null, created_by: "Juan", status: "pending", client_id: client.id });
 
       window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
       setClientsAttention(prev => prev.filter(c => c.id !== client.id));
       
-      toast({
-        title: "Cliente revisado",
-        description: `${client.name} ha sido marcado como revisado. El equipo ha sido notificado.`,
-      });
+      toast({ title: "Cliente revisado", description: `${client.name} ha sido marcado como revisado.` });
     } catch (err) {
       console.error("Error marking client as reviewed:", err);
       toast({ title: "Error", description: "No se pudo actualizar el cliente.", variant: "destructive" });
@@ -170,13 +152,9 @@ export function DesktopCEODashboard() {
 
       const statusLabels: Record<Status, string> = { green: "Estable", yellow: "Pendiente", orange: "Atención", red: "Crítico" };
       const statusEmoji = newStatus === "green" ? "🟢" : newStatus === "yellow" ? "🟡" : newStatus === "orange" ? "🟠" : "🔴";
-      const noteText = `${statusEmoji} El CEO (Juan) ha cambiado el estado del cliente "${client.name}" de "${statusLabels[oldStatus]}" a "${statusLabels[newStatus]}".${client.issue ? ` Motivo original: "${client.issue}".` : ""}`;
+      const noteText = `${statusEmoji} El CEO (Juan) ha cambiado el estado del cliente "${client.name}" de "${statusLabels[oldStatus]}" a "${statusLabels[newStatus]}".`;
 
-      const { error: noteError } = await supabase
-        .from("notes")
-        .insert({ text: noteText, visible_to: "team", target_employee: null, created_by: "Juan", status: "pending", client_id: client.id });
-
-      if (noteError) console.error("Error creating note:", noteError);
+      await supabase.from("notes").insert({ text: noteText, visible_to: "team", target_employee: null, created_by: "Juan", status: "pending", client_id: client.id });
 
       window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
 
@@ -186,38 +164,28 @@ export function DesktopCEODashboard() {
         setClientsAttention(prev => prev.map(c => c.id === client.id ? { ...c, status: newStatus } : c));
       }
       
-      toast({
-        title: "Estado actualizado",
-        description: `${client.name} ahora está en estado "${statusLabels[newStatus]}". El equipo ha sido notificado.`,
-      });
+      toast({ title: "Estado actualizado", description: `${client.name} ahora está en "${statusLabels[newStatus]}".` });
     } catch (err) {
       console.error("Error changing client status:", err);
-      toast({ title: "Error", description: "No se pudo cambiar el estado del cliente.", variant: "destructive" });
+      toast({ title: "Error", description: "No se pudo cambiar el estado.", variant: "destructive" });
     }
   };
 
-  // Count of clients needing attention
   const clientCount = clientsAttention.length;
   const weekEvents = events.length;
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
-      {/* Header */}
       <HeaderNavigation />
 
-      {/* Main: Sidebar + Chat Area */}
       <div className="flex-1 flex min-h-0">
-        {/* LEFT SIDEBAR - Context */}
+        {/* LEFT SIDEBAR */}
         <aside className="w-[260px] shrink-0 border-r border-border/50 bg-sidebar-background flex flex-col">
-          {/* Context Section */}
           <div className="p-4 flex-1 overflow-auto">
             <p className="text-[0.65rem] uppercase tracking-[0.15em] text-primary/60 font-semibold mb-4">Contexto activo</p>
             
             <div className="space-y-1.5">
-              <button
-                onClick={() => setAgendaOpen(true)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left group"
-              >
+              <button onClick={() => setAgendaOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left">
                 <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
                   <FolderOpen className="h-4 w-4 text-primary" />
                 </div>
@@ -227,27 +195,21 @@ export function DesktopCEODashboard() {
                 </div>
               </button>
 
-              <button
-                onClick={() => {/* clients section scrolls into view */}}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left group"
-              >
-                <div className="h-8 w-8 rounded-lg bg-status-orange/15 flex items-center justify-center shrink-0">
-                  <Users className="h-4 w-4 text-status-orange" />
+              <button onClick={() => setClientsOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left">
+                <div className="h-8 w-8 rounded-lg bg-accent/15 flex items-center justify-center shrink-0">
+                  <Users className="h-4 w-4 text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">Clientes</p>
                   {clientCount > 0 && (
-                    <p className="text-xs text-status-orange">{clientCount} requieren atención</p>
+                    <p className="text-xs text-accent">{clientCount} requieren atención</p>
                   )}
                 </div>
               </button>
 
-              <button
-                onClick={() => setCalendarOpen(true)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left group"
-              >
-                <div className="h-8 w-8 rounded-lg bg-status-purple/15 flex items-center justify-center shrink-0">
-                  <Calendar className="h-4 w-4 text-status-purple" />
+              <button onClick={() => setCalendarOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left">
+                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                  <Calendar className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">Reuniones</p>
@@ -255,23 +217,20 @@ export function DesktopCEODashboard() {
                 </div>
               </button>
 
-              <button
-                onClick={() => setNotesOpen(true)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left group"
-              >
-                <div className="h-8 w-8 rounded-lg bg-status-yellow/15 flex items-center justify-center shrink-0">
-                  <ClipboardList className="h-4 w-4 text-status-yellow" />
+              <button onClick={() => setNotesOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left">
+                <div className="h-8 w-8 rounded-lg bg-accent/15 flex items-center justify-center shrink-0">
+                  <ClipboardList className="h-4 w-4 text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">Seguimientos</p>
                   {pendingNotes.length > 0 && (
-                    <p className="text-xs text-status-yellow">{pendingNotes.length} pendientes</p>
+                    <p className="text-xs text-accent">{pendingNotes.length} pendientes</p>
                   )}
                 </div>
               </button>
             </div>
 
-            {/* Historial section */}
+            {/* Historial */}
             <div className="mt-6">
               <p className="text-[0.65rem] uppercase tracking-[0.15em] text-primary/60 font-semibold mb-3">Historial</p>
               <div className="space-y-1">
@@ -288,13 +247,8 @@ export function DesktopCEODashboard() {
             </div>
           </div>
 
-          {/* Send note button at bottom */}
           <div className="p-4 border-t border-border/30">
-            <Button
-              onClick={() => setSendNoteOpen(true)}
-              variant="ghost"
-              className="w-full h-10 bg-secondary/60 hover:bg-secondary text-foreground font-medium gap-2 text-sm"
-            >
+            <Button onClick={() => setSendNoteOpen(true)} variant="ghost" className="w-full h-10 bg-secondary/60 hover:bg-secondary text-foreground font-medium gap-2 text-sm">
               <Send className="h-3.5 w-3.5" />
               Enviar nota al equipo
             </Button>
@@ -303,7 +257,6 @@ export function DesktopCEODashboard() {
 
         {/* CENTER - Chat Area */}
         <main className="flex-1 flex flex-col min-h-0 min-w-0">
-          {/* Chat Header */}
           <div className="shrink-0 px-6 py-3 border-b border-border/30 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-xl bg-gradient-mint flex items-center justify-center">
@@ -319,33 +272,61 @@ export function DesktopCEODashboard() {
                 <CheckCircle className="h-3 w-3" />
                 Datos actualizados
               </span>
-              <button
-                onClick={() => {/* Could open settings */}}
-                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-all"
-              >
+              <button className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-all">
                 <Settings className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          {/* Reminders */}
           {visibleReminders.length > 0 && (
             <div className="px-6 pt-3 shrink-0">
               <ReminderAlert />
             </div>
           )}
 
-          {/* AI Chat Content */}
           <div className="flex-1 min-h-0 overflow-hidden">
             <AIChat />
           </div>
 
-          {/* Footer */}
           <div className="shrink-0 py-2 text-center border-t border-border/20">
             <span className="text-[0.6rem] text-muted-foreground/40 tracking-wider">Nexus IA · Powered by Prossium</span>
           </div>
         </main>
       </div>
+
+      {/* Clients Dialog */}
+      <Dialog open={clientsOpen} onOpenChange={setClientsOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto bg-card border-border">
+          <h2 className="text-lg font-semibold mb-4 text-foreground">Clientes que requieren atención</h2>
+          <div className="space-y-3">
+            {loading ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Cargando...</p>
+            ) : sortedClients.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No hay clientes que requieran atención</p>
+            ) : (
+              sortedClients.map((client) => (
+                <button
+                  key={client.id}
+                  onClick={() => handleClientClick(client)}
+                  className="flex w-full items-center gap-3 p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-left"
+                >
+                  <div className={`h-3 w-3 rounded-full shrink-0 ${
+                    client.status === "red" ? "bg-destructive" :
+                    client.status === "orange" ? "bg-accent" :
+                    client.status === "yellow" ? "bg-accent" : "bg-primary"
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground">{client.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">{client.issue}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{client.lastActivity}</span>
+                  <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Popups */}
       <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />
@@ -353,7 +334,6 @@ export function DesktopCEODashboard() {
       <TeamNotesPopup isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
       <SendNotePopup isOpen={sendNoteOpen} onClose={() => setSendNoteOpen(false)} />
 
-      {/* Client Chat Modal */}
       {selectedClient && (
         <ClientChatModal
           open={!!selectedClient}

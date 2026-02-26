@@ -13,7 +13,14 @@ import {
   MessageSquare, 
   Sparkles,
   Send,
-  CalendarDays
+  CalendarDays,
+  FolderOpen,
+  Users,
+  ClipboardList,
+  Clock,
+  Settings,
+  Bot,
+  CheckCircle,
 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
@@ -22,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Status } from "./StatusBadge";
+import { useAIChatContext } from "@/contexts/AIChatContext";
 
 interface ClientData {
   id: string;
@@ -44,11 +52,12 @@ export function DesktopCEODashboard() {
   const { events } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
   const { activeReminders } = useReminderContext();
+  const { messages } = useAIChatContext();
 
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
   const visibleReminders = activeReminders.filter((r) => !r.dismissed);
 
-  // Fetch clients that need attention (red, orange, yellow status)
+  // Fetch clients that need attention
   useEffect(() => {
     const fetchClients = async () => {
       try {
@@ -62,7 +71,6 @@ export function DesktopCEODashboard() {
         if (error) throw error;
 
         if (data) {
-          // Filter out clients without any project data
           const completeClients = data.filter((client) =>
             client.project_type || client.work_description || client.incidents || client.pending_tasks
           );
@@ -96,7 +104,6 @@ export function DesktopCEODashboard() {
     fetchClients();
   }, []);
 
-  // Sort by criticality
   const statusPriority = { red: 0, orange: 1, yellow: 2, green: 3 };
   const sortedClients = [...clientsAttention].sort((a, b) => statusPriority[a.status] - statusPriority[b.status]);
 
@@ -109,7 +116,6 @@ export function DesktopCEODashboard() {
       const now = new Date();
       const formattedDate = `${now.getDate().toString().padStart(2, "0")}/${(now.getMonth() + 1).toString().padStart(2, "0")} – Revisado por CEO`;
       
-      // Update client last_contact
       const { error: clientError } = await supabase
         .from("clients")
         .update({ 
@@ -121,7 +127,6 @@ export function DesktopCEODashboard() {
 
       if (clientError) throw clientError;
 
-      // Create note for the team about CEO review
       const noteText = client.issue 
         ? `✅ El CEO (Juan) ha revisado el cliente "${client.name}". Incidencia/tarea: "${client.issue}". Marcado como revisado.`
         : `✅ El CEO (Juan) ha revisado el cliente "${client.name}" y lo ha marcado como atendido.`;
@@ -137,14 +142,9 @@ export function DesktopCEODashboard() {
           client_id: client.id
         });
 
-      if (noteError) {
-        console.error("Error creating note:", noteError);
-      }
+      if (noteError) console.error("Error creating note:", noteError);
 
-      // Emit event for notification bell refresh
       window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
-
-      // Remove from attention list
       setClientsAttention(prev => prev.filter(c => c.id !== client.id));
       
       toast({
@@ -153,11 +153,7 @@ export function DesktopCEODashboard() {
       });
     } catch (err) {
       console.error("Error marking client as reviewed:", err);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el cliente.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo actualizar el cliente.", variant: "destructive" });
     }
   };
 
@@ -167,50 +163,27 @@ export function DesktopCEODashboard() {
       
       const { error: clientError } = await supabase
         .from("clients")
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq("id", client.id);
 
       if (clientError) throw clientError;
 
-      const statusLabels: Record<Status, string> = {
-        green: "Estable",
-        yellow: "Pendiente",
-        orange: "Atención",
-        red: "Crítico",
-      };
-
-      // Create note for the team about status change
+      const statusLabels: Record<Status, string> = { green: "Estable", yellow: "Pendiente", orange: "Atención", red: "Crítico" };
       const statusEmoji = newStatus === "green" ? "🟢" : newStatus === "yellow" ? "🟡" : newStatus === "orange" ? "🟠" : "🔴";
       const noteText = `${statusEmoji} El CEO (Juan) ha cambiado el estado del cliente "${client.name}" de "${statusLabels[oldStatus]}" a "${statusLabels[newStatus]}".${client.issue ? ` Motivo original: "${client.issue}".` : ""}`;
 
       const { error: noteError } = await supabase
         .from("notes")
-        .insert({
-          text: noteText,
-          visible_to: "team",
-          target_employee: null,
-          created_by: "Juan",
-          status: "pending",
-          client_id: client.id
-        });
+        .insert({ text: noteText, visible_to: "team", target_employee: null, created_by: "Juan", status: "pending", client_id: client.id });
 
-      if (noteError) {
-        console.error("Error creating note:", noteError);
-      }
+      if (noteError) console.error("Error creating note:", noteError);
 
-      // Emit event for notification bell refresh
       window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
 
-      // Update local state
       if (newStatus === "green") {
         setClientsAttention(prev => prev.filter(c => c.id !== client.id));
       } else {
-        setClientsAttention(prev => prev.map(c => 
-          c.id === client.id ? { ...c, status: newStatus } : c
-        ));
+        setClientsAttention(prev => prev.map(c => c.id === client.id ? { ...c, status: newStatus } : c));
       }
       
       toast({
@@ -219,149 +192,160 @@ export function DesktopCEODashboard() {
       });
     } catch (err) {
       console.error("Error changing client status:", err);
-      toast({
-        title: "Error",
-        description: "No se pudo cambiar el estado del cliente.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo cambiar el estado del cliente.", variant: "destructive" });
     }
   };
 
-  // Get greeting based on time
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Buenos días";
-    if (hour < 19) return "Buenas tardes";
-    return "Buenas noches";
-  };
-
-  // Format date
-  const formatDate = () => {
-    const now = new Date();
-    const day = now.getDate();
-    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    return `${day} ${months[now.getMonth()]}`;
-  };
+  // Count of clients needing attention
+  const clientCount = clientsAttention.length;
+  const weekEvents = events.length;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background bg-grid overflow-hidden">
-      {/* Header with Navigation */}
+    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
+      {/* Header */}
       <HeaderNavigation />
 
-      {/* Main Content - Two Giant Cards */}
-      <main className="flex-1 flex gap-6 p-6 min-h-0">
-        {/* Left Card: Clients + Reminders */}
-        <div className="flex-1 glass-card card-giant flex flex-col overflow-hidden animate-fade-up">
-          {/* Active Reminders Section - Only shows when there are reminders */}
-          {visibleReminders.length > 0 && (
-            <div className="mb-4 shrink-0">
-              <ReminderAlert />
-            </div>
-          )}
-          
-          <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">
-            Seguimientos activos
-          </h2>
-          
-          {/* Client List - Scrollable */}
-          <div className="flex-1 overflow-auto space-y-3 min-h-0 pr-2">
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Cargando clientes...
-              </div>
-            ) : sortedClients.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No hay clientes que requieran atención</p>
-                <p className="text-xs mt-1">¡Excelente trabajo!</p>
-              </div>
-            ) : (
-              sortedClients.map((client, index) => (
-                <div 
-                  key={client.id}
-                  className="animate-fade-up"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <ClientCard
-                    variant="compact"
-                    name={client.name}
-                    status={client.status}
-                    lastActivity={client.lastActivity}
-                    issue={client.issue}
-                    projectCount={client.projectCount}
-                    onAIClick={() => handleClientClick(client)}
-                    onMarkReviewed={() => handleMarkReviewed(client)}
-                    onStatusChange={(newStatus) => handleStatusChange(client, newStatus)}
-                  />
+      {/* Main: Sidebar + Chat Area */}
+      <div className="flex-1 flex min-h-0">
+        {/* LEFT SIDEBAR - Context */}
+        <aside className="w-[260px] shrink-0 border-r border-border/50 bg-sidebar-background flex flex-col">
+          {/* Context Section */}
+          <div className="p-4 flex-1 overflow-auto">
+            <p className="text-[0.65rem] uppercase tracking-[0.15em] text-primary/60 font-semibold mb-4">Contexto activo</p>
+            
+            <div className="space-y-1.5">
+              <button
+                onClick={() => setAgendaOpen(true)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left group"
+              >
+                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                  <FolderOpen className="h-4 w-4 text-primary" />
                 </div>
-              ))
-            )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Proyectos activos</p>
+                  <p className="text-xs text-muted-foreground">{sortedClients.length} en seguimiento</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {/* clients section scrolls into view */}}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left group"
+              >
+                <div className="h-8 w-8 rounded-lg bg-status-orange/15 flex items-center justify-center shrink-0">
+                  <Users className="h-4 w-4 text-status-orange" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Clientes</p>
+                  {clientCount > 0 && (
+                    <p className="text-xs text-status-orange">{clientCount} requieren atención</p>
+                  )}
+                </div>
+              </button>
+
+              <button
+                onClick={() => setCalendarOpen(true)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left group"
+              >
+                <div className="h-8 w-8 rounded-lg bg-status-purple/15 flex items-center justify-center shrink-0">
+                  <Calendar className="h-4 w-4 text-status-purple" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Reuniones</p>
+                  <p className="text-xs text-muted-foreground">Esta semana: {weekEvents}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setNotesOpen(true)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/60 transition-colors text-left group"
+              >
+                <div className="h-8 w-8 rounded-lg bg-status-yellow/15 flex items-center justify-center shrink-0">
+                  <ClipboardList className="h-4 w-4 text-status-yellow" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Seguimientos</p>
+                  {pendingNotes.length > 0 && (
+                    <p className="text-xs text-status-yellow">{pendingNotes.length} pendientes</p>
+                  )}
+                </div>
+              </button>
+            </div>
+
+            {/* Historial section */}
+            <div className="mt-6">
+              <p className="text-[0.65rem] uppercase tracking-[0.15em] text-primary/60 font-semibold mb-3">Historial</p>
+              <div className="space-y-1">
+                {messages.filter(m => m.role === "user").slice(-5).reverse().map((msg, i) => (
+                  <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-secondary/40 transition-colors cursor-pointer">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <p className="text-xs text-muted-foreground truncate">{msg.content.slice(0, 40)}{msg.content.length > 40 ? "..." : ""}</p>
+                  </div>
+                ))}
+                {messages.filter(m => m.role === "user").length === 0 && (
+                  <p className="text-xs text-muted-foreground/50 px-3">Sin conversaciones recientes</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Footer with Quick Access */}
-          <div className="pt-4 mt-4 border-t border-border shrink-0 space-y-3">
-            <div className="flex gap-3">
-              <Button
-                variant="ghost"
-                onClick={() => setAgendaOpen(true)}
-                className="flex-1 h-12 gap-2 bg-primary/10 hover:bg-primary/20 text-primary justify-start"
-              >
-                <Calendar className="h-4 w-4" />
-                <span className="font-medium">{events.length} eventos</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setCalendarOpen(true)}
-                className="h-12 w-12 bg-primary/10 hover:bg-primary/20 text-primary"
-                title="Ver calendario"
-              >
-                <CalendarDays className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setNotesOpen(true)}
-                className="flex-1 h-12 gap-2 bg-status-purple/10 hover:bg-status-purple/20 text-status-purple justify-start"
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span className="font-medium">{pendingNotes.length} notas</span>
-              </Button>
-            </div>
+          {/* Send note button at bottom */}
+          <div className="p-4 border-t border-border/30">
             <Button
               onClick={() => setSendNoteOpen(true)}
               variant="ghost"
-              className="w-full h-11 bg-secondary hover:bg-secondary/80 text-foreground font-medium gap-2"
+              className="w-full h-10 bg-secondary/60 hover:bg-secondary text-foreground font-medium gap-2 text-sm"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-3.5 w-3.5" />
               Enviar nota al equipo
             </Button>
           </div>
-        </div>
+        </aside>
 
-        {/* Right Card: AI Chat */}
-        <div className="w-[500px] glass-card rounded-3xl flex flex-col overflow-hidden shrink-0 animate-fade-up-delay-1">
-          {/* AI Header */}
-          <div className="p-5 border-b border-border shrink-0">
+        {/* CENTER - Chat Area */}
+        <main className="flex-1 flex flex-col min-h-0 min-w-0">
+          {/* Chat Header */}
+          <div className="shrink-0 px-6 py-3 border-b border-border/30 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-teal flex items-center justify-center glow">
-                <Sparkles className="h-5 w-5 text-primary-foreground" />
+              <div className="h-9 w-9 rounded-xl bg-gradient-mint flex items-center justify-center">
+                <Bot className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">Tu IA empresarial</h2>
-                <p className="text-sm text-muted-foreground">Conectada a tus datos y herramientas</p>
+                <h2 className="font-semibold text-foreground text-sm">Nexus IA</h2>
+                <p className="text-xs text-muted-foreground">Especializada en tu agencia · Conectada a tu CRM</p>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs text-primary/70 px-2.5 py-1 rounded-full bg-primary/10">
+                <CheckCircle className="h-3 w-3" />
+                Datos actualizados
+              </span>
+              <button
+                onClick={() => {/* Could open settings */}}
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-all"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-          
+
+          {/* Reminders */}
+          {visibleReminders.length > 0 && (
+            <div className="px-6 pt-3 shrink-0">
+              <ReminderAlert />
+            </div>
+          )}
+
           {/* AI Chat Content */}
           <div className="flex-1 min-h-0 overflow-hidden">
             <AIChat />
           </div>
-        </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="shrink-0 py-2 text-center">
-        <span className="text-[0.65rem] text-muted-foreground/40 tracking-wider">Infrastructure by Prossium</span>
-      </footer>
+          {/* Footer */}
+          <div className="shrink-0 py-2 text-center border-t border-border/20">
+            <span className="text-[0.6rem] text-muted-foreground/40 tracking-wider">Nexus IA · Powered by Prossium</span>
+          </div>
+        </main>
+      </div>
 
       {/* Popups */}
       <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />

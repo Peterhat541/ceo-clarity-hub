@@ -28,6 +28,7 @@ export default function ParticleNetwork() {
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: -100, y: -100, active: false });
   const followersRef = useRef<FollowerParticle[]>([]);
+  const fadeRef = useRef(0); // 0 = invisible, 1 = fully visible
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -108,16 +109,20 @@ export default function ParticleNetwork() {
 
     const drawFollowers = () => {
       const followers = followersRef.current;
-      if (!mouseRef.current.active) return;
+      // Smooth fade in/out
+      const targetFade = mouseRef.current.active ? 1 : 0;
+      fadeRef.current += (targetFade - fadeRef.current) * 0.05;
+      if (fadeRef.current < 0.01) return;
 
       for (let i = 0; i < followers.length; i++) {
         const f = followers[i];
         const { h, s, l } = getHSL(f.color);
+        const alpha = f.opacity * fadeRef.current;
 
         // Glow
         const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius * 4);
-        grad.addColorStop(0, `hsla(${h}, ${s}%, ${l}%, ${f.opacity * 0.5})`);
-        grad.addColorStop(0.5, `hsla(${h}, ${s}%, ${l}%, ${f.opacity * 0.1})`);
+        grad.addColorStop(0, `hsla(${h}, ${s}%, ${l}%, ${alpha * 0.5})`);
+        grad.addColorStop(0.5, `hsla(${h}, ${s}%, ${l}%, ${alpha * 0.1})`);
         grad.addColorStop(1, `hsla(${h}, ${s}%, ${l}%, 0)`);
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.radius * 4, 0, Math.PI * 2);
@@ -127,7 +132,7 @@ export default function ParticleNetwork() {
         // Core
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${h}, ${s}%, ${l + 20}%, ${f.opacity})`;
+        ctx.fillStyle = `hsla(${h}, ${s}%, ${l + 20}%, ${alpha})`;
         ctx.fill();
       }
     };

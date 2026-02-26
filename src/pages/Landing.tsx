@@ -56,18 +56,18 @@ export default function Landing() {
       <ParticleNetwork />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center gap-8 px-6 max-w-2xl w-full">
+      <div className="relative z-10 flex flex-col items-center gap-10 px-6 max-w-3xl w-full">
         {/* Logo + Slogan */}
         <img
           src={logoSlogan}
           alt="Prossium - Menos conversaciones. Más control."
-          className={isMobile ? "w-64 h-auto" : "w-96 h-auto"}
+          className={isMobile ? "w-80 h-auto" : "w-[560px] h-auto"}
         />
 
         {/* Subtitle */}
         <p
           className={`text-white/40 font-light text-center ${
-            isMobile ? "text-sm" : "text-lg"
+            isMobile ? "text-base" : "text-xl"
           }`}
         >
           ¿Y si tu negocio tuviera su propia inteligencia artificial?

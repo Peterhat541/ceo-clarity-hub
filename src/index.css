@@ -5,34 +5,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* Prossium Design System
-   Dark Executive aesthetic - Zero Scroll Dashboard
+   Deep Forest Green corporate aesthetic - ChatGPT-style Dashboard
    All colors in HSL
 */
 
 @layer base {
   :root {
-    /* Prossium Brand Colors - #131313, #25E0B7, #FFFFFF */
-    --background: 0 0% 7.5%;
-    --foreground: 0 0% 100%;
+    /* Prossium Brand - Deep Forest Green base */
+    --background: 160 33% 5%;
+    --foreground: 0 0% 95%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 100%;
+    --card: 160 25% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 160 20% 10%;
+    --popover-foreground: 0 0% 95%;
 
     /* Mint accent - Prossium brand #25E0B7 */
     --primary: 161 75% 51%;
-    --primary-foreground: 0 0% 7.5%;
+    --primary-foreground: 160 33% 5%;
 
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 0 0% 90%;
+    --secondary: 160 20% 12%;
+    --secondary-foreground: 0 0% 85%;
 
-    --muted: 0 0% 18%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 160 15% 16%;
+    --muted-foreground: 160 10% 55%;
 
     --accent: 161 75% 51%;
-    --accent-foreground: 0 0% 7.5%;
+    --accent-foreground: 160 33% 5%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -44,28 +44,28 @@
     --status-red: 0 84% 55%;
     --status-purple: 271 65% 50%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
+    --border: 160 15% 15%;
+    --input: 160 20% 12%;
     --ring: 161 75% 51%;
 
     --radius: 1rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 9%;
-    --sidebar-foreground: 0 0% 65%;
+    /* Sidebar - ChatGPT style */
+    --sidebar-background: 160 30% 6%;
+    --sidebar-foreground: 160 10% 55%;
     --sidebar-primary: 161 75% 51%;
-    --sidebar-primary-foreground: 0 0% 7.5%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 18%;
+    --sidebar-primary-foreground: 160 33% 5%;
+    --sidebar-accent: 160 20% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 160 15% 13%;
     --sidebar-ring: 161 75% 51%;
 
     /* Gradients */
     --gradient-mint: linear-gradient(135deg, hsl(161 75% 51%) 0%, hsl(161 75% 40%) 100%);
     --gradient-mint-subtle: linear-gradient(135deg, hsl(161 75% 51% / 0.15) 0%, hsl(161 75% 40% / 0.05) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 12%) 0%, hsl(0 0% 10%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(160 25% 10%) 0%, hsl(160 25% 8%) 100%);
 
-    /* Shadows - Dark theme glow */
+    /* Shadows - Dark forest theme glow */
     --shadow-glow: 0 0 60px -15px hsl(161 75% 51% / 0.25);
     --shadow-card: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
     --shadow-soft: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
@@ -86,12 +86,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "cv11", "ss01";
-    background-image: 
-      linear-gradient(to right, hsl(0 0% 100% / 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(0 0% 100% / 0.035) 1px, transparent 1px),
-      linear-gradient(to right, hsl(0 0% 100% / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(0 0% 100% / 0.06) 1px, transparent 1px);
-    background-size: 60px 60px, 60px 60px, 240px 240px, 240px 240px;
   }
 
   /* Custom scrollbar - Dark theme */
@@ -105,25 +99,16 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(240 5% 25%);
+    background: hsl(160 15% 20%);
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(240 5% 35%);
+    background: hsl(160 15% 28%);
   }
 }
 
 @layer utilities {
-  .bg-grid {
-    background-image: 
-      linear-gradient(to right, hsl(0 0% 100% / 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(0 0% 100% / 0.035) 1px, transparent 1px),
-      linear-gradient(to right, hsl(0 0% 100% / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(0 0% 100% / 0.06) 1px, transparent 1px);
-    background-size: 60px 60px, 60px 60px, 240px 240px, 240px 240px;
-  }
-
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-mint);
@@ -149,17 +134,17 @@
     box-shadow: var(--shadow-soft);
   }
 
-  /* Glass Morphism Card - Softer effect */
+  /* Glass Morphism Card */
   .glass-card {
     @apply bg-card/70 backdrop-blur-xl border border-border/30;
     box-shadow: 0 4px 24px -4px hsl(0 0% 0% / 0.3),
-                inset 0 1px 0 0 hsl(0 0% 100% / 0.02);
+                inset 0 1px 0 0 hsl(160 30% 100% / 0.02);
   }
 
   .glass-card:hover {
     @apply border-primary/20;
-    box-shadow: 0 6px 32px -6px hsl(174 72% 40% / 0.15),
-                inset 0 1px 0 0 hsl(0 0% 100% / 0.03);
+    box-shadow: 0 6px 32px -6px hsl(161 72% 40% / 0.15),
+                inset 0 1px 0 0 hsl(160 30% 100% / 0.03);
   }
 
   /* Giant Card styles */
@@ -170,11 +155,11 @@
   /* Client row for compact lists */
   .client-row {
     @apply flex items-center gap-3 p-3 rounded-xl transition-colors;
-    background: hsl(0 0% 100% / 0.02);
+    background: hsl(160 20% 100% / 0.02);
   }
 
   .client-row:hover {
-    background: hsl(0 0% 100% / 0.05);
+    background: hsl(160 20% 100% / 0.05);
   }
 
   /* Status utilities */

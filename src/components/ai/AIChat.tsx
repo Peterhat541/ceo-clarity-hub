@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, Loader2, Square } from "lucide-react";
+import { Send, Mic, Loader2, Square, Sparkles, Users, FolderOpen, CalendarDays, TrendingUp, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClientContext } from "@/contexts/ClientContext";
@@ -24,10 +24,11 @@ interface ConversationMessage {
   content: string;
 }
 
-const suggestedQuestions = [
-  "¿Qué tengo que hacer hoy?",
-  "Dame la agenda del día",
-  "¿Qué clientes necesitan atención?",
+const suggestionCards = [
+  { icon: Users, text: "¿Qué clientes necesitan atención urgente?", color: "text-status-orange" },
+  { icon: FolderOpen, text: "Resumen de proyectos activos", color: "text-primary" },
+  { icon: CalendarDays, text: "Reuniones de seguimiento pendientes", color: "text-status-purple" },
+  { icon: TrendingUp, text: "Oportunidades de venta abiertas", color: "text-status-yellow" },
 ];
 
 export function AIChat() {
@@ -58,14 +59,9 @@ export function AIChat() {
     scrollToBottom();
   }, [messages]);
 
-  // Show recorder errors
   useEffect(() => {
     if (recorderError) {
-      toast({
-        title: "Error de micrófono",
-        description: recorderError,
-        variant: "destructive",
-      });
+      toast({ title: "Error de micrófono", description: recorderError, variant: "destructive" });
     }
   }, [recorderError]);
 
@@ -73,8 +69,6 @@ export function AIChat() {
   useEffect(() => {
     if (pendingContext) {
       const { clientName, issue } = pendingContext;
-      
-      // Fetch client ID from database
       const fetchClientId = async () => {
         const { data } = await supabase
           .from("clients")
@@ -85,28 +79,19 @@ export function AIChat() {
         
         if (data) {
           setActiveClient({ id: data.id, name: data.name });
-          
           const statusEmoji = data.status === "red" ? "🔴" : data.status === "orange" ? "🟠" : data.status === "yellow" ? "🟡" : "🟢";
           const statusText = data.status === "red" ? "crítico" : data.status === "orange" ? "atención" : data.status === "yellow" ? "pendiente" : "estable";
           
           const contextMessage: Message = {
             id: Date.now().toString(),
             role: "assistant",
-            content: `**${data.name}** ${statusEmoji} Estado: ${statusText}
-
-${issue ? `**Situación:** ${issue}` : ""}
-
-📞 **Contacto:** ${data.contact_name || "No especificado"} — ${data.phone || "Sin teléfono"}
-✉️ **Email:** ${data.email || "Sin email"}
-
-¿Qué quieres hacer con este cliente?`,
+            content: `**${data.name}** ${statusEmoji} Estado: ${statusText}\n\n${issue ? `**Situación:** ${issue}` : ""}\n\n📞 **Contacto:** ${data.contact_name || "No especificado"} — ${data.phone || "Sin teléfono"}\n✉️ **Email:** ${data.email || "Sin email"}\n\n¿Qué quieres hacer con este cliente?`,
             timestamp: new Date(),
             clientContext: data.name,
           };
           setMessages(prev => [...prev, contextMessage]);
         }
       };
-      
       fetchClientId();
       clearPendingContext();
     }
@@ -125,74 +110,45 @@ ${issue ? `**Situación:** ${issue}` : ""}
         
         if (data) {
           setActiveClient({ id: data.id, name: data.name });
-          
           const statusEmoji = data.status === "red" ? "🔴" : data.status === "orange" ? "🟠" : data.status === "yellow" ? "🟡" : "🟢";
-          
           const autoMessage: Message = {
             id: Date.now().toString(),
             role: "assistant",
-            content: `**${data.name}** seleccionado. ${statusEmoji}
-
-📞 ${data.contact_name || "Contacto"}: ${data.phone || "Sin teléfono"}
-
-¿Qué quieres saber o hacer?`,
+            content: `**${data.name}** seleccionado. ${statusEmoji}\n\n📞 ${data.contact_name || "Contacto"}: ${data.phone || "Sin teléfono"}\n\n¿Qué quieres saber o hacer?`,
             timestamp: new Date(),
             clientContext: data.name,
           };
           setMessages(prev => [...prev, autoMessage]);
         }
       };
-      
       fetchClientData();
     }
   }, [selectedClient, pendingContext, activeClient.name]);
 
   const handleMicClick = async () => {
     if (isRecording) {
-      // Stop recording and transcribe
       const audioBlob = await stopRecording();
       if (audioBlob && audioBlob.size > 0) {
         setIsTranscribing(true);
         try {
-          // Convert blob to base64
           const arrayBuffer = await audioBlob.arrayBuffer();
-          const base64 = btoa(
-            new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-          );
-
+          const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
           const { data, error } = await supabase.functions.invoke("transcribe", {
-            body: { 
-              audio: base64,
-              mimeType: audioBlob.type 
-            },
+            body: { audio: base64, mimeType: audioBlob.type },
           });
-
-          if (error) {
-            throw new Error(error.message);
-          }
-
+          if (error) throw new Error(error.message);
           if (data?.text) {
             setInput(prev => prev ? `${prev} ${data.text}` : data.text);
-            toast({
-              title: "Transcripción completada",
-              description: "Texto añadido al input.",
-            });
-          } else if (data?.error) {
-            throw new Error(data.error);
-          }
+            toast({ title: "Transcripción completada", description: "Texto añadido al input." });
+          } else if (data?.error) throw new Error(data.error);
         } catch (err) {
           console.error("Transcription error:", err);
-          toast({
-            title: "Error de transcripción",
-            description: err instanceof Error ? err.message : "No se pudo transcribir el audio.",
-            variant: "destructive",
-          });
+          toast({ title: "Error de transcripción", description: err instanceof Error ? err.message : "No se pudo transcribir el audio.", variant: "destructive" });
         } finally {
           setIsTranscribing(false);
         }
       }
     } else {
-      // Start recording
       await startRecording();
     }
   };
@@ -221,17 +177,8 @@ ${issue ? `**Situación:** ${issue}` : ""}
     const todayNotes = getTodayCEONotes();
     
     const uiSnapshot = {
-      todayEvents: todayEvents.map(e => ({
-        title: e.title,
-        type: e.type,
-        time: e.time,
-        clientName: e.clientName
-      })),
-      pendingNotes: todayNotes.filter(n => n.status === "pending").map(n => ({
-        content: n.content,
-        clientName: n.clientName,
-        author: n.author
-      })),
+      todayEvents: todayEvents.map(e => ({ title: e.title, type: e.type, time: e.time, clientName: e.clientName })),
+      pendingNotes: todayNotes.filter(n => n.status === "pending").map(n => ({ content: n.content, clientName: n.clientName, author: n.author })),
       incidentCounts: { total: 3 }
     };
 
@@ -254,14 +201,8 @@ ${issue ? `**Situación:** ${issue}` : ""}
       });
 
       if (!resp.ok) {
-        if (resp.status === 429) {
-          toast({ title: "Demasiadas solicitudes", description: "Espera un momento.", variant: "destructive" });
-          throw new Error("rate_limit");
-        }
-        if (resp.status === 402) {
-          toast({ title: "Créditos agotados", description: "Contacta con el administrador.", variant: "destructive" });
-          throw new Error("payment_required");
-        }
+        if (resp.status === 429) { toast({ title: "Demasiadas solicitudes", description: "Espera un momento.", variant: "destructive" }); throw new Error("rate_limit"); }
+        if (resp.status === 402) { toast({ title: "Créditos agotados", description: "Contacta con el administrador.", variant: "destructive" }); throw new Error("payment_required"); }
         throw new Error("Error al contactar el asistente");
       }
 
@@ -284,26 +225,14 @@ ${issue ? `**Situación:** ${issue}` : ""}
         while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
           let line = textBuffer.slice(0, newlineIndex);
           textBuffer = textBuffer.slice(newlineIndex + 1);
-
           if (line.endsWith("\r")) line = line.slice(0, -1);
           if (line.startsWith(":") || line.trim() === "") continue;
           if (!line.startsWith("data: ")) continue;
-
           const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") {
-            streamDone = true;
-            break;
-          }
-
+          if (jsonStr === "[DONE]") { streamDone = true; break; }
           try {
             const parsed = JSON.parse(jsonStr);
-            
-            // Check for actions preamble
-            if (parsed.actions) {
-              executedActions = parsed.actions;
-              continue;
-            }
-            
+            if (parsed.actions) { executedActions = parsed.actions; continue; }
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
               assistantSoFar += content;
@@ -313,19 +242,10 @@ ${issue ? `**Situación:** ${issue}` : ""}
                 if (last?.role === "assistant" && last.id === assistantId) {
                   return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: currentContent } : m);
                 }
-                return [...prev, {
-                  id: assistantId,
-                  role: "assistant" as const,
-                  content: currentContent,
-                  timestamp: new Date(),
-                  clientContext: activeClient.name || undefined,
-                }];
+                return [...prev, { id: assistantId, role: "assistant" as const, content: currentContent, timestamp: new Date(), clientContext: activeClient.name || undefined }];
               });
             }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
+          } catch { textBuffer = line + "\n" + textBuffer; break; }
         }
       }
 
@@ -349,13 +269,7 @@ ${issue ? `**Situación:** ${issue}` : ""}
                 if (last?.role === "assistant" && last.id === assistantId) {
                   return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: currentContent } : m);
                 }
-                return [...prev, {
-                  id: assistantId,
-                  role: "assistant" as const,
-                  content: currentContent,
-                  timestamp: new Date(),
-                  clientContext: activeClient.name || undefined,
-                }];
+                return [...prev, { id: assistantId, role: "assistant" as const, content: currentContent, timestamp: new Date(), clientContext: activeClient.name || undefined }];
               });
             }
           } catch { /* ignore */ }
@@ -364,18 +278,10 @@ ${issue ? `**Situación:** ${issue}` : ""}
 
       if (!assistantSoFar) {
         assistantSoFar = "No tengo respuesta.";
-        setMessages(prev => [...prev, {
-          id: assistantId,
-          role: "assistant" as const,
-          content: assistantSoFar,
-          timestamp: new Date(),
-        }]);
+        setMessages(prev => [...prev, { id: assistantId, role: "assistant" as const, content: assistantSoFar, timestamp: new Date() }]);
       }
 
-      setConversationHistory([
-        ...newHistory,
-        { role: "assistant" as const, content: assistantSoFar }
-      ].slice(-20));
+      setConversationHistory([...newHistory, { role: "assistant" as const, content: assistantSoFar }].slice(-20));
 
       if (executedActions.some((a: any) => a.tool === "create_event" && a.result?.success)) {
         window.dispatchEvent(new CustomEvent("prossium:eventCreated"));
@@ -386,12 +292,7 @@ ${issue ? `**Situación:** ${issue}` : ""}
 
     } catch (error) {
       console.error("Error sending message:", error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.",
-        timestamp: new Date(),
-      };
+      const errorMessage: Message = { id: (Date.now() + 1).toString(), role: "assistant", content: "Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.", timestamp: new Date() };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -404,42 +305,63 @@ ${issue ? `**Situación:** ${issue}` : ""}
 
   const clearContext = () => {
     setActiveClient({ id: null, name: null });
-    toast({
-      title: "Contexto limpiado",
-      description: "Ya no hay cliente activo.",
-    });
+    toast({ title: "Contexto limpiado", description: "Ya no hay cliente activo." });
   };
 
   const isMicDisabled = isLoading || isTranscribing || !isSupported;
+  const showWelcome = messages.length <= 1;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Context indicator (only when client active) */}
+      {/* Context indicator */}
       {activeClient.name && (
         <div className="px-4 py-2 border-b border-border bg-primary/5 flex items-center justify-between">
           <p className="text-xs text-primary">
             Contexto: <span className="font-medium">{activeClient.name}</span>
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearContext}
-            className="text-xs text-muted-foreground hover:text-foreground h-6 px-2"
-          >
+          <Button variant="ghost" size="sm" onClick={clearContext} className="text-xs text-muted-foreground hover:text-foreground h-6 px-2">
             Limpiar
           </Button>
         </div>
       )}
 
-      {/* Messages */}
+      {/* Messages or Welcome */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
+        {showWelcome && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            {/* Sparkle icon */}
+            <div className="h-16 w-16 rounded-2xl bg-gradient-mint flex items-center justify-center mb-6 glow">
+              <Sparkles className="h-8 w-8 text-primary-foreground" />
+            </div>
+            
+            {/* Welcome text */}
+            <h1 className="text-2xl font-semibold text-foreground mb-2">
+              Hola Carlos, soy tu <span className="text-gradient">IA de empresa</span>
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-md mb-8">
+              Estoy conectada a tus datos, clientes, proyectos y herramientas. Pregúntame lo que necesites saber sobre tu negocio.
+            </p>
+
+            {/* 2x2 Suggestion Cards */}
+            <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+              {suggestionCards.map((card) => (
+                <button
+                  key={card.text}
+                  onClick={() => handleSuggestion(card.text)}
+                  className="flex flex-col items-start gap-2 p-4 rounded-xl border border-border/50 bg-card/50 hover:bg-secondary/60 hover:border-primary/30 transition-all text-left group"
+                >
+                  <card.icon className={cn("h-5 w-5", card.color)} />
+                  <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-relaxed">{card.text}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!showWelcome && messages.map((message) => (
           <div
             key={message.id}
-            className={cn(
-              "animate-fade-in",
-              message.role === "user" ? "flex justify-end" : ""
-            )}
+            className={cn("animate-fade-in", message.role === "user" ? "flex justify-end" : "")}
           >
             <div
               className={cn(
@@ -468,26 +390,8 @@ ${issue ? `**Situación:** ${issue}` : ""}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestions */}
-      {messages.length <= 1 && (
-        <div className="px-4 pb-2">
-          <div className="flex flex-wrap gap-2">
-            {suggestedQuestions.map((question) => (
-              <button
-                key={question}
-                onClick={() => handleSuggestion(question)}
-                className="text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
-              >
-                {question}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Input */}
-      <div className="p-4 border-t border-border">
-        {/* Recording indicator */}
+      <div className="p-4 border-t border-border/30">
         {isRecording && (
           <div className="mb-2 flex items-center gap-2 text-destructive animate-pulse">
             <div className="w-2 h-2 rounded-full bg-destructive" />
@@ -507,31 +411,19 @@ ${issue ? `**Situación:** ${issue}` : ""}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder={activeClient.name 
-              ? `Pregunta sobre ${activeClient.name}...` 
-              : "Pregunta sobre cualquier cliente..."
-            }
+            placeholder="Pregunta sobre tus clientes, proyectos, reuniones..."
             disabled={isLoading || isRecording}
             className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all disabled:opacity-50"
           />
           <Button
             variant={isRecording ? "destructive" : "outline"}
             size="icon"
-            className={cn(
-              "h-12 w-12 rounded-xl transition-all",
-              isRecording && "animate-pulse"
-            )}
+            className={cn("h-12 w-12 rounded-xl transition-all", isRecording && "animate-pulse")}
             onClick={handleMicClick}
             disabled={isMicDisabled}
             title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Iniciar grabación de voz"}
           >
-            {isTranscribing ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : isRecording ? (
-              <Square className="w-5 h-5" />
-            ) : (
-              <Mic className="w-5 h-5" />
-            )}
+            {isTranscribing ? <Loader2 className="w-5 h-5 animate-spin" /> : isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </Button>
           <Button
             onClick={handleSend}
@@ -539,12 +431,24 @@ ${issue ? `**Situación:** ${issue}` : ""}
             size="icon"
             className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90"
           >
-            {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </Button>
+        </div>
+        
+        {/* Attach + Voice labels */}
+        <div className="flex gap-4 mt-2 px-1">
+          <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <Paperclip className="h-3.5 w-3.5" />
+            Adjuntar
+          </button>
+          <button 
+            onClick={handleMicClick}
+            disabled={isMicDisabled}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            <Mic className="h-3.5 w-3.5" />
+            Voz
+          </button>
         </div>
       </div>
     </div>

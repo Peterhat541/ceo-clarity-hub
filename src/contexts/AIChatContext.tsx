@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserContext } from "@/contexts/UserContext";
 
@@ -52,7 +52,13 @@ export function AIChatProvider({ children }: { children: ReactNode }) {
   const [activeClient, setActiveClient] = useState<ActiveClient>({ id: null, name: null });
   const [input, setInput] = useState("");
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const activeConversationIdRef = useRef<string | null>(null);
   const [conversationsList, setConversationsList] = useState<Conversation[]>([]);
+
+  const setActiveConvId = (id: string | null) => {
+    setActiveConversationId(id);
+    activeConversationIdRef.current = id;
+  };
 
   // Load conversations list when user changes
   useEffect(() => {
@@ -60,7 +66,7 @@ export function AIChatProvider({ children }: { children: ReactNode }) {
       setMessages([]);
       setConversationHistory([]);
       setConversationsList([]);
-      setActiveConversationId(null);
+      setActiveConvId(null);
       return;
     }
 
@@ -75,10 +81,10 @@ export function AIChatProvider({ children }: { children: ReactNode }) {
         setConversationsList(data);
         // Auto-select most recent conversation
         await loadConversationMessages(data[0].id);
-        setActiveConversationId(data[0].id);
+        setActiveConvId(data[0].id);
       } else {
         setConversationsList([]);
-        setActiveConversationId(null);
+        setActiveConvId(null);
         showWelcomeMessage();
       }
     };
@@ -133,20 +139,20 @@ export function AIChatProvider({ children }: { children: ReactNode }) {
 
   const createNewConversation = useCallback(async () => {
     if (!activeUser) return;
-    setActiveConversationId(null);
+    setActiveConvId(null);
     showWelcomeMessage();
     setConversationHistory([]);
   }, [activeUser]);
 
   const switchConversation = useCallback(async (id: string) => {
     if (id === activeConversationId) return;
-    setActiveConversationId(id);
+    setActiveConvId(id);
     await loadConversationMessages(id);
   }, [activeConversationId]);
 
   // Ensure a conversation exists (create if needed), returns conversation id
   const ensureConversation = useCallback(async (firstMessage?: string): Promise<string> => {
-    if (activeConversationId) return activeConversationId;
+    if (activeConversationIdRef.current) return activeConversationIdRef.current;
     if (!activeUser) throw new Error("No active user");
 
     const title = firstMessage ? firstMessage.slice(0, 40) + (firstMessage.length > 40 ? "..." : "") : "Nueva conversación";
@@ -157,15 +163,14 @@ export function AIChatProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error || !data) throw new Error("Failed to create conversation");
-    setActiveConversationId(data.id);
+    setActiveConvId(data.id);
     await refreshConversationsList();
     return data.id;
-  }, [activeConversationId, activeUser]);
+  }, [activeUser]);
 
   const saveMessage = useCallback(async (role: string, content: string, clientContext?: string) => {
     if (!activeUser) return;
-    // ensureConversation should have been called before this
-    const convId = activeConversationId;
+    const convId = activeConversationIdRef.current;
     if (!convId) return;
 
     await supabase.from("user_chat_messages").insert({
@@ -176,10 +181,9 @@ export function AIChatProvider({ children }: { children: ReactNode }) {
       conversation_id: convId,
     } as any);
 
-    // Update conversation's updated_at
     await supabase.from("conversations").update({ updated_at: new Date().toISOString() } as any).eq("id", convId);
     await refreshConversationsList();
-  }, [activeUser, activeConversationId]);
+  }, [activeUser]);
 
   return (
     <AIChatContext.Provider

@@ -224,7 +224,7 @@ export function AIChat() {
   const showWelcome = messages.length <= 1;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex flex-col h-full">
       {activeClient.name && (
         <div className="px-4 py-2 border-b border-border bg-primary/5 flex items-center justify-between">
           <p className="text-xs text-primary">Contexto: <span className="font-medium">{activeClient.name}</span></p>
@@ -232,14 +232,14 @@ export function AIChat() {
         </div>
       )}
 
-      <div className="sticky top-0 z-10 flex justify-center py-2 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <AIBrainSphere size={44} isThinking={true} />
+      {/* Esfera permanente centrada como fondo */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-40">
+        <AIBrainSphere size={120} isThinking={true} />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="relative z-10 flex-1 overflow-y-auto p-4 space-y-4">
         {showWelcome && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <AIBrainSphere size={140} isThinking={true} />
             <h1 className="text-2xl font-semibold text-foreground mb-2 mt-2">
               Hola Carlos, soy tu <span className="text-gradient">IA de empresa</span>
             </h1>
@@ -265,11 +265,6 @@ export function AIChat() {
           <>
             {messages.map((message) => (
               <div key={message.id} className={cn("animate-fade-in", message.role === "user" ? "flex justify-end" : "flex items-start gap-3")}>
-                {message.role === "assistant" && (
-                  <div className="flex-shrink-0 mt-1">
-                    <AIBrainSphere size={36} isThinking={true} />
-                  </div>
-                )}
                 <div className={cn("max-w-[80%] rounded-2xl px-4 py-3", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground")}>
                   <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -279,11 +274,8 @@ export function AIChat() {
             ))}
             
             {isLoading && (
-              <div className="animate-fade-in flex items-start gap-3 py-2">
-                <div className="flex-shrink-0">
-                  <AIBrainSphere size={36} isThinking={true} />
-                </div>
-                <span className="text-sm text-muted-foreground mt-2">Pensando...</span>
+              <div className="animate-fade-in flex items-center gap-3 py-2">
+                <span className="text-sm text-muted-foreground">Pensando...</span>
               </div>
             )}
           </>

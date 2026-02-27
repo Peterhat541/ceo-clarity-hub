@@ -39,7 +39,7 @@ export function AIChat() {
   const { getTodayCEONotes } = useNoteContext();
   const {
     messages, setMessages, conversationHistory, setConversationHistory,
-    activeClient, setActiveClient, input, setInput, saveMessage,
+    activeClient, setActiveClient, input, setInput, saveMessage, ensureConversation,
   } = useAIChatContext();
   const { activeUser } = useUserContext();
   const [isLoading, setIsLoading] = useState(false);
@@ -119,6 +119,9 @@ export function AIChat() {
     const userInput = input;
     setInput("");
     setIsLoading(true);
+    
+    // Ensure conversation exists before saving
+    await ensureConversation(userInput);
     saveMessage("user", userInput, activeClient.name || undefined);
 
     const newHistory: ConversationMessage[] = [...conversationHistory, { role: "user", content: userInput }];
@@ -225,7 +228,7 @@ export function AIChat() {
   const handleSuggestion = (question: string) => { setInput(question); };
   const clearContext = () => { setActiveClient({ id: null, name: null }); toast({ title: "Contexto limpiado" }); };
   const isMicDisabled = isLoading || isTranscribing || !isSupported;
-  const showWelcome = messages.length <= 1;
+  const showWelcome = messages.length <= 1 || (messages.length === 1 && messages[0].id === "welcome");
 
   return (
     <div className="flex flex-col h-full">

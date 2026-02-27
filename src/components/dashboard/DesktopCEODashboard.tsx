@@ -15,8 +15,8 @@ import {
   FolderOpen,
   Users,
   ClipboardList,
-  Clock,
-  Settings,
+  MessageSquare,
+  Plus,
   Bot,
   CheckCircle,
 } from "lucide-react";
@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Status } from "./StatusBadge";
 import { useAIChatContext } from "@/contexts/AIChatContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface ClientData {
   id: string;
@@ -52,7 +53,7 @@ export function DesktopCEODashboard() {
   const { events } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
   const { activeReminders } = useReminderContext();
-  const { messages } = useAIChatContext();
+  const { messages, conversationsList, activeConversationId, switchConversation, createNewConversation } = useAIChatContext();
 
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
   const visibleReminders = activeReminders.filter((r) => !r.dismissed);
@@ -234,13 +235,23 @@ export function DesktopCEODashboard() {
             <div className="mt-6">
               <p className="text-[0.65rem] uppercase tracking-[0.15em] text-primary/60 font-semibold mb-3">Historial</p>
               <div className="space-y-1">
-                {messages.filter(m => m.role === "user").slice(-5).reverse().map((msg, i) => (
-                  <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-secondary/40 transition-colors cursor-pointer">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <p className="text-xs text-muted-foreground truncate">{msg.content.slice(0, 40)}{msg.content.length > 40 ? "..." : ""}</p>
+                {conversationsList.map((conv) => (
+                  <div
+                    key={conv.id}
+                    onClick={() => switchConversation(conv.id)}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-secondary/40 transition-colors cursor-pointer",
+                      activeConversationId === conv.id && "bg-secondary/60 border border-primary/20"
+                    )}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-foreground truncate">{conv.title}</p>
+                      <p className="text-[0.6rem] text-muted-foreground/60">{new Date(conv.updated_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</p>
+                    </div>
                   </div>
                 ))}
-                {messages.filter(m => m.role === "user").length === 0 && (
+                {conversationsList.length === 0 && (
                   <p className="text-xs text-muted-foreground/50 px-3">Sin conversaciones recientes</p>
                 )}
               </div>
@@ -272,8 +283,12 @@ export function DesktopCEODashboard() {
                 <CheckCircle className="h-3 w-3" />
                 Datos actualizados
               </span>
-              <button className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-all">
-                <Settings className="h-4 w-4" />
+              <button
+                onClick={createNewConversation}
+                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 px-2.5 py-1.5 rounded-lg hover:bg-primary/10 transition-all"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nueva conversación
               </button>
             </div>
           </div>

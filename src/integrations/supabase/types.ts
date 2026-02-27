@@ -174,6 +174,38 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_access_codes: {
         Row: {
           code: string
@@ -308,6 +340,7 @@ export type Database = {
         Row: {
           client_context: string | null
           content: string
+          conversation_id: string | null
           created_at: string
           id: string
           role: string
@@ -316,6 +349,7 @@ export type Database = {
         Insert: {
           client_context?: string | null
           content: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           role: string
@@ -324,12 +358,20 @@ export type Database = {
         Update: {
           client_context?: string | null
           content?: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           role?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_chat_messages_user_id_fkey"
             columns: ["user_id"]

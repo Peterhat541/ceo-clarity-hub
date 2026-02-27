@@ -16,10 +16,15 @@ import {
   Settings,
   LogOut,
   Bot,
+  Plus,
+  History,
 } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
+import { useAIChatContext } from "@/contexts/AIChatContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import ssIcon from "@/assets/ss-icon.png";
 
 // Mock data
@@ -49,10 +54,12 @@ export function MobileHome() {
   const [sendNoteOpen, setSendNoteOpen] = useState(false);
   const [clientsOpen, setClientsOpen] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<typeof clientsAttention[0] | null>(null);
 
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
+  const { conversationsList, activeConversationId, switchConversation, createNewConversation } = useAIChatContext();
 
   const todayEvents = getTodayEvents();
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
@@ -86,6 +93,13 @@ export function MobileHome() {
         </div>
         <div className="flex items-center gap-1.5">
           <button
+            onClick={() => setHistoryOpen(true)}
+            className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+            title="Historial"
+          >
+            <History className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => navigate("/admin")}
             className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
             title="Configuración"
@@ -105,7 +119,7 @@ export function MobileHome() {
       {/* AI Chat Section */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* AI Header */}
-        <div className="shrink-0 px-5 py-3 border-b border-border/30">
+        <div className="shrink-0 px-5 py-3 border-b border-border/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-gradient-mint flex items-center justify-center glow">
               <Bot className="h-5 w-5 text-primary-foreground" />
@@ -115,6 +129,13 @@ export function MobileHome() {
               <p className="text-xs text-muted-foreground">Conectada a tus datos y herramientas</p>
             </div>
           </div>
+          <button
+            onClick={() => { createNewConversation(); }}
+            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 px-2 py-1.5 rounded-lg hover:bg-primary/10 transition-all"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden min-[400px]:inline">Nueva</span>
+          </button>
         </div>
         
         {/* AI Chat Content */}
@@ -133,6 +154,45 @@ export function MobileHome() {
       <AgendaPopup isOpen={agendaOpen} onClose={() => setAgendaOpen(false)} />
       <TeamNotesPopup isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
       <SendNotePopup isOpen={sendNoteOpen} onClose={() => setSendNoteOpen(false)} />
+
+      {/* History Sheet */}
+      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+        <SheetContent side="left" className="w-[300px] p-0 flex flex-col">
+          <SheetHeader className="p-4 pb-2 border-b border-border/30">
+            <SheetTitle className="text-sm">Conversaciones</SheetTitle>
+          </SheetHeader>
+          <div className="p-3">
+            <button
+              onClick={() => { createNewConversation(); setHistoryOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva conversación
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
+            {conversationsList.map((conv) => (
+              <button
+                key={conv.id}
+                onClick={() => { switchConversation(conv.id); setHistoryOpen(false); }}
+                className={cn(
+                  "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-secondary/60 transition-colors text-left",
+                  activeConversationId === conv.id && "bg-secondary/60 border border-primary/20"
+                )}
+              >
+                <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-foreground truncate">{conv.title}</p>
+                  <p className="text-[0.6rem] text-muted-foreground/60">{new Date(conv.updated_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</p>
+                </div>
+              </button>
+            ))}
+            {conversationsList.length === 0 && (
+              <p className="text-xs text-muted-foreground/50 px-3 py-4 text-center">Sin conversaciones aún</p>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Clients Modal */}
       <Dialog open={clientsOpen} onOpenChange={setClientsOpen}>

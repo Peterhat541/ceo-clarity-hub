@@ -134,7 +134,9 @@ const tools = [
 ];
 
 // System prompt for the AI
-const systemPrompt = `Eres el asistente ejecutivo de Juan, CEO de Processia. Empleados: María, Luis, Marta.
+const baseSystemPrompt = `Eres el asistente ejecutivo de {user_name} ({user_role}) en Processia.
+
+{user_ai_instructions}
 
 CONSULTA DE DATOS:
 - SIEMPRE usa las herramientas para consultar datos. NUNCA respondas de memoria.
@@ -174,7 +176,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, activeClientId, activeClientName, conversationHistory, uiSnapshot } = await req.json();
+    const { message, activeClientId, activeClientName, conversationHistory, uiSnapshot, userId, userName, userRole, aiInstructions } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -189,23 +191,22 @@ serve(async (req) => {
     const currentTime = now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
     const currentDate = now.toISOString().split("T")[0];
 
-    // Build messages with context
+    // Build system prompt with user context
+    const systemPrompt = baseSystemPrompt
+      .replace("{user_name}", userName || "Usuario")
+      .replace("{user_role}", userRole || "Empleado")
+      .replace("{user_ai_instructions}", aiInstructions ? `INSTRUCCIONES PERSONALIZADAS DEL USUARIO:\n${aiInstructions}` : "")
+      .replace("{current_time}", currentTime)
+      .replace("{current_date}", currentDate);
+
     const contextInfo = activeClientName 
       ? `\n[CONTEXTO ACTIVO: Cliente "${activeClientName}" (ID: ${activeClientId || "desconocido"})]`
       : "";
     
     const messages = [
-      { 
-        role: "system", 
-        content: systemPrompt
-          .replace("{current_time}", currentTime)
-          .replace("{current_date}", currentDate)
-      },
-      ...(conversationHistory || []).slice(-10), // Last 10 messages for context
-      { 
-        role: "user", 
-        content: message + contextInfo
-      }
+      { role: "system", content: systemPrompt },
+      ...(conversationHistory || []).slice(-10),
+      { role: "user", content: message + contextInfo }
     ];
 
     console.log("Sending request to AI gateway with message:", message);
@@ -418,7 +419,7 @@ serve(async (req) => {
               start_at: args.start_at,
               reminder_minutes: args.reminder_minutes || 15,
               notes: args.notes || null,
-              created_by: "Juan"
+              created_by: userName || "Usuario"
             }).select().single();
 
             if (error) {
@@ -431,7 +432,7 @@ serve(async (req) => {
                   client_id: args.client_id,
                   type: args.type === "call" ? "call" : args.type === "meeting" ? "meeting" : "event",
                   summary: `Evento creado: ${args.title}`,
-                  created_by: "Juan",
+                  created_by: userName || "Usuario",
                   visible_to: "both"
                 });
               }
@@ -449,13 +450,13 @@ serve(async (req) => {
                   month: "long"
                 });
                 const eventTypeLabel = args.type === "meeting" ? "reunión" : "llamada";
-                const clientInfo = args.client_name ? ` Cliente: ${args.client_name}.` : "";
-                
+                 const clientInfo = args.client_name ? ` Cliente: ${args.client_name}.` : "";
+                 const creatorName = userName || "Usuario";
                 await supabase.from("notes").insert({
-                  text: `📅 Nueva ${eventTypeLabel} agendada por Juan: "${args.title}" el ${eventDateStr} a las ${eventTime}.${clientInfo}`,
+                  text: `📅 Nueva ${eventTypeLabel} agendada por ${creatorName}: "${args.title}" el ${eventDateStr} a las ${eventTime}.${clientInfo}`,
                   visible_to: "team",
                   target_employee: null,
-                  created_by: "Juan",
+                  created_by: creatorName,
                   status: "pending",
                   due_at: args.start_at,
                   client_id: args.client_id || null
@@ -483,7 +484,7 @@ serve(async (req) => {
               due_at: args.due_at || null,
               visible_to: args.visible_to,
               target_employee: args.target_employee || null,
-              created_by: "CEO",
+              created_by: userName || "Usuario",
               status: "pending"
             }).select().single();
 
@@ -657,7 +658,7 @@ serve(async (req) => {
               client_id: args.client_id,
               type: args.type,
               summary: args.summary,
-              created_by: "CEO",
+              created_by: userName || "Usuario",
               visible_to: args.visible_to
             }).select().single();
 

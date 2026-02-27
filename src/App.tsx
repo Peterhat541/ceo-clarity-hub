@@ -9,8 +9,11 @@ import { NoteProvider } from "@/contexts/NoteContext";
 import { ReminderProvider } from "@/contexts/ReminderContext";
 import { CEONoteProvider } from "@/contexts/CEONoteContext";
 import { AIChatProvider } from "@/contexts/AIChatContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { DemoGuard } from "@/components/auth/DemoGuard";
+import { UserGuard } from "@/components/auth/UserGuard";
 import Landing from "./pages/Landing";
+import UserSelect from "./pages/UserSelect";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -20,34 +23,36 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ClientProvider>
-        <EventProvider>
-          <NoteProvider>
-            <ReminderProvider>
-              <CEONoteProvider>
-                <AIChatProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                    <Routes>
-                      <Route path="/landing" element={<Landing />} />
-                      <Route path="/" element={<DemoGuard><Index /></DemoGuard>} />
-                      <Route path="/admin" element={<DemoGuard><Admin /></DemoGuard>} />
-                      {/* Redirect old routes */}
-                      <Route path="/ceo" element={<Navigate to="/" replace />} />
-                      <Route path="/home" element={<Navigate to="/" replace />} />
-                      <Route path="/incidencias" element={<Navigate to="/" replace />} />
-                      <Route path="/clientes-rojo" element={<Navigate to="/" replace />} />
-                      <Route path="/fechas" element={<Navigate to="/" replace />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </BrowserRouter>
-                </AIChatProvider>
-              </CEONoteProvider>
-            </ReminderProvider>
-          </NoteProvider>
-        </EventProvider>
-      </ClientProvider>
+      <UserProvider>
+        <ClientProvider>
+          <EventProvider>
+            <NoteProvider>
+              <ReminderProvider>
+                <CEONoteProvider>
+                  <AIChatProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                      <Routes>
+                        <Route path="/landing" element={<Landing />} />
+                        <Route path="/select-user" element={<DemoGuard><UserSelect /></DemoGuard>} />
+                        <Route path="/" element={<DemoGuard><UserGuard><Index /></UserGuard></DemoGuard>} />
+                        <Route path="/admin" element={<DemoGuard><UserGuard><Admin /></UserGuard></DemoGuard>} />
+                        <Route path="/ceo" element={<Navigate to="/" replace />} />
+                        <Route path="/home" element={<Navigate to="/" replace />} />
+                        <Route path="/incidencias" element={<Navigate to="/" replace />} />
+                        <Route path="/clientes-rojo" element={<Navigate to="/" replace />} />
+                        <Route path="/fechas" element={<Navigate to="/" replace />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </BrowserRouter>
+                  </AIChatProvider>
+                </CEONoteProvider>
+              </ReminderProvider>
+            </NoteProvider>
+          </EventProvider>
+        </ClientProvider>
+      </UserProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

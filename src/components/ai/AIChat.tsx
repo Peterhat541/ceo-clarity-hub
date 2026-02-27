@@ -7,6 +7,7 @@ import { useClientContext } from "@/contexts/ClientContext";
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { useAIChatContext } from "@/contexts/AIChatContext";
+import { useUserContext } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -38,8 +39,9 @@ export function AIChat() {
   const { getTodayCEONotes } = useNoteContext();
   const {
     messages, setMessages, conversationHistory, setConversationHistory,
-    activeClient, setActiveClient, input, setInput,
+    activeClient, setActiveClient, input, setInput, saveMessage,
   } = useAIChatContext();
+  const { activeUser } = useUserContext();
   const [isLoading, setIsLoading] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -117,6 +119,7 @@ export function AIChat() {
     const userInput = input;
     setInput("");
     setIsLoading(true);
+    saveMessage("user", userInput, activeClient.name || undefined);
 
     const newHistory: ConversationMessage[] = [...conversationHistory, { role: "user", content: userInput }];
     const todayEvents = getTodayEvents();
@@ -132,7 +135,7 @@ export function AIChat() {
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ message: userInput, activeClientId: activeClient.id, activeClientName: activeClient.name, conversationHistory: newHistory.slice(-10), uiSnapshot }),
+        body: JSON.stringify({ message: userInput, activeClientId: activeClient.id, activeClientName: activeClient.name, conversationHistory: newHistory.slice(-10), uiSnapshot, userId: activeUser?.id, userName: activeUser?.name, userRole: activeUser?.role, aiInstructions: activeUser?.ai_instructions }),
       });
 
       if (!resp.ok) {
@@ -210,6 +213,7 @@ export function AIChat() {
       }
 
       setConversationHistory([...newHistory, { role: "assistant" as const, content: assistantSoFar }].slice(-20));
+      saveMessage("assistant", assistantSoFar, activeClient.name || undefined);
       if (executedActions.some((a: any) => a.tool === "create_event" && a.result?.success)) window.dispatchEvent(new CustomEvent("prossium:eventCreated"));
       if (executedActions.some((a: any) => a.tool === "create_note" && a.result?.success)) window.dispatchEvent(new CustomEvent("prossium:noteCreated"));
     } catch (error) {
@@ -237,7 +241,7 @@ export function AIChat() {
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <AIBrainSphere size={140} isThinking={false} />
             <h1 className="text-2xl font-semibold text-foreground mb-2 mt-2">
-              Hola Carlos, soy tu <span className="text-gradient">IA de empresa</span>
+              Hola {activeUser?.name || ""}. Soy tu <span className="text-gradient">IA de empresa</span>
             </h1>
             <p className="text-sm text-muted-foreground max-w-md mb-8">
               Estoy conectada a tus datos, clientes, proyectos y herramientas. Pregúntame lo que necesites.

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUserContext, AppUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, User, ArrowRight } from "lucide-react";
@@ -11,6 +12,7 @@ const defaultColors = ["#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#
 
 export default function UserSelect() {
   const { users, setActiveUser, loadUsers } = useUserContext();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -31,12 +33,14 @@ export default function UserSelect() {
     } else {
       await loadUsers();
       setActiveUser(data as AppUser);
+      navigate("/");
     }
     setSaving(false);
   };
 
   const handleSelect = (user: AppUser) => {
     setActiveUser(user);
+    navigate("/");
   };
 
   return (

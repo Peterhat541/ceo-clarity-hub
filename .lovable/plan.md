@@ -1,52 +1,17 @@
 
 
-## Plan: Sistema multiusuario con historial de chat individual
+## Plan: Input estilo Gemini debajo de las sugerencias
 
-### Resumen
-Crear un sistema donde cada empleado (Carlos, Pedro, María, Paula) tiene su propio perfil con chat personalizado. Comparten todos los datos (clientes, eventos, notas) pero cada uno tiene su historial de conversación separado. Incluye formulario para crear nuevos usuarios con nombre, rol e instrucciones para la IA.
+### Cambio
+Mover la barra de input de la parte inferior fija a justo debajo de las tarjetas de sugerencias en la pantalla de bienvenida, dentro de un contenedor redondeado estilo Gemini. Cuando hay conversación activa, el input se mantiene abajo pero con el mismo estilo visual.
 
-### Cambios en la base de datos
+### Implementación en `AIChat.tsx`
 
-**Nueva tabla `app_users`:**
-- `id` (uuid, PK)
-- `name` (text) — nombre del empleado
-- `role` (text) — rol en la empresa (ej: "Director comercial")
-- `ai_instructions` (text) — cómo quiere que actúe la IA (ej: "Sé directo y usa datos")
-- `avatar_color` (text) — color para identificar visualmente
-- `created_at` (timestamp)
+1. **Pantalla de bienvenida**: Mover el input dentro del bloque `showWelcome`, justo después del grid de sugerencias. Envolverlo en un contenedor con bordes redondeados, fondo sutil (`bg-card/80 border border-border/50 rounded-2xl`), con el textarea/input y los botones de mic/enviar dentro, estilo compacto como Gemini.
 
-**Nueva tabla `user_chat_messages`:**
-- `id` (uuid, PK)
-- `user_id` (uuid, FK → app_users)
-- `role` (text) — "user" o "assistant"
-- `content` (text)
-- `client_context` (text, nullable)
-- `created_at` (timestamp)
+2. **Pantalla de conversación**: Mantener el input abajo pero aplicar el mismo estilo visual redondeado.
 
-Insertar los 4 usuarios iniciales: Carlos, Pedro, María, Paula.
+3. **Estilo del contenedor**: Rectángulo redondeado (`rounded-2xl`), padding interno, input sin bordes propios (transparente), botones de mic y enviar alineados a la derecha dentro del contenedor. El input ocupa todo el ancho del contenedor.
 
-### Cambios en frontend
-
-1. **Nuevo contexto `UserContext`** — almacena el usuario activo seleccionado, lo persiste en `sessionStorage`
-
-2. **Pantalla de selección de usuario** — al entrar (después del código demo), si no hay usuario seleccionado, muestra tarjetas con cada empleado para elegir quién eres. Botón "Crear nuevo usuario" abre formulario con campos: nombre, rol, instrucciones para la IA
-
-3. **`AIChatContext`** — modificar para cargar/guardar mensajes en `user_chat_messages` según el usuario activo. Al cambiar de usuario, carga su historial
-
-4. **`AIChat.tsx`** — el saludo cambia dinámicamente: "Hola, {nombre}" según el usuario activo
-
-5. **`HeaderNavigation.tsx`** — mostrar el nombre del usuario activo en lugar de "Carlos Ruiz" hardcodeado. Añadir opción para cambiar de usuario
-
-6. **Edge function `ai-chat`** — recibir `userId` y `userName` + `userRole` + `aiInstructions`. Personalizar el system prompt con esos datos. Guardar mensajes en `user_chat_messages`
-
-### Flujo
-```text
-Demo code → Seleccionar usuario → Dashboard con chat personalizado
-                ↓
-        [Crear nuevo usuario]
-        → Nombre: ____
-        → Rol: ____
-        → ¿Cómo quieres que actúe la IA?: ____
-        → Guardar → Seleccionar automáticamente
-```
+4. **Layout**: En welcome, cambiar de `flex-col h-full` con input fijo abajo a que el input forme parte del flujo centrado. Eliminar el `border-t` del input en welcome.
 

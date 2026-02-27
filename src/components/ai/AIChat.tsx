@@ -228,7 +228,7 @@ export function AIChat() {
   const handleSuggestion = (question: string) => { setInput(question); };
   const clearContext = () => { setActiveClient({ id: null, name: null }); toast({ title: "Contexto limpiado" }); };
   const isMicDisabled = isLoading || isTranscribing || !isSupported;
-  const showWelcome = messages.length <= 1 || (messages.length === 1 && messages[0].id === "welcome");
+  const showWelcome = messages.length === 0 || (messages.length === 1 && messages[0].id === "welcome");
 
   return (
     <div className="flex flex-col h-full">

@@ -233,9 +233,12 @@ export function AIChat() {
       )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex justify-center py-2">
+          <AIBrainSphere size={showWelcome ? 140 : 72} isThinking={isLoading} />
+        </div>
+
         {showWelcome && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <AIBrainSphere size={140} isThinking={false} />
             <h1 className="text-2xl font-semibold text-foreground mb-2 mt-2">
               Hola Carlos, soy tu <span className="text-gradient">IA de empresa</span>
             </h1>

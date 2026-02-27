@@ -1,23 +1,24 @@
 
+Objetivo: que la esfera no desaparezca y permanezca siempre visible cuando se muestra el bloque de bienvenida (“Hola, Carlos…”).
 
-## Plan: Corregir navegación al historial de conversaciones
+1) Corregir la causa de corte de animación en `src/components/ai/AIBrainSphere.tsx`
+- Ajustar el dibujo de órbitas para no pasar radios negativos al canvas.
+- Cambiar `ctx.ellipse(..., r * Math.cos(tilt), ...)` por una versión segura:
+  - `radiusY = Math.max(0.1, Math.abs(r * Math.cos(tilt)))`
+- Mantener el ángulo de rotación visual por separado para conservar el efecto 3D.
+- Envolver el frame de animación en protección mínima (`try/catch`) para evitar que un frame inválido congele la esfera completa.
 
-### Problema
-Al hacer clic en una conversación del historial, se muestra la pantalla de bienvenida ("Hola Carlos, soy tu IA") en vez de los mensajes de esa conversación. Dos bugs:
+2) Mantener la esfera fija en la vista de bienvenida en `src/components/ai/AIChat.tsx`
+- Dejar `AIBrainSphere` dentro del bloque de bienvenida, pero con contenedor estable y clases fijas para que no “parpadee” en rerenders.
+- No condicionar su render por timers ni estados transitorios; solo por `showWelcome`.
+- Mantenerla por encima del título exactamente en la misma posición visual actual.
 
-1. **`showWelcome` demasiado agresivo** en `AIChat.tsx` línea 231: `messages.length <= 1` muestra welcome incluso con 1 mensaje real cargado. Debería solo mostrar welcome cuando el único mensaje es el de bienvenida.
+3) Verificación funcional después del cambio
+- Entrar al perfil/chat y esperar >15s en bienvenida: la esfera debe seguir animando sin desaparecer.
+- Repetir navegando fuera y dentro del perfil: la esfera debe volver y mantenerse estable.
+- Confirmar que el resto del chat (mensajes, historial, envío) no cambia de comportamiento.
 
-2. **`saveMessage` usa `activeConversationId` stale** en `AIChatContext.tsx`: el `useCallback` captura el valor anterior de `activeConversationId` por el closure, así que tras crear una conversación nueva con `ensureConversation`, `saveMessage` todavía ve `null`.
-
-### Cambios
-
-**`src/components/ai/AIChat.tsx`** — Línea 231:
-- Cambiar condición de `showWelcome` a: solo mostrar welcome cuando hay exactamente 1 mensaje y su `id === "welcome"`, o cuando no hay mensajes.
-```ts
-const showWelcome = messages.length === 0 || (messages.length === 1 && messages[0].id === "welcome");
-```
-
-**`src/contexts/AIChatContext.tsx`** — Corregir closure stale:
-- Usar un `ref` para `activeConversationId` que `saveMessage` pueda leer siempre el valor actual, en vez de depender del closure del `useCallback`.
-- Actualizar `saveMessage` para leer de `activeConversationIdRef.current`.
-
+Sección técnica (resumen)
+- Archivo 1: `AIBrainSphere.tsx` → fix de canvas para radios no negativos + robustez del loop de animación.
+- Archivo 2: `AIChat.tsx` → garantizar render persistente de la esfera mientras `showWelcome === true`.
+- No requiere cambios de base de datos ni backend.

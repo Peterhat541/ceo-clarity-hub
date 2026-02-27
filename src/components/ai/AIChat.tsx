@@ -257,21 +257,32 @@ export function AIChat() {
           </div>
         )}
 
-        {!showWelcome && messages.map((message) => (
-          <div key={message.id} className={cn("animate-fade-in", message.role === "user" ? "flex justify-end" : "")}>
-            <div className={cn("max-w-[85%] rounded-2xl px-4 py-3", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground")}>
-              <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown>{message.content}</ReactMarkdown>
+        {!showWelcome && (
+          <>
+            {messages.map((message) => (
+              <div key={message.id} className={cn("animate-fade-in", message.role === "user" ? "flex justify-end" : "flex items-start gap-3")}>
+                {message.role === "assistant" && (
+                  <div className="flex-shrink-0 mt-1">
+                    <AIBrainSphere size={36} isThinking={false} />
+                  </div>
+                )}
+                <div className={cn("max-w-[80%] rounded-2xl px-4 py-3", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground")}>
+                  <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
-        
-        {isLoading && (
-          <div className="animate-fade-in flex items-center gap-3 py-2">
-            <AIBrainSphere size={48} isThinking={true} />
-            <span className="text-sm text-muted-foreground">Pensando...</span>
-          </div>
+            ))}
+            
+            {isLoading && (
+              <div className="animate-fade-in flex items-start gap-3 py-2">
+                <div className="flex-shrink-0">
+                  <AIBrainSphere size={36} isThinking={true} />
+                </div>
+                <span className="text-sm text-muted-foreground mt-2">Pensando...</span>
+              </div>
+            )}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>

@@ -232,10 +232,11 @@ export function AIChat() {
         </div>
       )}
 
+      <div className="px-4 pt-3 pb-2 border-b border-border/20 bg-background/80 backdrop-blur-sm flex justify-center">
+        <AIBrainSphere size={56} isThinking={isLoading} />
+      </div>
+
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="flex justify-center py-2">
-          <AIBrainSphere size={showWelcome ? 140 : 72} isThinking={isLoading} />
-        </div>
 
         {showWelcome && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">

@@ -22,8 +22,10 @@ import {
 import { useEventContext } from "@/contexts/EventContext";
 import { useNoteContext } from "@/contexts/NoteContext";
 import { useAIChatContext } from "@/contexts/AIChatContext";
+import { useUserContext } from "@/contexts/UserContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import ssIcon from "@/assets/ss-icon.png";
 
@@ -60,6 +62,7 @@ export function MobileHome() {
   const { getTodayEvents } = useEventContext();
   const { getTodayCEONotes } = useNoteContext();
   const { conversationsList, activeConversationId, switchConversation, createNewConversation } = useAIChatContext();
+  const { activeUser, users, setActiveUser } = useUserContext();
 
   const todayEvents = getTodayEvents();
   const pendingNotes = getTodayCEONotes().filter(n => n.status === "pending");
@@ -99,6 +102,38 @@ export function MobileHome() {
           >
             <History className="w-4 h-4" />
           </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold text-primary-foreground shrink-0 transition-all ring-2 ring-transparent hover:ring-primary/40"
+                style={{ backgroundColor: activeUser?.avatar_color || "hsl(var(--primary))" }}
+                title={activeUser?.name || "Usuario"}
+              >
+                {activeUser?.name?.charAt(0).toUpperCase() || "?"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-48 p-2">
+              <p className="text-[0.65rem] uppercase tracking-wider text-muted-foreground px-2 pb-1.5">Cambiar perfil</p>
+              {users.map((user) => (
+                <button
+                  key={user.id}
+                  onClick={() => setActiveUser(user)}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left text-sm transition-colors",
+                    activeUser?.id === user.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-secondary text-foreground"
+                  )}
+                >
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-primary-foreground shrink-0"
+                    style={{ backgroundColor: user.avatar_color }}
+                  >
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="truncate">{user.name}</span>
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
           <button
             onClick={() => navigate("/admin")}
             className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"

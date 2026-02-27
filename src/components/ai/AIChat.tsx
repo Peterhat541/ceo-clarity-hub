@@ -237,7 +237,7 @@ export function AIChat() {
       )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {showWelcome && (
+      {showWelcome && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <AIBrainSphere size={140} isThinking={false} />
             <h1 className="text-2xl font-semibold text-foreground mb-2 mt-2">
@@ -246,7 +246,7 @@ export function AIChat() {
             <p className="text-sm text-muted-foreground max-w-md mb-8">
               Estoy conectada a tus datos, clientes, proyectos y herramientas. Pregúntame lo que necesites.
             </p>
-            <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+            <div className="grid grid-cols-2 gap-3 w-full max-w-lg mb-6">
               {suggestionCards.map((card) => (
                 <button
                   key={card.text}
@@ -257,6 +257,45 @@ export function AIChat() {
                   <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-relaxed">{card.text}</p>
                 </button>
               ))}
+            </div>
+            {/* Gemini-style input */}
+            <div className="w-full max-w-lg">
+              {isRecording && (
+                <div className="mb-2 flex items-center justify-center gap-2 text-destructive animate-pulse">
+                  <div className="w-2 h-2 rounded-full bg-destructive" />
+                  <span className="text-sm font-medium">Escuchando... (pulsa para detener)</span>
+                </div>
+              )}
+              {isTranscribing && (
+                <div className="mb-2 flex items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Transcribiendo...</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 bg-card/80 border border-border/50 rounded-2xl px-4 py-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                  placeholder="Pregunta sobre tus clientes, proyectos, reuniones..."
+                  disabled={isLoading || isRecording}
+                  className="flex-1 bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 py-2"
+                />
+                <Button
+                  variant={isRecording ? "destructive" : "ghost"}
+                  size="icon"
+                  className={cn("h-9 w-9 rounded-xl shrink-0", isRecording && "animate-pulse")}
+                  onClick={handleMicClick}
+                  disabled={isMicDisabled}
+                  title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Grabación de voz"}
+                >
+                  {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
+                <Button onClick={handleSend} disabled={!input.trim() || isLoading} size="icon" className="h-9 w-9 rounded-xl bg-primary hover:bg-primary/90 shrink-0">
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -291,45 +330,47 @@ export function AIChat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input area */}
-      <div className="p-4 border-t border-border/30">
-        {isRecording && (
-          <div className="mb-2 flex items-center gap-2 text-destructive animate-pulse">
-            <div className="w-2 h-2 rounded-full bg-destructive" />
-            <span className="text-sm font-medium">Escuchando... (pulsa para detener)</span>
+      {/* Input area - only shown during conversation */}
+      {!showWelcome && (
+        <div className="p-4">
+          {isRecording && (
+            <div className="mb-2 flex items-center gap-2 text-destructive animate-pulse">
+              <div className="w-2 h-2 rounded-full bg-destructive" />
+              <span className="text-sm font-medium">Escuchando... (pulsa para detener)</span>
+            </div>
+          )}
+          {isTranscribing && (
+            <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Transcribiendo...</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 bg-card/80 border border-border/50 rounded-2xl px-4 py-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+              placeholder="Pregunta sobre tus clientes, proyectos, reuniones..."
+              disabled={isLoading || isRecording}
+              className="flex-1 bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 py-2"
+            />
+            <Button
+              variant={isRecording ? "destructive" : "ghost"}
+              size="icon"
+              className={cn("h-9 w-9 rounded-xl shrink-0", isRecording && "animate-pulse")}
+              onClick={handleMicClick}
+              disabled={isMicDisabled}
+              title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Grabación de voz"}
+            >
+              {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </Button>
+            <Button onClick={handleSend} disabled={!input.trim() || isLoading} size="icon" className="h-9 w-9 rounded-xl bg-primary hover:bg-primary/90 shrink-0">
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </Button>
           </div>
-        )}
-        {isTranscribing && (
-          <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Transcribiendo...</span>
-          </div>
-        )}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Pregunta sobre tus clientes, proyectos, reuniones..."
-            disabled={isLoading || isRecording}
-            className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all disabled:opacity-50"
-          />
-          <Button
-            variant={isRecording ? "destructive" : "outline"}
-            size="icon"
-            className={cn("h-12 w-12 rounded-xl transition-all", isRecording && "animate-pulse")}
-            onClick={handleMicClick}
-            disabled={isMicDisabled}
-            title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Grabación de voz"}
-          >
-            {isTranscribing ? <Loader2 className="w-5 h-5 animate-spin" /> : isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </Button>
-          <Button onClick={handleSend} disabled={!input.trim() || isLoading} size="icon" className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90">
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-          </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

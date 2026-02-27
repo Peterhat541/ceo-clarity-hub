@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
 interface Message {
   id: string;
@@ -54,12 +54,11 @@ export function ClientChatModal({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasLoadedHistory = useRef(false);
 
-  const { isRecording, isSupported, error: recorderError, startRecording, stopRecording } = useAudioRecorder();
+  const { isRecording, isTranscribing, isSupported, error: recorderError, startListening, stopListening } = useSpeechRecognition();
 
   // Show recorder errors
   useEffect(() => {
@@ -197,51 +196,15 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
 
   const handleMicClick = async () => {
     if (isRecording) {
-      // Stop recording and transcribe
-      const audioBlob = await stopRecording();
-      if (audioBlob && audioBlob.size > 0) {
-        setIsTranscribing(true);
-        try {
-          // Convert blob to base64
-          const arrayBuffer = await audioBlob.arrayBuffer();
-          const base64 = btoa(
-            new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-          );
-
-          const { data, error } = await supabase.functions.invoke("transcribe", {
-            body: { 
-              audio: base64,
-              mimeType: audioBlob.type 
-            },
-          });
-
-          if (error) {
-            throw new Error(error.message);
-          }
-
-          if (data?.text) {
-            setInput(prev => prev ? `${prev} ${data.text}` : data.text);
-            toast({
-              title: "Transcripción completada",
-              description: "Texto añadido al input.",
-            });
-          } else if (data?.error) {
-            throw new Error(data.error);
-          }
-        } catch (err) {
-          console.error("Transcription error:", err);
-          toast({
-            title: "Error de transcripción",
-            description: err instanceof Error ? err.message : "No se pudo transcribir el audio.",
-            variant: "destructive",
-          });
-        } finally {
-          setIsTranscribing(false);
-        }
+      const text = await stopListening();
+      if (text) {
+        setInput(prev => prev ? `${prev} ${text}` : text);
+        toast({ title: "Transcripción completada", description: "Texto añadido al input." });
+      } else {
+        toast({ title: "No se detectó voz", variant: "destructive" });
       }
     } else {
-      // Start recording
-      await startRecording();
+      startListening();
     }
   };
 

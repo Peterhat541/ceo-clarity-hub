@@ -11,7 +11,7 @@ import { useUserContext } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
-import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
 interface Message {
   id: string;
@@ -43,10 +43,9 @@ export function AIChat() {
   } = useAIChatContext();
   const { activeUser } = useUserContext();
   const [isLoading, setIsLoading] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { isRecording, isSupported, error: recorderError, startRecording, stopRecording } = useAudioRecorder();
+  const { isRecording, isTranscribing, isSupported, error: recorderError, startListening, stopListening } = useSpeechRecognition();
 
   const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
   useEffect(() => { scrollToBottom(); }, [messages]);
@@ -94,22 +93,16 @@ export function AIChat() {
 
   const handleMicClick = async () => {
     if (isRecording) {
-      const audioBlob = await stopRecording();
-      if (audioBlob && audioBlob.size > 0) {
-        setIsTranscribing(true);
-        try {
-          const arrayBuffer = await audioBlob.arrayBuffer();
-          const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
-          const { data, error } = await supabase.functions.invoke("transcribe", { body: { audio: base64, mimeType: audioBlob.type } });
-          if (error) throw new Error(error.message);
-          if (data?.text) { setInput(prev => prev ? `${prev} ${data.text}` : data.text); toast({ title: "Transcripción completada" }); }
-          else if (data?.error) throw new Error(data.error);
-        } catch (err) {
-          console.error("Transcription error:", err);
-          toast({ title: "Error de transcripción", description: err instanceof Error ? err.message : "No se pudo transcribir.", variant: "destructive" });
-        } finally { setIsTranscribing(false); }
+      const text = await stopListening();
+      if (text) {
+        setInput(prev => prev ? `${prev} ${text}` : text);
+        toast({ title: "Transcripción completada" });
+      } else {
+        toast({ title: "No se detectó voz", variant: "destructive" });
       }
-    } else { await startRecording(); }
+    } else {
+      startListening();
+    }
   };
 
   const handleSend = async () => {

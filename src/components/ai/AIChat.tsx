@@ -232,14 +232,10 @@ export function AIChat() {
         </div>
       )}
 
-      <div className="px-4 pt-3 pb-2 border-b border-border/20 bg-background/80 backdrop-blur-sm flex justify-center">
-        <AIBrainSphere size={56} isThinking={isLoading} />
-      </div>
-
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-
         {showWelcome && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            <AIBrainSphere size={140} isThinking={false} />
             <h1 className="text-2xl font-semibold text-foreground mb-2 mt-2">
               Hola Carlos, soy tu <span className="text-gradient">IA de empresa</span>
             </h1>

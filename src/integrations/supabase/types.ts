@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_users: {
+        Row: {
+          ai_instructions: string
+          avatar_color: string
+          created_at: string
+          id: string
+          name: string
+          role: string
+        }
+        Insert: {
+          ai_instructions?: string
+          avatar_color?: string
+          created_at?: string
+          id?: string
+          name: string
+          role?: string
+        }
+        Update: {
+          ai_instructions?: string
+          avatar_color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          role?: string
+        }
+        Relationships: []
+      }
       client_conversations: {
         Row: {
           client_id: string | null
@@ -273,6 +300,41 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_chat_messages: {
+        Row: {
+          client_context: string | null
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          client_context?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          client_context?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
             referencedColumns: ["id"]
           },
         ]

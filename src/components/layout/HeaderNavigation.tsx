@@ -1,14 +1,21 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Settings, LogOut, Sparkles } from "lucide-react";
+import { Settings, LogOut, Sparkles, UserCircle } from "lucide-react";
 import ssIcon from "@/assets/ss-icon.png";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUserContext } from "@/contexts/UserContext";
 
 export function HeaderNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { activeUser, setActiveUser } = useUserContext();
   
   const isAdmin = location.pathname === "/admin";
+
+  const handleSwitchUser = () => {
+    setActiveUser(null);
+    navigate("/select-user");
+  };
 
   if (isMobile) {
     return (
@@ -74,7 +81,19 @@ export function HeaderNavigation() {
           <Sparkles className="w-3.5 h-3.5" />
           TU IA
         </button>
-        <span className="text-sm text-muted-foreground hidden lg:inline">Carlos Ruiz</span>
+        <button
+          onClick={handleSwitchUser}
+          className="flex items-center gap-1.5 px-2 py-1 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+          title="Cambiar usuario"
+        >
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+            style={{ backgroundColor: activeUser?.avatar_color || "#3b82f6" }}
+          >
+            {activeUser?.name?.charAt(0)?.toUpperCase() || "?"}
+          </div>
+          <span className="hidden lg:inline">{activeUser?.name || "Usuario"}</span>
+        </button>
         <button
           onClick={() => navigate("/admin")}
           className={`flex items-center justify-center w-8 h-8 rounded-full transition-all ${

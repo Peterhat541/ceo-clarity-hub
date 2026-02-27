@@ -63,6 +63,7 @@ export default function AIBrainSphere({ size = 160, isThinking = false }: AIBrai
     const getColor = (color: "green" | "gold") => color === "green" ? GREEN : GOLD;
 
     const animate = () => {
+      try {
       ctx.clearRect(0, 0, size, size);
 
       const thinking = thinkingRef.current;
@@ -89,8 +90,9 @@ export default function AIBrainSphere({ size = 160, isThinking = false }: AIBrai
       for (let ring = 0; ring < 3; ring++) {
         const r = currentRadius * (0.7 + ring * 0.2);
         const tilt = (ring * 0.4 + rotationRef.current * 0.5);
+        const radiusY = Math.max(0.1, Math.abs(r * Math.cos(tilt)));
         ctx.beginPath();
-        ctx.ellipse(cx, cy, r, r * Math.cos(tilt), rotationRef.current * 0.3 + ring * 0.8, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, r, radiusY, rotationRef.current * 0.3 + ring * 0.8, 0, Math.PI * 2);
         ctx.stroke();
       }
       ctx.restore();
@@ -167,7 +169,9 @@ export default function AIBrainSphere({ size = 160, isThinking = false }: AIBrai
       for (const p of particles) {
         p.theta += p.speed * 0.002 * (thinking ? 3 : 1);
       }
-
+      } catch (_) {
+        // Prevent a single bad frame from killing the animation loop
+      }
       animationRef.current = requestAnimationFrame(animate);
     };
 

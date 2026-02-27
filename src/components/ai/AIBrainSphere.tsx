@@ -122,9 +122,8 @@ export default function AIBrainSphere({ size = 160, isThinking = false }: AIBrai
 
       for (const { p, x, y, perspective } of projected) {
         const { h, s, l } = getColor(p.color);
-        const clampedPerspective = Math.max(0, perspective);
-        const depthAlpha = p.opacity * (0.3 + clampedPerspective * 0.7);
-        const r = Math.max(0, p.radius * clampedPerspective);
+        const depthAlpha = p.opacity * (0.3 + perspective * 0.7);
+        const r = p.radius * perspective;
 
         // Glow
         if (r > 0.8) {

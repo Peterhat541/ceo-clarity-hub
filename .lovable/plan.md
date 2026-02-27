@@ -1,43 +1,17 @@
 
 
-## Plan: Esfera permanente centrada como fondo del chat
+## Plan: Efecto de partículas siguiendo el cursor (mouse trail)
 
-**Problema actual**: La esfera se renderiza dentro de bloques condicionales (`showWelcome`, lista de mensajes, loading) y se desmonta al cambiar de estado. Además hay un sticky header duplicado.
+### Qué se hará
+Añadir al componente `ParticleNetwork` un efecto donde un grupo de bolitas (verdes y doradas, los colores de marca) siguen el cursor del ratón por la pantalla, dejando un rastro visual como una "flecha" de partículas que persiguen al puntero.
 
-**Solución**: Convertir la esfera en un elemento de fondo fijo centrado en el área del chat, siempre visible independientemente del estado.
+### Cambios técnicos
 
-### Cambios en `src/components/ai/AIChat.tsx`
+**Archivo: `src/components/landing/ParticleNetwork.tsx`**
 
-1. **Eliminar** la esfera del sticky header (líneas 235-237)
-2. **Eliminar** la esfera grande de la pantalla de bienvenida (línea 242)
-3. **Eliminar** las esferas individuales junto a cada mensaje assistant (líneas 268-271)
-4. **Eliminar** la esfera del indicador de loading (líneas 283-285)
-5. **Añadir** una esfera permanente centrada como capa de fondo dentro del contenedor principal del chat:
-   - Posición absoluta centrada (`absolute inset-0 flex items-center justify-center`)
-   - Z-index bajo para que quede detrás del contenido
-   - `pointer-events-none` para no bloquear interacción
-   - Tamaño grande (~120px) con `isThinking={true}` para rotación constante
-   - Opacidad reducida (~0.4) para que no interfiera con la lectura del texto
-
-```text
-Estructura resultante:
-
-┌─────────────────────────┐
-│  [contexto cliente]     │
-├─────────────────────────┤
-│                         │
-│    ┌───────────┐        │  ← Capa fondo (absolute, z-0)
-│    │  ESFERA   │        │     siempre visible, opacity 0.4
-│    │  giratoria │        │
-│    └───────────┘        │
-│                         │
-│  mensajes / welcome     │  ← Capa contenido (relative, z-10)
-│  encima de la esfera    │
-│                         │
-├─────────────────────────┤
-│  [input area]           │
-└─────────────────────────┘
-```
-
-Esto asegura que la esfera **nunca se desmonta** y permanece visible continuamente como identidad visual de la IA.
+1. Capturar la posición del ratón con un listener de `mousemove` en el canvas
+2. Crear un conjunto de ~15-20 partículas "seguidoras" que persigan al cursor con un efecto de retraso (easing/lerp), de forma que cada una siga a la anterior creando un efecto de cola/serpiente
+3. Estas partículas usarán los mismos colores de marca (verde `#24A475` y dorado `#D89B2A`), con tamaños decrecientes y opacidad que se desvanece hacia el final de la cola
+4. En móvil, usar `touchmove` en lugar de `mousemove` para el mismo efecto
+5. Las partículas del fondo (las que ya existen flotando) se mantienen tal cual
 

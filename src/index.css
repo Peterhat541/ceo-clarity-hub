@@ -157,13 +157,33 @@
   .gradient-filled-input {
     position: relative;
     border-radius: 1rem;
-    padding: 3px;
     background: var(--gradient-brand);
     transition: all 0.3s ease;
   }
 
   .gradient-filled-input > div {
+    background: transparent !important;
     border-radius: calc(1rem - 2px);
+  }
+
+  .gradient-filled-input input::placeholder {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .gradient-filled-input input {
+    color: white;
+  }
+
+  .gradient-filled-input button {
+    color: white;
+  }
+
+  .gradient-filled-input button.bg-primary {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .gradient-filled-input button.bg-primary:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 
   .glow {

@@ -341,7 +341,7 @@ export function AIChat() {
               <span className="text-sm">Transcribiendo...</span>
             </div>
           )}
-          <div className={cn("flex items-center gap-2 bg-card/80 border rounded-2xl px-4 py-2 transition-all duration-300", isRecording ? "siri-listening" : "border-border/50")}>
+          <div className={cn("flex items-center gap-2 bg-card/80 border-2 rounded-2xl px-4 py-3 transition-all duration-300", (isRecording || input.trim()) ? "siri-listening" : "border-border/50")}>
             <input
               type="text"
               value={input}

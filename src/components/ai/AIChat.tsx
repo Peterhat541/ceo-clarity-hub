@@ -234,7 +234,7 @@ export function AIChat() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {showWelcome && (
-          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+          <div className={cn("flex flex-col items-center justify-center h-full text-center px-4 border-2 rounded-3xl transition-all duration-300 mx-2 my-4", isRecording ? "siri-listening" : "border-transparent")}>
             <AIBrainSphere size={140} isThinking={false} />
             <h1 className="text-2xl font-semibold text-foreground mb-2 mt-2">
               Hola {activeUser?.name || ""}. Soy tu <span className="text-gradient">IA de empresa</span>
@@ -268,7 +268,7 @@ export function AIChat() {
                   <span className="text-sm">Transcribiendo...</span>
                 </div>
               )}
-              <div className={cn("flex items-center gap-2 bg-card/80 border rounded-2xl px-4 py-2 transition-all duration-300", isRecording ? "siri-listening" : "border-border/50")}>
+              <div className="flex items-center gap-2 bg-card/80 border border-border/50 rounded-2xl px-4 py-2 transition-all duration-300">
                 <input
                   type="text"
                   value={input}

@@ -224,7 +224,7 @@ export function AIChat() {
   const showWelcome = messages.length === 0 || (messages.length === 1 && messages[0].id === "welcome");
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={cn("flex flex-col h-full border-2 rounded-3xl transition-all duration-300 m-1", (isRecording || input.trim()) ? "siri-listening" : "border-transparent")}>
       {activeClient.name && (
         <div className="px-4 py-2 border-b border-border bg-primary/5 flex items-center justify-between">
           <p className="text-xs text-primary">Contexto: <span className="font-medium">{activeClient.name}</span></p>
@@ -341,7 +341,7 @@ export function AIChat() {
               <span className="text-sm">Transcribiendo...</span>
             </div>
           )}
-          <div className={cn("flex items-center gap-2 bg-card/80 border-2 rounded-2xl px-4 py-3 transition-all duration-300", (isRecording || input.trim()) ? "siri-listening" : "border-border/50")}>
+          <div className="flex items-center gap-2 bg-card/80 border border-border/50 rounded-2xl px-4 py-3 transition-all duration-300">
             <input
               type="text"
               value={input}

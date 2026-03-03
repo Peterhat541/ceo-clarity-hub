@@ -213,12 +213,11 @@
   }
 
   @keyframes siri-breathe {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(0.985); }
+    0%, 100% { border-width: 2px; }
+    50% { border-width: 4px; }
   }
 
   .siri-listening {
-    animation: siri-border 2s ease-in-out infinite, siri-breathe 3s ease-in-out infinite;
-    border-width: 2px;
+    animation: siri-border 2s ease-in-out infinite, siri-breathe 2.5s ease-in-out infinite;
   }
 }

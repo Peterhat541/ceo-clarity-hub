@@ -269,7 +269,7 @@ export function AIChat() {
                   <span className="text-sm">Transcribiendo...</span>
                 </div>
               )}
-              <div className="gradient-border-input">
+              <div className={input.trim() || isRecording ? "gradient-border-input" : "gradient-filled-input"}>
                 <div className="flex items-center gap-2 bg-secondary rounded-2xl px-4 py-2">
                   <input
                     type="text"
@@ -344,7 +344,7 @@ export function AIChat() {
               <span className="text-sm">Transcribiendo...</span>
             </div>
           )}
-          <div className="gradient-border-input">
+          <div className={input.trim() || isRecording ? "gradient-border-input" : "gradient-filled-input"}>
             <div className="flex items-center gap-2 bg-secondary rounded-2xl px-4 py-3">
               <input
                 type="text"

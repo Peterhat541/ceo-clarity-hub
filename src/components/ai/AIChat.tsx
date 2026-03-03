@@ -268,7 +268,7 @@ export function AIChat() {
                   <span className="text-sm">Transcribiendo...</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 bg-card/80 border border-border/50 rounded-2xl px-4 py-2">
+              <div className={cn("flex items-center gap-2 bg-card/80 border rounded-2xl px-4 py-2 transition-all duration-300", isRecording ? "siri-listening" : "border-border/50")}>
                 <input
                   type="text"
                   value={input}
@@ -341,7 +341,7 @@ export function AIChat() {
               <span className="text-sm">Transcribiendo...</span>
             </div>
           )}
-          <div className="flex items-center gap-2 bg-card/80 border border-border/50 rounded-2xl px-4 py-2">
+          <div className={cn("flex items-center gap-2 bg-card/80 border rounded-2xl px-4 py-2 transition-all duration-300", isRecording ? "siri-listening" : "border-border/50")}>
             <input
               type="text"
               value={input}

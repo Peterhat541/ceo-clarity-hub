@@ -469,7 +469,7 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className={cn("flex gap-2 rounded-2xl px-2 py-1 transition-all duration-300 border", isRecording ? "siri-listening" : "border-transparent")}>
             <input
               type="text"
               value={input}

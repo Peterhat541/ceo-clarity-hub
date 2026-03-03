@@ -182,4 +182,16 @@
   .animate-fade-up { animation: fade-up 0.4s ease-out forwards; }
   .animate-fade-up-delay-1 { animation: fade-up 0.4s ease-out 0.1s forwards; opacity: 0; }
   .animate-fade-up-delay-2 { animation: fade-up 0.4s ease-out 0.2s forwards; opacity: 0; }
+
+  @keyframes siri-border {
+    0% { border-color: hsl(155 64% 39%); box-shadow: 0 0 15px hsl(155 64% 39% / 0.4), 0 0 30px hsl(155 64% 39% / 0.1); }
+    33% { border-color: hsl(39 70% 51%); box-shadow: 0 0 15px hsl(39 70% 51% / 0.4), 0 0 30px hsl(39 70% 51% / 0.1); }
+    66% { border-color: hsl(155 64% 50%); box-shadow: 0 0 15px hsl(155 64% 50% / 0.4), 0 0 30px hsl(155 64% 50% / 0.1); }
+    100% { border-color: hsl(155 64% 39%); box-shadow: 0 0 15px hsl(155 64% 39% / 0.4), 0 0 30px hsl(155 64% 39% / 0.1); }
+  }
+
+  .siri-listening {
+    animation: siri-border 2s ease-in-out infinite;
+    border-width: 2px;
+  }
 }

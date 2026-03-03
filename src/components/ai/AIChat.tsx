@@ -268,7 +268,7 @@ export function AIChat() {
                   <span className="text-sm">Transcribiendo...</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 bg-card/80 border border-border/50 rounded-2xl px-4 py-2 transition-all duration-300">
+              <div className="flex items-center gap-2 bg-secondary border border-border rounded-2xl px-4 py-2 transition-all duration-300">
                 <input
                   type="text"
                   value={input}
@@ -341,7 +341,7 @@ export function AIChat() {
               <span className="text-sm">Transcribiendo...</span>
             </div>
           )}
-          <div className="flex items-center gap-2 bg-card/80 border border-border/50 rounded-2xl px-4 py-3 transition-all duration-300">
+          <div className="flex items-center gap-2 bg-secondary border border-border rounded-2xl px-4 py-3 transition-all duration-300">
             <input
               type="text"
               value={input}

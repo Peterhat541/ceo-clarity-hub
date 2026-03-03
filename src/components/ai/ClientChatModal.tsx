@@ -376,7 +376,7 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[80vh] flex flex-col p-0 gap-0 bg-card border-border">
+      <DialogContent className={cn("max-w-2xl h-[80vh] flex flex-col p-0 gap-0 bg-card border-2 rounded-3xl transition-all duration-300", (isRecording || input.trim()) ? "siri-listening" : "border-border")}>
         {/* Header */}
         <DialogHeader className="p-4 pr-12 border-b border-border shrink-0">
           <div className="flex items-center gap-3">
@@ -469,7 +469,7 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
             </div>
           )}
 
-          <div className={cn("flex gap-2 rounded-2xl px-2 py-1 transition-all duration-300 border", isRecording ? "siri-listening" : "border-transparent")}>
+          <div className="gradient-border-input flex items-center gap-2 bg-secondary rounded-2xl px-4 py-3 transition-all duration-300">
             <input
               type="text"
               value={input}
@@ -477,7 +477,7 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
               placeholder={`Pregunta sobre ${clientName}...`}
               disabled={isLoading || isLoadingHistory || isRecording}
-              className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all disabled:opacity-50"
+              className="flex-1 bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
             />
             <Button
               variant={isRecording ? "destructive" : "outline"}

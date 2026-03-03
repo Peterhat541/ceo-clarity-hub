@@ -154,6 +154,18 @@
     pointer-events: none;
   }
 
+  .gradient-filled-input {
+    position: relative;
+    border-radius: 1rem;
+    padding: 3px;
+    background: var(--gradient-brand);
+    transition: all 0.3s ease;
+  }
+
+  .gradient-filled-input > div {
+    border-radius: calc(1rem - 2px);
+  }
+
   .glow {
     box-shadow: var(--shadow-glow);
   }

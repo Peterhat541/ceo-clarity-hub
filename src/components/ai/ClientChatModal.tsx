@@ -469,47 +469,49 @@ ${issue ? `**Situación actual:** ${issue}` : ""}
             </div>
           )}
 
-          <div className="gradient-border-input flex items-center gap-2 bg-secondary rounded-2xl px-4 py-3 transition-all duration-300">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-              placeholder={`Pregunta sobre ${clientName}...`}
-              disabled={isLoading || isLoadingHistory || isRecording}
-              className="flex-1 bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
-            />
-            <Button
-              variant={isRecording ? "destructive" : "outline"}
-              size="icon"
-              className={cn(
-                "h-12 w-12 rounded-xl transition-all",
-                isRecording && "animate-pulse"
-              )}
-              onClick={handleMicClick}
-              disabled={isMicDisabled}
-              title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Iniciar grabación de voz"}
-            >
-              {isTranscribing ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : isRecording ? (
-                <Square className="w-5 h-5" />
-              ) : (
-                <Mic className="w-5 h-5" />
-              )}
-            </Button>
-            <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading || isLoadingHistory}
-              size="icon"
-              className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </Button>
+          <div className="gradient-border-input">
+            <div className="flex items-center gap-2 bg-secondary rounded-2xl px-4 py-3">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                placeholder={`Pregunta sobre ${clientName}...`}
+                disabled={isLoading || isLoadingHistory || isRecording}
+                className="flex-1 bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+              />
+              <Button
+                variant={isRecording ? "destructive" : "outline"}
+                size="icon"
+                className={cn(
+                  "h-12 w-12 rounded-xl transition-all",
+                  isRecording && "animate-pulse"
+                )}
+                onClick={handleMicClick}
+                disabled={isMicDisabled}
+                title={!isSupported ? "Tu navegador no soporta grabación de audio" : isRecording ? "Detener grabación" : "Iniciar grabación de voz"}
+              >
+                {isTranscribing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isRecording ? (
+                  <Square className="w-5 h-5" />
+                ) : (
+                  <Mic className="w-5 h-5" />
+                )}
+              </Button>
+              <Button
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading || isLoadingHistory}
+                size="icon"
+                className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

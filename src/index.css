@@ -206,18 +206,30 @@
   .animate-fade-up-delay-2 { animation: fade-up 0.4s ease-out 0.2s forwards; opacity: 0; }
 
   @keyframes siri-border {
-    0% { border-color: hsl(155 64% 39%); box-shadow: 0 0 15px hsl(155 64% 39% / 0.4), 0 0 30px hsl(155 64% 39% / 0.1); }
-    33% { border-color: hsl(39 70% 51%); box-shadow: 0 0 15px hsl(39 70% 51% / 0.4), 0 0 30px hsl(39 70% 51% / 0.1); }
-    66% { border-color: hsl(155 64% 50%); box-shadow: 0 0 15px hsl(155 64% 50% / 0.4), 0 0 30px hsl(155 64% 50% / 0.1); }
-    100% { border-color: hsl(155 64% 39%); box-shadow: 0 0 15px hsl(155 64% 39% / 0.4), 0 0 30px hsl(155 64% 39% / 0.1); }
-  }
-
-  @keyframes siri-breathe {
-    0%, 100% { border-width: 2px; }
-    50% { border-width: 4px; }
+    0% {
+      border-color: hsl(155 64% 39%);
+      box-shadow: 0 0 8px hsl(155 64% 39% / 0.3), 0 0 20px hsl(155 64% 39% / 0.1);
+    }
+    25% {
+      border-color: hsl(155 64% 50%);
+      box-shadow: 0 0 20px hsl(155 64% 50% / 0.5), 0 0 40px hsl(155 64% 50% / 0.2), 0 0 60px hsl(155 64% 50% / 0.05);
+    }
+    50% {
+      border-color: hsl(39 70% 51%);
+      box-shadow: 0 0 8px hsl(39 70% 51% / 0.3), 0 0 20px hsl(39 70% 51% / 0.1);
+    }
+    75% {
+      border-color: hsl(39 70% 60%);
+      box-shadow: 0 0 20px hsl(39 70% 60% / 0.5), 0 0 40px hsl(39 70% 60% / 0.2), 0 0 60px hsl(39 70% 60% / 0.05);
+    }
+    100% {
+      border-color: hsl(155 64% 39%);
+      box-shadow: 0 0 8px hsl(155 64% 39% / 0.3), 0 0 20px hsl(155 64% 39% / 0.1);
+    }
   }
 
   .siri-listening {
-    animation: siri-border 2s ease-in-out infinite, siri-breathe 2.5s ease-in-out infinite;
+    animation: siri-border 3s ease-in-out infinite;
+    border-width: 2px;
   }
 }

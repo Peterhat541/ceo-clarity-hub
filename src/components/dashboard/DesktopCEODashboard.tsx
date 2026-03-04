@@ -259,7 +259,7 @@ export function DesktopCEODashboard() {
           </div>
 
           <div className="p-4 border-t border-border/30">
-            <Button onClick={() => setSendNoteOpen(true)} variant="ghost" className="w-full h-10 bg-secondary/60 hover:bg-secondary text-foreground font-medium gap-2 text-sm">
+            <Button onClick={() => setSendNoteOpen(true)} variant="ghost" className="w-full h-10 bg-secondary/60 hover:bg-secondary active:bg-secondary/80 text-foreground font-medium gap-2 text-sm">
               <Send className="h-3.5 w-3.5" />
               Enviar nota al equipo
             </Button>
